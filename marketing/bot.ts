@@ -49,6 +49,7 @@ import * as broadcast from './broadcast'
 import * as access from './access'
 import { buildDigest, stageDigest } from './digest'
 import { companyFacts, researchEntity, renderProspects, todaysProspects } from './os-commands'
+import { OS_HOME, SALES_MENU, MARKETING_MENU, INTEL_MENU, KNOWLEDGE_MENU, SYSTEM_MENU, homeKeyboard, backKeyboard } from './os-menu'
 
 /* ── access ───────────────────────────────────────────────────────────────────
    Two gates, in marketing/access.ts: the chat must be allowlisted AND the
@@ -281,7 +282,27 @@ bot.command('whoami', async (ctx) => {
   )
 })
 
-bot.command(['start', 'help'], (ctx) => ctx.reply(HELP, { parse_mode: 'HTML' }))
+bot.command('start', (ctx) => ctx.reply(OS_HOME, { parse_mode: 'HTML', reply_markup: homeKeyboard() }))
+bot.command('os', (ctx) => ctx.reply(OS_HOME, { parse_mode: 'HTML', reply_markup: homeKeyboard() }))
+bot.command('help', (ctx) => ctx.reply(HELP, { parse_mode: 'HTML' }))
+
+bot.callbackQuery('os:home', async (ctx) => {
+  await ctx.answerCallbackQuery()
+  await ctx.editMessageText(OS_HOME, { parse_mode: 'HTML', reply_markup: homeKeyboard() })
+})
+
+for (const [key, body] of [
+  ['sales', SALES_MENU],
+  ['marketing', MARKETING_MENU],
+  ['intel', INTEL_MENU],
+  ['knowledge', KNOWLEDGE_MENU],
+  ['system', SYSTEM_MENU],
+] as const) {
+  bot.callbackQuery(`os:${key}`, async (ctx) => {
+    await ctx.answerCallbackQuery()
+    await ctx.editMessageText(body, { parse_mode: 'HTML', reply_markup: backKeyboard() })
+  })
+}
 
 /* ── Satstreet OS front door ───────────────────────────────────────────────
    First three operating-system commands. All are research/draft only:
