@@ -27,6 +27,7 @@ import {
 } from './draft'
 import { needsReview, findCard, killCard, readyCard, type QueueCard } from './queue'
 import * as desk from './desk'
+import { chartShot, closeBrowser } from './shot'
 import {
   latestProspects, parseProspects, prospectEntry, companyFacts, researchCompany, type Region,
 } from './research'
@@ -338,19 +339,29 @@ async function respondPrice(ctx: Context, raw: string): Promise<void> {
   const keyboard = asset ? chartKeyboard(asset, range) : undefined
   const caption = renderSpot(result)
 
-  // A rendered TradingView chart when one is available, the text reply when
-  // not. The buttons ride along either way, so losing the image costs the
-  // look of the answer and never the answer itself.
-  if (asset?.listedOnCoinbase && isConfigured()) {
-    const png = await tradingViewChart(`COINBASE:${asset.symbol}USD`, range.imgInterval)
-    if (png) {
-      await ctx.replyWithPhoto(new InputFile(png, `${asset.symbol}-${range.key}.png`), {
-        caption,
-        parse_mode: 'HTML',
-        reply_markup: keyboard,
-      })
-      return
-    }
+  // Three sources, in order of how much they look like Satstreet:
+  //
+  //   1. a screenshot of the desk's own chart page — branded, unwatermarked,
+  //      and carrying the reference-price disclaimer
+  //   2. chart-img's TradingView render — a fallback on a 50/day allowance
+  //   3. the text reply
+  //
+  // The buttons ride along in every case, so losing the image costs the look
+  // of the answer and never the answer itself.
+  const photo = asset
+    ? (await chartShot({ symbol: asset.symbol, name: asset.name, range: range.key })) ??
+      (asset.listedOnCoinbase && isConfigured()
+        ? await tradingViewChart(`COINBASE:${asset.symbol}USD`, range.imgInterval)
+        : null)
+    : null
+
+  if (photo) {
+    await ctx.replyWithPhoto(new InputFile(photo, `${asset!.symbol}-${range.key}.png`), {
+      caption,
+      parse_mode: 'HTML',
+      reply_markup: keyboard,
+    })
+    return
   }
 
   await send(ctx, caption, keyboard ? { reply_markup: keyboard } : {})
@@ -1548,6 +1559,7 @@ if (process.argv[1]?.endsWith('bot.ts')) {
   for (const sig of ['SIGINT', 'SIGTERM'] as const) {
     process.once(sig, () => {
       console.log(`\n[bot] ${sig} — stopping`)
+      void closeBrowser()
       void bot.stop()
     })
   }

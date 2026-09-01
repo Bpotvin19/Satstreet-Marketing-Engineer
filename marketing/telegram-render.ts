@@ -17,6 +17,7 @@ import type { Digest, DigestItem } from './digest'
 import type { Range } from './coinbase'
 import { LABEL, fireInDays, type Reminder } from './reminders'
 import type { QueueCard } from './queue'
+import { chartUrl, SITE_URL } from './shot'
 import type { Research } from './types'
 import { prospectBanner, type ProspectList, type ProspectEntry, type FactSection, type Region } from './research'
 
@@ -373,9 +374,9 @@ const compactUsd = (n: number) => {
   return `$${n.toFixed(0)}`
 }
 
-/** The always-on board. Overridable so a re-host does not need a code change. */
-const TICKER_URL =
-  process.env.TICKER_URL || 'https://bpotvin19.github.io/satstreetgolf/ticker.html'
+/** The always-on board. Overridable so a re-host does not need a code change.
+    Defaults to the live site — the old GitHub Pages URL now 301s. */
+const TICKER_URL = process.env.TICKER_URL || `${SITE_URL}/ticker.html`
 
 /**
  * Enough decimals to be meaningful at any magnitude. Two is right for BTC and
@@ -408,6 +409,12 @@ function spotPrice(n: number): string {
 export function chartKeyboard(a: Spot, range: Range): InlineKeyboard | undefined {
   const kb = new InlineKeyboard()
   let any = false
+
+  // The desk's own page first: it is the one that opens interactive, with the
+  // range already selected and the reference-price disclaimer attached.
+  kb.url('Live chart \u2192', chartUrl({ symbol: a.symbol, name: a.name, range: range.key }))
+  kb.row()
+  any = true
 
   if (a.listedOnCoinbase) {
     const symbol = encodeURIComponent(`COINBASE:${a.symbol}USD`)
