@@ -149,6 +149,82 @@ export const PLAN_SCHEMA = {
   },
 } as const
 
+/* ── Sales/BD research ─────────────────────────────────────────────────────
+   The shape of one entry in the Daily Prospect List, so /research produces
+   something the sales team can paste straight into the list rather than a
+   paragraph they have to reformat.
+
+   Every field is public-data-only. The engine spec is explicit that this is a
+   prioritisation thesis built from public sources, not a claim about anyone's
+   intent to trade, and unknowns stay unknown rather than being filled in.
+   ────────────────────────────────────────────────────────────────────────── */
+
+export interface Research {
+  company: string
+  category: string
+  /** Empty when nothing recent was found — never a manufactured event. */
+  trigger: string
+  why_now: string
+  /** What Satstreet could plausibly provide. A hypothesis, labelled as one. */
+  likely_flow: string
+  decision_makers: string[]
+  contact_path: string
+  repeat_flow: 'Very High' | 'High' | 'Medium' | 'Low' | 'Unknown'
+  satstreet_angle: string
+  /** US/Florida entities are research-only until compliance says otherwise. */
+  jurisdiction_note: string
+  sources: string[]
+  /** What could not be established from public sources. */
+  gaps: string[]
+}
+
+export const RESEARCH_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'company', 'category', 'trigger', 'why_now', 'likely_flow', 'decision_makers',
+    'contact_path', 'repeat_flow', 'satstreet_angle', 'jurisdiction_note', 'sources', 'gaps',
+  ],
+  properties: {
+    company: { type: 'string' },
+    category: { type: 'string', description: 'What the company actually does, in a few words.' },
+    trigger: {
+      type: 'string',
+      description:
+        'A specific, recent, publicly reported event with a date. Empty string if none was found — never invent or generalise one.',
+    },
+    why_now: { type: 'string' },
+    likely_flow: {
+      type: 'string',
+      description:
+        'The execution, liquidity or settlement need this company plausibly has. A hypothesis from public facts, never a claim about their intent.',
+    },
+    decision_makers: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'Name — title, from public sources only. Empty if none could be established.',
+    },
+    contact_path: { type: 'string', description: 'Public route in: IR page, website form, LinkedIn.' },
+    repeat_flow: { type: 'string', enum: ['Very High', 'High', 'Medium', 'Low', 'Unknown'] },
+    satstreet_angle: {
+      type: 'string',
+      description:
+        'The opening a Satstreet person would actually use. Execution redundancy beats pitching crypto to a company already in crypto.',
+    },
+    jurisdiction_note: {
+      type: 'string',
+      description:
+        'Where the entity operates and what that means. US or Florida entities are RESEARCH AND RELATIONSHIP-BUILDING ONLY until Satstreet legal and compliance confirm permissions.',
+    },
+    sources: { type: 'array', items: { type: 'string' }, description: 'Public URLs only.' },
+    gaps: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'What public sources did not establish. Say so rather than filling it in.',
+    },
+  },
+} as const
+
 /* ── the Founder News Desk card rewrite ────────────────────────────────────
    A Draft plus the two things the desk's Telegram format requires and the
    other flows do not: the do-not-say list that ships beside every card, and

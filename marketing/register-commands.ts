@@ -13,6 +13,9 @@
 import { Bot } from 'grammy'
 
 const COMMANDS: { command: string; description: string }[] = [
+  { command: 'research', description: 'Public Sales/BD research — /research VBX' },
+  { command: 'todays_prospects', description: 'Latest prospect list — add florida for that list' },
+  { command: 'company_facts', description: 'Satstreet facts from the versioned context pack' },
   { command: 'queue', description: 'Content Queue — cards waiting on review' },
   { command: 'open', description: 'Open a queue card — /open 668f' },
   { command: 'why', description: 'Why this draft, this voice, this limit' },

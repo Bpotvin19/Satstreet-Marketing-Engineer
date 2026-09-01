@@ -17,6 +17,8 @@ import type { Digest, DigestItem } from './digest'
 import type { Range } from './coinbase'
 import { LABEL, fireInDays, type Reminder } from './reminders'
 import type { QueueCard } from './queue'
+import type { Research } from './types'
+import { prospectBanner, type ProspectList, type ProspectEntry, type FactSection, type Region } from './research'
 
 /** Telegram's hard limit is 4096 characters per message. */
 export const TG_LIMIT = 4096
@@ -515,6 +517,14 @@ export const HELP = `<b>Satstreet marketing bot</b>
 /voice robustus &lt;topic&gt; — the external cut-through style, published as
    Satstreet: the shape of the argument, never the author's words
 
+<b>Sales / BD research</b>
+/research &lt;company&gt; — public research: triggers, decision-makers,
+   likely flow, the angle, sources, and what it could not establish
+/todays_prospects — the latest Canadian prospect list
+/todays_prospects florida — the latest Florida research list
+   add <code>full</code> for the whole document, or a number for one entry
+/company_facts &lt;topic&gt; — the versioned context pack, quoted as written
+
 <b>Founder News Desk</b>
 /queue — cards Grok harvested overnight, waiting on review
 /open &lt;ref or title&gt; — one card, then pick a voice
@@ -661,6 +671,149 @@ export function renderCardDraft(
     for (const v of warns) lines.push(`• ${esc(v.detail)}`)
   }
 
+  return lines.join('\n')
+}
+
+/* ── Sales/BD research ────────────────────────────────────────────────────
+   The prospect lists are Markdown files written for GitHub, so they need
+   converting rather than escaping. Telegram supports a small tag set: bold,
+   italic, code, pre, links. Everything else in the source — tables, nested
+   lists, horizontal rules — has to degrade to plain text.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/** Markdown to the subset of HTML Telegram parses. Escapes first, so any
+    angle bracket in the source is inert before formatting is applied. */
+export function md(source: string): string {
+  return esc(source)
+    .split('\n')
+    .map((line) => {
+      if (/^\s*[-*_]{3,}\s*$/.test(line)) return '' // horizontal rule
+      const h = line.match(/^(#{1,6})\s+(.+)$/)
+      if (h) return `<b>${h[2].trim()}</b>`
+      const q = line.match(/^\s*&gt;\s?(.*)$/) // blockquote, already escaped
+      if (q) return q[1].trim() ? `<i>${q[1].trim()}</i>` : ''
+      return line.replace(/^\s*[-*]\s+/, '• ')
+    })
+    .join('\n')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/\n{3,}/g, '\n\n')
+}
+
+const REGION_LABEL: Record<Region, string> = {
+  canada: 'Canadian prospects',
+  florida: 'Florida research list',
+}
+
+/**
+ * The index view: who is on the list and why, one line each.
+ *
+ * The banner is not decoration. Both lists carry a warning in their own words
+ * — public data only, a thesis rather than intent, and for Florida, that no US
+ * permission is assumed — and it travels with every render.
+ */
+export function renderProspectIndex(list: ProspectList, entries: ProspectEntry[]): string {
+  const lines = [
+    `<b>${esc(REGION_LABEL[list.region])} — ${esc(list.date)}</b>`,
+    `<i>${esc(prospectBanner(list.body))}</i>`,
+    '',
+  ]
+
+  if (!entries.length) {
+    lines.push('The file has no numbered entries — it may be a draft. Open it in the repo:', esc(list.path))
+    return lines.join('\n')
+  }
+
+  for (const e of entries) {
+    lines.push(`<b>${e.rank}. ${esc(e.name)}</b>${e.score ? ` · ${esc(e.score)}` : ''}`)
+    if (e.trigger) lines.push(`      ${esc(clip(e.trigger, 160))}`)
+    lines.push('')
+  }
+
+  lines.push(
+    `<i>${entries.length} entries · full text: <code>/todays-prospects` +
+      `${list.region === 'florida' ? ' florida' : ''} full</code> · ` +
+      `one entry: <code>/todays-prospects${list.region === 'florida' ? ' florida' : ''} 3</code></i>`,
+  )
+  return lines.join('\n')
+}
+
+const clip = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n - 1).trimEnd()}…`)
+
+/** One entry, or the whole document, as Telegram-formatted Markdown. */
+export function renderProspectText(list: ProspectList, body: string): string {
+  return [
+    `<b>${esc(REGION_LABEL[list.region])} — ${esc(list.date)}</b>`,
+    `<i>${esc(prospectBanner(list.body))}</i>`,
+    '',
+    md(body),
+  ].join('\n')
+}
+
+/** /research — one prospect entry, in the shape the daily list uses. */
+export function renderResearch(r: Research): string {
+  const lines = [
+    `<b>${esc(r.company)}</b>`,
+    `<i>${esc(r.category)}</i>`,
+    '',
+  ]
+
+  if (r.jurisdiction_note) lines.push(`⚠️ <i>${esc(r.jurisdiction_note)}</i>`, '')
+
+  if (r.trigger) lines.push('<b>Trigger</b>', esc(r.trigger), '')
+  else lines.push('<b>Trigger</b>', '<i>None established from public sources.</i>', '')
+
+  lines.push('<b>Why now</b>', esc(r.why_now), '')
+  lines.push('<b>Likely flow</b>', esc(r.likely_flow), '')
+
+  if (r.decision_makers.length) {
+    lines.push('<b>Decision-makers</b>')
+    for (const d of r.decision_makers) lines.push(`• ${esc(d)}`)
+    lines.push('')
+  }
+
+  if (r.contact_path) lines.push(`<b>Contact path</b> ${esc(r.contact_path)}`)
+  lines.push(`<b>Repeat flow</b> ${esc(r.repeat_flow)}`, '')
+  lines.push('<b>Satstreet angle</b>', esc(r.satstreet_angle))
+
+  if (r.gaps.length) {
+    lines.push('', '<b>Not established</b>')
+    for (const g of r.gaps) lines.push(`• ${esc(g)}`)
+  }
+
+  if (r.sources.length) {
+    lines.push('', '<b>Sources</b>')
+    for (const s of r.sources) lines.push(esc(s))
+  }
+
+  lines.push('', '<i>Public data only. A prioritisation thesis, not a statement of intent to trade.</i>')
+  return lines.join('\n')
+}
+
+/**
+ * /company-facts — the context pack's own words.
+ *
+ * Quoted rather than summarised, and an empty result says so plainly. "Not
+ * documented" is the honest answer and it tells the team what to write down;
+ * a fluent paragraph invented on the spot does neither.
+ */
+export function renderFacts(query: string, sections: FactSection[]): string {
+  if (!sections.length) {
+    return (
+      `<b>${esc(query)}</b>\n\n` +
+      'Nothing in the Satstreet context pack covers that.\n\n' +
+      '<i>Rather than guess: this is what the pack does not yet say. ' +
+      'Add it to marketing/context/satstreet.md and it will be here next time.</i>'
+    )
+  }
+
+  const lines = [`<b>${esc(query)}</b>`, '<i>From the versioned context pack, as written.</i>', '']
+  for (const s of sections) {
+    lines.push(`<b>${esc(s.heading)}</b>`, md(s.body), '')
+  }
+  lines.push(
+    '<i>Source: marketing/context/satstreet.md — internal reference, not approved public copy. ' +
+    'Fees, minimums, custody arrangements and regulatory detail need sign-off before any of it is published.</i>',
+  )
   return lines.join('\n')
 }
 

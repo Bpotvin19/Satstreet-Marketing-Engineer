@@ -27,6 +27,9 @@ import {
 } from './draft'
 import { needsReview, findCard, killCard, readyCard, type QueueCard } from './queue'
 import * as desk from './desk'
+import {
+  latestProspects, parseProspects, prospectEntry, companyFacts, researchCompany, type Region,
+} from './research'
 import { refreshVoices, listVoices, findVoice, readVoice, voiceLabel, voicesCached } from './voices'
 import { checkDraft, isBlocked } from './compliance'
 import * as compose from './compose'
@@ -37,6 +40,7 @@ import {
   renderPlan, planKeyboard, renderDraft, draftKeyboard, renderVariants, renderIdeas,
   renderCalendar, renderWeekly, renderPublished, renderVoiceDraft, renderReminderSchedule, renderSpot,
   renderQueue, renderCard, renderCardDraft,
+  renderProspectIndex, renderProspectText, renderResearch, renderFacts,
   chartKeyboard, chunk, esc, HELP,
   renderChannelPost, publishKeyboard, confirmPublishKeyboard,
   renderPublishPreview, renderSent, renderDigestForReview, digestKeyboard, renderTweets,
@@ -1026,6 +1030,132 @@ bot.callbackQuery('nd:r', async (ctx) => {
     await fail(ctx, e)
   }
 })
+
+/* ── Sales/BD research ────────────────────────────────────────────────────
+   Three commands over the prospecting engine's output and the versioned
+   context pack.
+
+     /research <company>          public research, generated, gaps declared
+     /todays-prospects [florida]  the list the engine already wrote
+     /company-facts <topic>       the context pack's own words
+
+   A note on the names. Telegram command entities are [a-zA-Z0-9_] only, so
+   "/todays-prospects" reaches us as the command "todays" followed by the text
+   "-prospects". The underscore spellings are the canonical ones and the only
+   ones that can appear in the "/" menu; the hyphenated forms are accepted
+   because they are what people type.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/** Strip the "-prospects" or "_facts" tail left over from a hyphenated name. */
+const stripTail = (s: string, tail: string) =>
+  s.trim().replace(new RegExp(`^[-_]${tail}\\b`, 'i'), '').trim()
+
+bot.command('research', async (ctx) => {
+  try {
+    const company = (ctx.match ?? '').toString().trim()
+    if (!company) {
+      await ctx.reply(
+        'Which company? <code>/research VBX</code>\n\n' +
+          'Public sources only — recent triggers, decision-makers, likely flow, ' +
+          'the angle, and what could not be established.',
+        { parse_mode: 'HTML' },
+      )
+      return
+    }
+
+    await ctx.reply(`Researching <b>${esc(company)}</b> — public sources, about a minute.`, {
+      parse_mode: 'HTML',
+    })
+    await ctx.replyWithChatAction('typing')
+    await send(ctx, renderResearch(await researchCompany(company)))
+  } catch (e) {
+    await fail(ctx, e)
+  }
+})
+
+/**
+ * The prospect lists.
+ *
+ *   /todays-prospects              index of the latest Canadian list
+ *   /todays-prospects florida      index of the latest Florida list
+ *   /todays-prospects full         the whole document
+ *   /todays-prospects florida 3    one entry in full
+ */
+async function showProspects(ctx: Context, raw: string) {
+  const args = stripTail(raw, 'prospects').toLowerCase().split(/\s+/).filter(Boolean)
+
+  const region: Region = args[0] === 'florida' || args[0] === 'fl' ? 'florida' : 'canada'
+  const rest = region === 'florida' ? args.slice(1) : args
+  const list = latestProspects(region)
+
+  if (!list) {
+    await ctx.reply(
+      `No ${region === 'florida' ? 'Florida' : 'Canadian'} prospect list found. ` +
+        'The prospecting engine writes them into outputs/daily-prospects/.',
+    )
+    return
+  }
+
+  const rank = Number(rest[0])
+  if (Number.isInteger(rank) && rank > 0) {
+    const entry = prospectEntry(list.body, rank)
+    if (!entry) {
+      await ctx.reply(`No entry ${rank} in the ${esc(list.date)} list.`, { parse_mode: 'HTML' })
+      return
+    }
+    await send(ctx, renderProspectText(list, entry))
+    return
+  }
+
+  if (rest[0] === 'full') {
+    await send(ctx, renderProspectText(list, list.body))
+    return
+  }
+
+  await send(ctx, renderProspectIndex(list, parseProspects(list.body)))
+}
+
+for (const name of ['todays_prospects', 'prospects', 'todays'] as const) {
+  bot.command(name, async (ctx) => {
+    try {
+      const raw = (ctx.match ?? '').toString()
+      // "/todays" on its own is the daily plan, not the prospect list. Only
+      // treat it as prospects when the hyphenated tail is actually there.
+      if (name === 'todays' && !/^\s*[-_]prospects\b/i.test(raw)) {
+        await ctx.reply('Did you mean /today for the content plan, or /todays_prospects?')
+        return
+      }
+      await showProspects(ctx, raw)
+    } catch (e) {
+      await fail(ctx, e)
+    }
+  })
+}
+
+/** /company-facts — retrieval, never invention. */
+async function showFacts(ctx: Context, raw: string) {
+  const query = stripTail(raw, 'facts')
+  if (!query) {
+    await ctx.reply(
+      'What about? <code>/company_facts custody</code>\n\n' +
+        'Answers come from the versioned context pack, quoted as written. ' +
+        'If it is not in there, I say so rather than inventing one.',
+      { parse_mode: 'HTML' },
+    )
+    return
+  }
+  await send(ctx, renderFacts(query, companyFacts(query)))
+}
+
+for (const name of ['company_facts', 'facts', 'company'] as const) {
+  bot.command(name, async (ctx) => {
+    try {
+      await showFacts(ctx, (ctx.match ?? '').toString())
+    } catch (e) {
+      await fail(ctx, e)
+    }
+  })
+}
 
 bot.command('ref', async (ctx) => {
   try {
