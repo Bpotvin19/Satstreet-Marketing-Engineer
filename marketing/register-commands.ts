@@ -13,6 +13,9 @@
 import { Bot } from 'grammy'
 
 const COMMANDS: { command: string; description: string }[] = [
+  { command: 'research', description: 'Public Sales/BD research — /research VBX' },
+  { command: 'todays-prospects', description: 'Latest prospect list — add florida for U.S. research' },
+  { command: 'company-facts', description: 'Versioned Satstreet facts — /company-facts custody' },
   { command: 'queue', description: 'Content Queue — cards waiting on review' },
   { command: 'open', description: 'Open a queue card — /open 668f' },
   { command: 'why', description: 'Why this draft, this voice, this limit' },
@@ -36,11 +39,11 @@ const COMMANDS: { command: string; description: string }[] = [
 ]
 
 const DESCRIPTION =
-  'Satstreet marketing desk. Proposes the day\'s strongest content opportunities, drafts posts in the ' +
+  'Satstreet operating desk. Sales research, company knowledge, prospect intelligence, and marketing workflows. ' +
   'founders\' voices, and checks every draft against the compliance rules. Nothing publishes on its own: ' +
   'approve logs the copy, and publishing to the client channel takes a second, deliberate confirmation.'
 
-const SHORT = "Satstreet's marketing desk. Proposes, drafts, checks. A human always posts."
+const SHORT = "Satstreet OS in Telegram: research, prospects, knowledge, marketing. Human-controlled."
 
 async function main() {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim()
