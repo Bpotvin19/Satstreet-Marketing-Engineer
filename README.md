@@ -23,9 +23,10 @@ For meaningful client interactions, trading decisions, compliance judgments, app
 
 1. **AI & Automation Audit** — map recurring workflows across Sales, Trading, Compliance, Client Service, Marketing, and Management.
 2. **Automation Backlog** — score opportunities by revenue impact, time saved, implementation difficulty, and risk.
-3. **First workflows** — prospect intelligence, social drafting, and internal knowledge retrieval.
-4. **Revenue workflows** — client reactivation, meeting prep, referral prospecting, follow-up drafting, pipeline intelligence.
-5. **Measurement layer** — track adoption, hours saved, meetings created, funded accounts, and trading volume influenced.
+3. **Sales / BD MVP** — Daily Prospect List powered by the Prospect Intelligence Engine.
+4. **Revenue workflows** — privacy-safe client reactivation, meeting prep, personalized outreach, follow-up, referral prospecting.
+5. **Marketing / knowledge workflows** — social drafting, fact checking, internal knowledge retrieval.
+6. **Measurement layer** — track adoption, hours saved, meetings created, funded accounts, and trading volume influenced.
 
 ## Data rules
 
@@ -46,5 +47,7 @@ Use environment variables / secret managers for credentials and approved systems
 ## Current documents
 
 - [AI & Automation Audit](docs/AI_AUTOMATION_AUDIT.md)
+- [Sales / BD Audit](docs/SALES_BD_AUDIT.md)
 - [Automation Backlog](docs/AUTOMATION_BACKLOG.md)
 - [Process Interview Guide](docs/PROCESS_INTERVIEW_GUIDE.md)
+- [Prospect Intelligence Engine — MVP Specification](specs/PROSPECT_INTELLIGENCE_ENGINE.md)
