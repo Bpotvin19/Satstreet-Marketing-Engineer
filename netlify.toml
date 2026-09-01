@@ -1,0 +1,40 @@
+# Netlify build settings for the public site.
+#
+# Everything served lives in public/. Nothing is compiled: the pages are
+# self-contained HTML that fetch their own data in the browser, so there is
+# no build step and the repo's npm scripts — which run the Telegram bot — must
+# never be mistaken for one.
+
+[build]
+  publish = "public"
+  # Explicit no-op. This repo has a package.json, and left to guess, Netlify
+  # would look for a build. There is nothing to build, and the scripts in that
+  # file start a long-running bot rather than producing static output.
+  command = "echo 'static site — nothing to build'"
+
+# The market board is the front page.
+#
+# It is called ticker.html because the other pages link to it by name from the
+# tab bar, but the deployed site has always answered "/" with it. Without this
+# the site root 404s the moment the repo is connected, because public/ has no
+# index.html.
+#
+# status = 200 makes this a rewrite rather than a redirect: the visitor stays
+# on "/" and the address bar does not change, which is exactly what the
+# hand-uploaded deployment did.
+[[redirects]]
+  from = "/"
+  to = "/ticker.html"
+  status = 200
+
+# Modest security headers.
+#
+# Deliberately no X-Frame-Options. These are public pages with no login and
+# nothing to hijack, so framing protection buys nothing — and the widget that
+# runs on satstreet.com already points at this host, so a future version that
+# embeds a page rather than linking to it would break silently.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
