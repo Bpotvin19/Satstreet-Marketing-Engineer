@@ -13,6 +13,7 @@
 import { Bot } from 'grammy'
 
 const COMMANDS: { command: string; description: string }[] = [
+  { command: 'os', description: 'Open the Satstreet OS menu' },
   { command: 'research', description: 'Public Sales/BD research — /research VBX' },
   { command: 'todays-prospects', description: 'Latest prospect list — add florida for U.S. research' },
   { command: 'company-facts', description: 'Versioned Satstreet facts — /company-facts custody' },
