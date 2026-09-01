@@ -1,0 +1,30 @@
+{
+  "name": "satstreet-marketing-engineer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Satstreet's marketing desk: a Telegram bot that proposes, drafts and compliance-checks content. A human always publishes.",
+  "scripts": {
+    "bot": "tsx --env-file-if-exists=marketing/.env marketing/bot.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "marketing:bot": "tsx --env-file-if-exists=marketing/.env marketing/bot.ts",
+    "marketing:today": "tsx --env-file-if-exists=marketing/.env marketing/today.ts",
+    "marketing:morning": "tsx --env-file-if-exists=marketing/.env marketing/run-morning.ts",
+    "marketing:digest": "tsx --env-file-if-exists=marketing/.env marketing/run-digest.ts",
+    "marketing:remind": "tsx --env-file-if-exists=marketing/.env marketing/run-reminders.ts",
+    "marketing:commands": "tsx --env-file-if-exists=marketing/.env marketing/register-commands.ts",
+    "marketing:check": "tsx --env-file-if-exists=marketing/.env marketing/check-telegram.ts",
+    "marketing:chatid": "tsx --env-file-if-exists=marketing/.env marketing/find-chat.ts",
+    "marketing:users": "tsx --env-file-if-exists=marketing/.env marketing/list-users.ts",
+    "marketing:broadcast": "tsx --env-file-if-exists=marketing/.env marketing/check-broadcast.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0",
+    "grammy": "^1.45.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3"
+  }
+}

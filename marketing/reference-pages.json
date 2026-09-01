@@ -1,0 +1,25 @@
+[
+  { "label": "Post Examples", "id": "3c7e562fa5bd80f78613c278e8f2e85b" },
+  { "label": "Social Media Hub", "id": "3c0e562fa5bd802983eded117792852b" },
+  { "label": "Satstreet Ethos", "id": "3c0e562fa5bd80529accd5920d108bd2" },
+  { "label": "Disclaimer", "id": "3bce562fa5bd803d9384d8dd831da83f" },
+  { "label": "Regulations", "id": "3b9e562fa5bd806ea9e2eea496665831" },
+  { "label": "Security & Fraud Prevention", "id": "3c0e562fa5bd8161a13aeba436fece00" },
+  { "label": "Trading & Settlement", "id": "3c0e562fa5bd81c78583dc9b8628f366" },
+  { "label": "Withdrawals & Account Changes", "id": "3c1e562fa5bd81fb8081ead5dee1739d" },
+  { "label": "Statements & Reporting", "id": "3c0e562fa5bd81e0ad7ef37e9035542d" },
+  { "label": "Help & Escalation", "id": "3c0e562fa5bd818db810e07d88c88e96" },
+  { "label": "Start Here", "id": "3b9e562fa5bd807a9c10e9ef9d15b566" },
+  { "label": "Funding Instructions", "id": "3bae562fa5bd80d5877ff0120c569ed9" },
+  { "label": "Founders Newsletters", "id": "3c7e562fa5bd80c29307d683622fe673" },
+
+  { "label": "Satstreet Social Voice Context", "id": "3c7e562fa5bd80f9a933c3bf21ebc937", "prompt": false },
+  { "label": "Bitcoin Websites", "id": "3c6e562fa5bd808ba20dc96d70a7719e", "prompt": false },
+  { "label": "Social Media Calendar", "id": "3bce562fa5bd80be83a4c2e851bf79b4", "prompt": false },
+  { "label": "Knowledge Hub", "id": "3bbe562fa5bd80f293c6ddfe1462cd20", "prompt": false },
+  { "label": "How We Work", "id": "3c0e562fa5bd814eafc0d1e7987e1673", "prompt": false },
+  { "label": "Your Account", "id": "3c0e562fa5bd817b826bea63cd2d7eaf", "prompt": false },
+  { "label": "Resources", "id": "3c0e562fa5bd81d8b8c5cc4d048593fc", "prompt": false },
+  { "label": "Onboarding", "id": "3c0e562fa5bd81989bc7f734fe7af250", "prompt": false },
+  { "label": "Client Resources", "id": "3b9e562fa5bd805caec5d139f3c8c0c7", "prompt": false }
+]

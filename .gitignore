@@ -1,0 +1,13 @@
+# Secrets. The README is explicit that no API keys go in this repo.
+.env
+.env.*
+!.env.example
+
+node_modules/
+*.log
+
+# Runtime cache: voice profiles pulled from Notion, open compose and desk
+# sessions, the published log. All of it regenerates; none of it is source.
+marketing/.state/
+
+.DS_Store
