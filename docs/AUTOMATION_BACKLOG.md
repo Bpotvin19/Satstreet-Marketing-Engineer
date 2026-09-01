@@ -1,6 +1,6 @@
 # Automation Backlog
 
-Use this document after process interviews to rank what gets built.
+Use this document to rank what gets built.
 
 ## Scoring model
 
@@ -20,17 +20,33 @@ Revenue is deliberately weighted most heavily.
 
 ---
 
-## Backlog
+## Sales / BD — validated priorities
 
 | Workflow | Dept | R | T | E | S | A | Score | Owner | Status | KPI |
 |---|---|---:|---:|---:|---:|---:|---:|---|---|---|
-| Daily Prospect Intelligence | Sales | 5 | 4 | 4 | 5 | 5 | 37 | TBD | Discover | Qualified meetings |
-| Client Reactivation | Sales | 5 | 4 | 3 | 3 | 5 | 34 | TBD | Discover | Reactivated accounts / volume |
-| Meeting Prep Brief | Sales | 4 | 4 | 5 | 5 | 5 | 35 | TBD | Discover | Prep time saved |
-| Follow-up Drafting | Sales | 4 | 3 | 5 | 4 | 5 | 32 | TBD | Discover | Response time |
+| Daily Prospect List — MVP | Sales | 5 | 5 | 5 | 5 | 5 | 40 | Ben | Design | Qualified conversations / meetings |
+| Prospect Intelligence Engine | Sales | 5 | 5 | 3 | 5 | 5 | 38 | Ben | Design | Research time saved + qualified meetings |
+| Dormant Client Reactivation — privacy-safe | Sales | 5 | 4 | 3 | 2 | 5 | 33 | Ben | Discover | Reactivated accounts / trading volume |
+| Meeting Prep — public info first | Sales | 4 | 4 | 5 | 5 | 5 | 35 | Ben | Discover | Prep time saved |
+| Personalized Outreach Drafting | Sales | 4 | 4 | 5 | 4 | 5 | 34 | Ben | Discover | Reply / meeting rate |
+| Follow-up Engine | Sales | 4 | 3 | 4 | 3 | 5 | 30 | Ben | Discover | Follow-up completion / response time |
+| Referral Engine | Sales | 4 | 3 | 4 | 5 | 4 | 31 | Ben | Discover | Partner meetings / introductions |
+
+### Design note
+
+The **Daily Prospect List** is the first output of the **Prospect Intelligence Engine**. They are intentionally separated in the backlog so the team can ship a useful MVP before building the full automated engine.
+
+Dormant-client reactivation has a lower safety score because client information is sensitive. The approved architecture should keep client-level data inside HubSpot and use AI only on generic cohort descriptions unless Satstreet explicitly approves a controlled private integration.
+
+---
+
+## Other departments — provisional
+
+| Workflow | Dept | R | T | E | S | A | Score | Owner | Status | KPI |
+|---|---|---:|---:|---:|---:|---:|---:|---|---|---|
 | Internal Knowledge Q&A | Client Service | 3 | 5 | 4 | 4 | 5 | 32 | TBD | Discover | Questions resolved |
-| Social Drafting Engine | Marketing | 3 | 4 | 5 | 4 | 5 | 30 | TBD | Discover | Approved posts / time saved |
+| Social Drafting Engine | Marketing | 3 | 4 | 5 | 4 | 5 | 30 | Ben | Discover | Approved posts / time saved |
 | Marketing Fact Checker | Compliance/Marketing | 3 | 3 | 4 | 5 | 4 | 28 | TBD | Discover | Issues caught before publish |
 | Weekly Management Brief | Management | 3 | 4 | 4 | 5 | 4 | 29 | TBD | Discover | Reporting hours saved |
 
-> Scores above are placeholders for discovery. Replace them with team-validated scores.
+> Non-sales scores remain provisional until the relevant process owners are interviewed.
