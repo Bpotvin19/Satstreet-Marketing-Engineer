@@ -505,7 +505,13 @@ export function renderCalendar(entries: DatedEntry[]): string {
   return lines.join('\n')
 }
 
-export const HELP = `<b>Satstreet marketing bot</b>
+export const HELP = `<b>Satstreet OS</b>
+
+<b>Sales / BD</b>
+/research &lt;entity&gt; — public company research, trigger, decision-maker, Satstreet angle
+/todays-prospects — latest Canada prospect list
+   /todays-prospects florida — latest Florida research list
+/company-facts &lt;topic&gt; — versioned Satstreet facts; never invents a missing claim
 
 <b>Write something</b>
 /tweets &lt;topic&gt; — three short X posts, three shapes, under 220 chars
