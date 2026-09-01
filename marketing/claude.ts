@@ -23,6 +23,70 @@ export const MODEL = process.env.CLAUDE_MODEL?.trim() || 'claude-opus-5'
 export const EFFORT = (process.env.CLAUDE_EFFORT?.trim() || 'high') as
   | 'low' | 'medium' | 'high' | 'xhigh' | 'max'
 
+/* ── web search ───────────────────────────────────────────────────────────
+   The server-side web_search tool, for the one job the desk has that cannot
+   be done from cached RSS: researching a company nobody has written about
+   this week. The crypto press covers ETF flows and regulation; it does not
+   cover whether a given brokerage changed CFO.
+
+   Returns the prose the model wrote plus every URL it actually visited, so
+   the caller can hand both to a second, schema-constrained pass. Splitting it
+   in two keeps structured output and server tools from competing in one call.
+   ────────────────────────────────────────────────────────────────────────── */
+
+export interface WebSearchResult {
+  text: string
+  sources: string[]
+}
+
+/** Every url found anywhere in the response, including tool-result blocks. */
+function collectUrls(node: unknown, into: Set<string>): void {
+  if (Array.isArray(node)) {
+    for (const n of node) collectUrls(n, into)
+    return
+  }
+  if (node && typeof node === 'object') {
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      if (k === 'url' && typeof v === 'string' && /^https?:\/\//.test(v)) into.add(v)
+      else collectUrls(v, into)
+    }
+  }
+}
+
+export async function webSearch(
+  system: string,
+  user: string,
+  maxUses = 6,
+  maxTokens = 4_000,
+): Promise<WebSearchResult> {
+  const key = process.env.ANTHROPIC_API_KEY?.trim()
+  const client = new Anthropic(key ? { apiKey: key } : {})
+
+  const params = {
+    model: MODEL,
+    max_tokens: maxTokens,
+    system,
+    messages: [{ role: 'user', content: user }],
+    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: maxUses }],
+  }
+
+  // SDK typings lag server-side tool definitions; the wire shape is current.
+  const message = await (client.messages.create as unknown as (
+    p: unknown,
+  ) => Promise<{ content: unknown[] }>)(params)
+
+  const urls = new Set<string>()
+  collectUrls(message.content, urls)
+
+  const text = (message.content as { type: string; text?: string }[])
+    .filter((b) => b.type === 'text' && b.text)
+    .map((b) => b.text as string)
+    .join('\n')
+    .trim()
+
+  return { text, sources: [...urls] }
+}
+
 export async function structured<T>(
   system: string,
   user: string,

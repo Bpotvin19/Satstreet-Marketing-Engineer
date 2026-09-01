@@ -20,7 +20,7 @@ import { resolve, basename } from 'node:path'
 import { MARKETING_DIR } from './calendar'
 import { coverage, coverageBlock } from './news'
 import { buildSystemPrompt } from './prompt'
-import { structured } from './claude'
+import { structured, webSearch } from './claude'
 import { RESEARCH_SCHEMA, type Research } from './types'
 
 /** The repository root: outputs/ and config/ are siblings of marketing/. */
@@ -203,13 +203,54 @@ JURISDICTION. If the entity is in the United States, including Florida, this is 
 
 Never state Satstreet serves the United States, Florida or the United Kingdom. Never describe a lending product. Never mention insurance coverage, CIPF, minimums or assets under custody.`
 
+/* Two passes, deliberately.
+
+   The first goes and looks: server-side web search, which is the only way to
+   research a company the crypto press has not written about this week. The
+   second turns what it found into the Daily Prospect List's fields.
+
+   One pass would be cheaper, but a schema-constrained call and a tool-using
+   call want different things from the model, and the field that matters most
+   here is the one it is allowed to leave empty. Separating them keeps the
+   search unconstrained and the output strict. */
+
+const SEARCH_SYSTEM = `You are the public-data research layer for Satstreet Sales/BD, a Canadian institutional digital asset brokerage.
+
+Search public sources only: company websites, news, regulatory registries, press releases, public executive biographies, funding and treasury announcements.
+
+Establish, and say plainly when you cannot: what the entity actually does, its legal name and where it is domiciled, any dated public event in the last few months, who the current decision-makers are with their titles, and how a stranger would contact them.
+
+Report what you found and what you could not find. An honest "no recent public event" is more useful than a general observation dressed up as news, and a name you are not confident about is worse than no name — someone will act on it.
+
+Never claim Satstreet serves US, Florida or UK persons or entities.`
+
 export async function researchCompany(company: string): Promise<Research> {
-  const news = coverageBlock(await coverage(company))
+  // Both inputs, because they cover different ground: search finds the
+  // company, the desk's own feed finds today's market backdrop.
+  const [found, news] = await Promise.all([
+    webSearch(
+      SEARCH_SYSTEM,
+      `Research "${company}" as a potential Sales/BD prospect. Establish what they do, ` +
+        'where they are domiciled, any recent dated public event, current decision-makers ' +
+        'and their titles, and a public contact route. Say what you could not establish.',
+    ),
+    coverage(company).then(coverageBlock),
+  ])
 
   const user = [
     `Research this company as a Sales/BD prospect for Satstreet: ${company}`,
     '',
-    'Fill every field from public information. Leave a field empty and record it in gaps rather than guessing.',
+    'Everything you know about this company is in the web research below. Use it as the source of fact.',
+    'Fill every field from it. Leave a field empty and record it in gaps rather than guessing.',
+    'A claim the research did not establish does not go in the output — it goes in gaps.',
+    '',
+    '<web_research>',
+    found.text || '(the search returned nothing usable)',
+    '</web_research>',
+    '',
+    found.sources.length
+      ? `<sources_visited>\n${found.sources.join('\n')}\n</sources_visited>`
+      : '<sources_visited>none</sources_visited>',
     '',
     news,
     '',
