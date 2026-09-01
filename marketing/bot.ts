@@ -48,6 +48,7 @@ import { tradingViewChart, isConfigured } from './chartimg'
 import * as broadcast from './broadcast'
 import * as access from './access'
 import { buildDigest, stageDigest } from './digest'
+import { companyFacts, researchEntity, renderProspects, todaysProspects } from './os-commands'
 
 /* ── access ───────────────────────────────────────────────────────────────────
    Two gates, in marketing/access.ts: the chat must be allowlisted AND the
@@ -281,6 +282,48 @@ bot.command('whoami', async (ctx) => {
 })
 
 bot.command(['start', 'help'], (ctx) => ctx.reply(HELP, { parse_mode: 'HTML' }))
+
+/* ── Satstreet OS front door ───────────────────────────────────────────────
+   First three operating-system commands. All are research/draft only:
+   no client sends, no trading actions, no CRM/PII access.
+   ───────────────────────────────────────────────────────────────────────── */
+
+bot.command('research', async (ctx) => {
+  try {
+    const query = (ctx.match ?? '').toString().trim()
+    if (!query) {
+      await ctx.reply('What should I research? Try <code>/research VBX</code>', { parse_mode: 'HTML' })
+      return
+    }
+    await ctx.replyWithChatAction('typing')
+    const report = await researchEntity(query)
+    await send(
+      ctx,
+      `<b>Public research — ${esc(query)}</b>\n\n${esc(report)}\n\n<i>Public-data research only. Human review before outreach.</i>`,
+    )
+  } catch (e) {
+    await fail(ctx, e)
+  }
+})
+
+bot.command('todays-prospects', async (ctx) => {
+  try {
+    const region = (ctx.match ?? '').toString().trim()
+    await send(ctx, renderProspects(todaysProspects(region)))
+  } catch (e) {
+    await fail(ctx, e)
+  }
+})
+
+bot.command('company-facts', async (ctx) => {
+  try {
+    const query = (ctx.match ?? '').toString().trim()
+    await send(ctx, companyFacts(query))
+  } catch (e) {
+    await fail(ctx, e)
+  }
+})
+
 
 bot.command('today', async (ctx) => {
   try {
