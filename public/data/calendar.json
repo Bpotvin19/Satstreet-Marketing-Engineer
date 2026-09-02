@@ -1,0 +1,55 @@
+{
+  "_comment": "Scheduled macro events. Every entry is verified against the issuing institution's own published schedule — see 'verified'. Add entries only from a primary source; a wrong date on a client-facing page costs more credibility than a short calendar. BLS blocks automated access to its release schedule, so US CPI and jobs dates beyond the next one must be added by hand from bls.gov/schedule.",
+  "updated": "2026-09-02",
+  "events": [
+    {
+      "date": "2026-09-04",
+      "title": "US jobs report",
+      "detail": "Employment Situation for August, 8:30am ET",
+      "kind": "data",
+      "verified": "bls.gov"
+    },
+    {
+      "date": "2026-09-11",
+      "title": "US CPI",
+      "detail": "Consumer Price Index for August, 8:30am ET",
+      "kind": "data",
+      "verified": "bls.gov"
+    },
+    {
+      "date": "2026-09-16",
+      "title": "Federal Reserve decision",
+      "detail": "FOMC, 15–16 September, with updated projections",
+      "kind": "central-bank",
+      "verified": "federalreserve.gov"
+    },
+    {
+      "date": "2026-10-28",
+      "title": "Bank of Canada decision",
+      "detail": "With the Monetary Policy Report, 9:45am ET",
+      "kind": "central-bank",
+      "verified": "bankofcanada.ca"
+    },
+    {
+      "date": "2026-10-28",
+      "title": "Federal Reserve decision",
+      "detail": "FOMC, 27–28 October — same day as the Bank of Canada",
+      "kind": "central-bank",
+      "verified": "federalreserve.gov"
+    },
+    {
+      "date": "2026-12-09",
+      "title": "Bank of Canada decision",
+      "detail": "Final decision of 2026, 9:45am ET",
+      "kind": "central-bank",
+      "verified": "bankofcanada.ca"
+    },
+    {
+      "date": "2026-12-09",
+      "title": "Federal Reserve decision",
+      "detail": "FOMC, 8–9 December, with updated projections — same day as the Bank of Canada",
+      "kind": "central-bank",
+      "verified": "federalreserve.gov"
+    }
+  ]
+}
