@@ -54,6 +54,7 @@ import * as broadcast from './broadcast'
 import * as access from './access'
 import { buildDigest, stageDigest, type Digest } from './digest'
 import { checkMatters, publishMatters } from './matters'
+import { latestMacroDesk, mattersFromDesk } from './macrodesk'
 
 /* ── access ───────────────────────────────────────────────────────────────────
    Two gates, in marketing/access.ts: the chat must be allowlisted AND the
@@ -1186,30 +1187,53 @@ const pendingMatters = new Map<number, Digest>()
 
 bot.command('matters', async (ctx) => {
   try {
-    await ctx.reply('Reading the press for today\'s three to five — about a minute.')
     await ctx.replyWithChatAction('typing')
 
-    const r = await buildDigest(24)
-    if (!r.digest.items.length) {
+    // The desk's own Macro Desk page is the better source: a person set the
+    // agenda overnight. It is only eligible once someone marks it Reviewed in
+    // Notion, and it is never published as written — it is internal material
+    // the model writes client copy from.
+    const desk = await latestMacroDesk(true)
+    let digest: Digest
+    let sourceLine: string
+
+    if (desk.desk) {
+      await ctx.reply(
+        `Writing from <b>${esc(desk.desk.title)}</b> — about a minute.`,
+        { parse_mode: 'HTML' },
+      )
+      digest = await mattersFromDesk(desk.desk)
+      sourceLine = `Source: ${desk.desk.title} (Reviewed)`
+    } else {
+      await ctx.reply(
+        `Macro Desk unavailable — ${esc(desk.error ?? 'unknown')}\n\nFalling back to the press.`,
+        { parse_mode: 'HTML' },
+      )
+      digest = (await buildDigest(24)).digest
+      sourceLine = 'Source: crypto press (Macro Desk was not Reviewed)'
+    }
+
+    if (!digest.items.length) {
       await ctx.reply('Nothing worth putting in front of a client today. Nothing published.')
       return
     }
 
-    pendingMatters.set(ctx.chat.id, r.digest)
-    const check = checkMatters(r.digest)
+    pendingMatters.set(ctx.chat.id, digest)
+    const check = checkMatters(digest)
 
     const lines = [
       '<b>WHAT MATTERS TODAY — review</b>',
       '<i>Goes to the client dashboard if you approve. Nothing published yet.</i>',
       '',
     ]
-    r.digest.items.forEach((i, n) => {
+    digest.items.forEach((i, n) => {
       lines.push(`<b>${n + 1}. ${esc(i.headline)}</b>`)
       lines.push(esc(i.why))
       lines.push(`<i>${esc(i.source)}</i>`)
       lines.push('')
     })
-    lines.push('<b>Desk view</b>', esc(r.digest.market_line))
+    lines.push('<b>Desk view</b>', esc(digest.market_line))
+    lines.push('', `<i>${esc(sourceLine)}</i>`)
 
     if (check.blocked.length) {
       lines.push('', '⛔ <b>Blocked — cannot publish as written</b>')
