@@ -128,6 +128,13 @@
   .item a { color: var(--muted); font-size: 12px; text-decoration: none; }
   .item a:hover { color: var(--blue); text-decoration: underline; }
 
+  .lede-note {
+    font-size: 15.5px; font-weight: 600; margin: 0 0 12px;
+    padding-left: 12px; border-left: 3px solid var(--cyan);
+  }
+  #dn-body p { margin: 0 0 10px; font-size: 14px; }
+  #dn-body p:last-child { margin-bottom: 0; }
+
   .deskview {
     margin-top: 13px; padding: 12px 14px;
     background: var(--surface); border-left: 3px solid var(--cyan); border-radius: 0 6px 6px 0;
@@ -196,12 +203,9 @@
   <!-- Hidden until the desk publishes. An empty module is better than a
        module explaining that it is empty. -->
   <div class="panel" id="matters" hidden>
-    <h2>What matters today</h2>
-    <div id="matters-items"></div>
-    <div class="deskview" id="deskview" hidden>
-      <span class="dv-label">Satstreet desk view</span>
-      <p id="dv-text"></p>
-    </div>
+    <h2>Satstreet desk note</h2>
+    <p class="lede-note" id="dn-lede"></p>
+    <div id="dn-body"></div>
     <p class="stamp" id="matters-stamp"></p>
   </div>
 
@@ -321,38 +325,40 @@
      page just reads the file; if there is nothing to read, or what is there
      is yesterday's, the module stays hidden rather than showing a client
      stale commentary with today's prices above it. */
+  /* Straight from Notion. The desk writes the note, marks it Reviewed, and it
+     appears here — no publishing step and no copy kept in this repo. The
+     endpoint refuses anything that is not Reviewed and refuses the internal
+     documents outright, so "nothing to show" is the safe default and the
+     module simply stays hidden. */
   var STALE_HOURS = 36;
 
   function matters() {
-    fetch('/data/matters.json', { cache: 'no-store' })
+    fetch('/api/desknote', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (m) {
-        if (!m || !m.items || !m.items.length) return;
-        var age = (Date.now() - Date.parse(m.publishedAt)) / 3600000;
-        if (!isFinite(age) || age > STALE_HOURS) return;
+      .then(function (d) {
+        if (!d || !d.note || !d.note.paragraphs || !d.note.paragraphs.length) return;
+        var n = d.note;
 
-        var box = el('matters-items');
+        if (n.date) {
+          var age = (Date.now() - Date.parse(n.date + 'T12:00:00')) / 3600000;
+          if (isFinite(age) && age > STALE_HOURS) return;
+        }
+
+        if (n.preheader) el('dn-lede').textContent = n.preheader;
+        else el('dn-lede').hidden = true;
+
+        var box = el('dn-body');
         box.innerHTML = '';
-        m.items.forEach(function (i) {
-          var d = document.createElement('div');
-          d.className = 'item';
-          d.innerHTML =
-            '<h3>' + esc(i.headline) + '</h3>' +
-            '<p>' + esc(i.why) + '</p>' +
-            (i.url
-              ? '<a href="' + esc(i.url) + '" target="_blank" rel="noopener noreferrer">' +
-                esc(i.source) + ' →</a>'
-              : '<a>' + esc(i.source) + '</a>');
-          box.appendChild(d);
+        n.paragraphs.forEach(function (t) {
+          var para = document.createElement('p');
+          para.textContent = t;
+          box.appendChild(para);
         });
 
-        if (m.deskView) {
-          el('dv-text').textContent = m.deskView;
-          el('deskview').hidden = false;
-        }
-        el('matters-stamp').textContent =
-          'Published ' + new Date(m.publishedAt).toLocaleString('en-US',
-            { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        el('matters-stamp').textContent = n.date
+          ? new Date(n.date + 'T12:00:00').toLocaleDateString('en-US',
+              { weekday: 'long', month: 'long', day: 'numeric' })
+          : '';
         el('matters').hidden = false;
       })
       .catch(function () { /* no module rather than an error in front of a client */ });
