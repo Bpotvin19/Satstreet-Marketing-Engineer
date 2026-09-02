@@ -100,22 +100,8 @@ function bodyOf(blocks: Block[]): { preheader: string; paragraphs: string[] } {
 }
 
 export default async function handler(): Promise<Response> {
-  const seen = Object.keys(process.env)
-    .filter((k) => /NOTION|TELEGRAM|ANTHROPIC|SATSTREET/i.test(k))
-    .sort()
-
   const empty = (reason: string, status = 200) =>
-    new Response(JSON.stringify({
-      note: null,
-      reason,
-      // Names only. No values are read or returned.
-      diagnostic: {
-        matchingEnvNames: seen,
-        totalEnvNames: Object.keys(process.env).length,
-        notionTokenPresent: typeof process.env.NOTION_TOKEN === 'string',
-        notionTokenLength: (process.env.NOTION_TOKEN || '').trim().length,
-      },
-    }), {
+    new Response(JSON.stringify({ note: null, reason }), {
       status,
       headers: {
         'content-type': 'application/json',
@@ -123,7 +109,6 @@ export default async function handler(): Promise<Response> {
         'cache-control': 'public, max-age=120, stale-while-revalidate=600',
       },
     })
-
 
   try {
     const res = await notion(`/databases/${DB}/query`, {
