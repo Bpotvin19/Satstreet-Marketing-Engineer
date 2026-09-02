@@ -12,6 +12,12 @@
   # file start a long-running bot rather than producing static output.
   command = "echo 'static site — nothing to build'"
 
+# Server-side endpoints. /api/market assembles the Overview strip's quotes:
+# the equity, rate, metal and dollar sources send no CORS header, so a browser
+# cannot reach them and something on Netlify's side has to.
+[functions]
+  directory = "netlify/functions"
+
 # The market board is the front page.
 #
 # It is called ticker.html because the other pages link to it by name from the
