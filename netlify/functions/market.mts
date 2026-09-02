@@ -28,6 +28,18 @@ interface Quote {
    * field for anything quoted as a yield and changePct for everything else.
    */
   changeAbs: number | null
+  /**
+   * A short close series for the sparkline, oldest first.
+   *
+   * Deliberately small. This is a shape, not a chart — enough points to show
+   * a direction at 60 pixels wide, few enough that eight instruments do not
+   * turn one request into a payload nobody needs.
+   */
+  spark: number[]
+  /** Crypto only: the venue's rolling 24-hour figures. */
+  high24h?: number | null
+  low24h?: number | null
+  volume24h?: number | null
   /** How to render it: a currency, a percentage yield, or an index level. */
   kind: 'usd' | 'cad' | 'pct' | 'level' | 'fx'
   source: string
@@ -50,15 +62,18 @@ const MACRO: { symbol: string; label: string; kind: Quote['kind'] }[] = [
 ]
 
 async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promise<Quote> {
-  const base: Quote = { symbol, label, price: null, changePct: null, changeAbs: null, kind, source: 'Yahoo Finance' }
+  const base: Quote = { symbol, label, price: null, changePct: null, changeAbs: null, spark: [], kind, source: 'Yahoo Finance' }
   try {
-    const r = await fetch(`${YAHOO}${encodeURIComponent(symbol)}?interval=1d&range=5d`, {
+    const r = await fetch(`${YAHOO}${encodeURIComponent(symbol)}?interval=1d&range=1mo`, {
       headers: { 'user-agent': 'Mozilla/5.0 (compatible; SatstreetDashboard/1.0)' },
       signal: AbortSignal.timeout(6000),
     })
     if (!r.ok) return { ...base, error: `http ${r.status}` }
 
-    const meta = (await r.json())?.chart?.result?.[0]?.meta
+    const result = (await r.json())?.chart?.result?.[0]
+    const meta = result?.meta
+    const closes: number[] = (result?.indicators?.quote?.[0]?.close ?? [])
+      .filter((n: unknown): n is number => typeof n === 'number' && isFinite(n))
     const price = Number(meta?.regularMarketPrice)
     const prev = Number(meta?.chartPreviousClose ?? meta?.previousClose)
     if (!isFinite(price)) return { ...base, error: 'no price in response' }
@@ -68,6 +83,7 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
       price,
       changePct: isFinite(prev) && prev !== 0 ? ((price - prev) / prev) * 100 : null,
       changeAbs: isFinite(prev) ? price - prev : null,
+      spark: closes.slice(-22),
     }
   } catch (e) {
     return { ...base, error: e instanceof Error ? e.message : 'failed' }
@@ -80,21 +96,36 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
 async function coinbase(): Promise<Quote[]> {
   const out: Quote[] = []
   const spot = async (pair: string, label: string, kind: Quote['kind']): Promise<Quote> => {
-    const base: Quote = { symbol: pair, label, price: null, changePct: null, changeAbs: null, kind, source: 'Coinbase' }
+    const base: Quote = { symbol: pair, label, price: null, changePct: null, changeAbs: null, spark: [], kind, source: 'Coinbase' }
     try {
-      const [t, s] = await Promise.all([
+      const [t, s, c] = await Promise.all([
         fetch(`https://api.exchange.coinbase.com/products/${pair}/ticker`, { signal: AbortSignal.timeout(6000) }),
         fetch(`https://api.exchange.coinbase.com/products/${pair}/stats`, { signal: AbortSignal.timeout(6000) }),
+        fetch(`https://api.exchange.coinbase.com/products/${pair}/candles?granularity=3600`, {
+          signal: AbortSignal.timeout(6000),
+        }),
       ])
       if (!t.ok) return { ...base, error: `http ${t.status}` }
       const price = parseFloat((await t.json()).price)
-      const open = s.ok ? parseFloat((await s.json()).open) : NaN
+      const stats = s.ok ? await s.json() : {}
+      const open = parseFloat(stats.open)
+
+      // Candles arrive newest-first as [time, low, high, open, close, volume].
+      let spark: number[] = []
+      if (c.ok) {
+        const rows = (await c.json()) as number[][]
+        spark = rows.slice(0, 24).map((r) => r[4]).reverse().filter((n) => isFinite(n))
+      }
       if (!isFinite(price)) return { ...base, error: 'no price' }
       return {
         ...base,
         price,
         changePct: isFinite(open) && open !== 0 ? ((price - open) / open) * 100 : null,
         changeAbs: isFinite(open) ? price - open : null,
+        spark,
+        high24h: isFinite(parseFloat(stats.high)) ? parseFloat(stats.high) : null,
+        low24h: isFinite(parseFloat(stats.low)) ? parseFloat(stats.low) : null,
+        volume24h: isFinite(parseFloat(stats.volume)) ? parseFloat(stats.volume) : null,
       }
     } catch (e) {
       return { ...base, error: e instanceof Error ? e.message : 'failed' }
@@ -110,7 +141,7 @@ async function coinbase(): Promise<Quote[]> {
 async function cadUsd(): Promise<Quote> {
   const base: Quote = {
     symbol: 'USD-CAD', label: 'CAD/USD', price: null, changePct: null, changeAbs: null,
-    kind: 'fx', source: 'Coinbase',
+    spark: [], kind: 'fx', source: 'Coinbase',
   }
   try {
     const r = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD', {
