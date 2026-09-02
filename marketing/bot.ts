@@ -52,7 +52,8 @@ import { findRange, DEFAULT_RANGE } from './coinbase'
 import { tradingViewChart, isConfigured } from './chartimg'
 import * as broadcast from './broadcast'
 import * as access from './access'
-import { buildDigest, stageDigest } from './digest'
+import { buildDigest, stageDigest, type Digest } from './digest'
+import { checkMatters, publishMatters } from './matters'
 
 /* ── access ───────────────────────────────────────────────────────────────────
    Two gates, in marketing/access.ts: the chat must be allowlisted AND the
@@ -1167,6 +1168,103 @@ for (const name of ['company_facts', 'facts', 'company'] as const) {
     }
   })
 }
+
+/* ── What Matters Today ───────────────────────────────────────────────────
+   The client dashboard's daily module.
+
+   Same generation as /brief — buildDigest reads the press and writes one
+   sentence per story on why a Satstreet client should care — but a different
+   destination: publishing writes a file the public Overview page reads.
+
+   That destination is why this has its own command rather than a button on
+   /brief. Everything else the bot publishes goes to a Telegram channel the
+   desk controls. This goes to a page clients read, so the copy is checked
+   against the full post rules first and a person presses the button.
+   ────────────────────────────────────────────────────────────────────────── */
+
+const pendingMatters = new Map<number, Digest>()
+
+bot.command('matters', async (ctx) => {
+  try {
+    await ctx.reply('Reading the press for today\'s three to five — about a minute.')
+    await ctx.replyWithChatAction('typing')
+
+    const r = await buildDigest(24)
+    if (!r.digest.items.length) {
+      await ctx.reply('Nothing worth putting in front of a client today. Nothing published.')
+      return
+    }
+
+    pendingMatters.set(ctx.chat.id, r.digest)
+    const check = checkMatters(r.digest)
+
+    const lines = [
+      '<b>WHAT MATTERS TODAY — review</b>',
+      '<i>Goes to the client dashboard if you approve. Nothing published yet.</i>',
+      '',
+    ]
+    r.digest.items.forEach((i, n) => {
+      lines.push(`<b>${n + 1}. ${esc(i.headline)}</b>`)
+      lines.push(esc(i.why))
+      lines.push(`<i>${esc(i.source)}</i>`)
+      lines.push('')
+    })
+    lines.push('<b>Desk view</b>', esc(r.digest.market_line))
+
+    if (check.blocked.length) {
+      lines.push('', '⛔ <b>Blocked — cannot publish as written</b>')
+      for (const v of check.blocked) lines.push(`• ${esc(v.detail)}`)
+    }
+    const warns = check.violations.filter((v) => v.severity === 'warn')
+    if (warns.length) {
+      lines.push('', '⚠️ <b>Check first</b>')
+      for (const v of warns) lines.push(`• ${esc(v.detail)}`)
+    }
+
+    await send(ctx, lines.join('\n'), {
+      reply_markup: check.ok
+        ? new InlineKeyboard().text('✅ Publish to dashboard', 'mt:go').text('✖ Discard', 'mt:no')
+        : new InlineKeyboard().text('✖ Discard', 'mt:no'),
+    })
+  } catch (e) {
+    await fail(ctx, e)
+  }
+})
+
+bot.callbackQuery('mt:no', async (ctx) => {
+  await ctx.answerCallbackQuery()
+  pendingMatters.delete(ctx.chat!.id)
+  await ctx.reply('Discarded. Nothing published.')
+})
+
+bot.callbackQuery('mt:go', async (ctx) => {
+  await ctx.answerCallbackQuery()
+  try {
+    const d = pendingMatters.get(ctx.chat!.id)
+    if (!d) {
+      await ctx.reply('That review expired — run /matters again.')
+      return
+    }
+
+    const by = ctx.from?.username ?? ctx.from?.first_name ?? String(ctx.from?.id ?? 'unknown')
+    await ctx.reply('Publishing…')
+    const res = await publishMatters(d, by)
+    pendingMatters.delete(ctx.chat!.id)
+
+    if (!res.ok) {
+      await ctx.reply(`Not published — ${esc(res.error ?? 'unknown error')}`, { parse_mode: 'HTML' })
+      return
+    }
+    await ctx.reply(
+      res.deployed
+        ? `Published by ${esc(by)}. The site rebuilds in a minute or two.`
+        : `Written and committed, but not live: ${esc(res.error ?? '')}`,
+      { parse_mode: 'HTML' },
+    )
+  } catch (e) {
+    await fail(ctx, e)
+  }
+})
 
 bot.command('ref', async (ctx) => {
   try {
