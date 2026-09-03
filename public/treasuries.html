@@ -11,8 +11,8 @@
 <link rel="stylesheet" href="./assets/terminal.css" />
 <style>
   .treasury-tabs { display:flex; gap:8px; margin-bottom:18px; }
-  .treasury-tabs button { display:flex; align-items:center; gap:9px; font:inherit; font-weight:600; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:8px; padding:9px 14px; cursor:pointer; }
-  .treasury-tabs button[aria-selected="true"] { color:var(--ink); border-color:#8fc4e1; box-shadow:inset 0 0 0 1px #8fc4e1; }
+  .treasury-tabs button { display:flex; align-items:center; gap:9px; font:inherit; font-weight:600; color:var(--muted); background:#fff; border:1px solid var(--border); border-radius:999px; padding:9px 15px 9px 9px; cursor:pointer; box-shadow:0 2px 10px rgba(13,27,46,.035); }
+  .treasury-tabs button[aria-selected="true"] { color:#fff; background:var(--navy-2); border-color:var(--navy-2); box-shadow:0 8px 20px rgba(13,27,46,.13); }
   .asset-dot { width:22px; height:22px; display:grid; place-items:center; flex:none; border-radius:50%; color:#fff; font-size:12px; font-weight:700; }
   .asset-dot.btc { background:#f7931a; }
   .asset-dot.eth { background:#5968a8; }
@@ -35,10 +35,17 @@
   tbody tr:hover { background:#fafcfe; }
   .rank { width:40px; color:var(--faint); }
   .entity { display:flex; align-items:center; gap:9px; min-width:190px; }
-  .entity-mark { width:27px; height:27px; display:grid; place-items:center; flex:none; border-radius:7px; color:#476177; background:#edf3f7; font-size:11px; font-weight:700; }
+  .entity-mark { width:32px; height:32px; display:grid; place-items:center; flex:none; border-radius:50%; color:#476177; background:linear-gradient(145deg,#edf3f7,#dfe8ee); border:1px solid #dce6ec; font-size:10px; font-weight:700; }
   .entity strong { display:block; max-width:230px; overflow:hidden; text-overflow:ellipsis; }
   .entity small { display:block; color:var(--muted); font-size:11.5px; }
-  .bars h2 { font-size:17px; margin:0 0 16px; }
+  .bars h2 { font-size:21px; margin:0 0 3px; }
+  .bars-sub { margin:0 0 16px; color:var(--muted); font-size:12px; }
+  .donut-wrap { display:grid; place-items:center; padding:7px 0 21px; }
+  .donut { --share:0; width:152px; height:152px; display:grid; place-items:center; position:relative; border-radius:50%; background:conic-gradient(#0a95cd calc(var(--share) * 1%),#e8eef2 0); }
+  .donut::before { content:''; position:absolute; inset:17px; border-radius:50%; background:#fff; box-shadow:inset 0 0 0 1px var(--border-2); }
+  .donut-copy { position:relative; z-index:1; text-align:center; }
+  .donut-copy strong { display:block; font-family:var(--font-data); font-size:24px; line-height:1.05; }
+  .donut-copy span { display:block; margin-top:4px; color:var(--muted); font-size:10.5px; }
   .bar-row { margin-bottom:15px; }
   .bar-row:last-child { margin-bottom:0; }
   .bar-label { display:flex; justify-content:space-between; gap:8px; margin-bottom:5px; font-size:12.5px; }
@@ -47,6 +54,15 @@
   .bar-track { height:5px; overflow:hidden; background:#edf2f6; border-radius:9px; }
   .bar-fill { height:100%; min-width:3px; border-radius:9px; background:linear-gradient(90deg,#0068ff,#00a8dd); }
   .eth-mode .bar-fill { background:linear-gradient(90deg,#46588f,#7c8bc1); }
+  .eth-mode .donut { background:conic-gradient(#6673a7 calc(var(--share) * 1%),#e8eef2 0); }
+  .treasury-metric { display:grid; grid-template-columns:42px 1fr; gap:12px; align-items:center; min-height:112px; }
+  .treasury-metric .metric-icon { width:40px; height:40px; display:grid; place-items:center; border-radius:50%; color:#1480ab; background:#e8f4f8; }
+  .treasury-metric .metric-icon svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .treasury-metric.asset .metric-icon { color:#e37e0d; background:#fff0df; font-size:19px; font-weight:700; }
+  .treasury-metric.eth .metric-icon { color:#6270a5; background:#eeeff8; }
+  .treasury-metric.reference { color:#fff; background:linear-gradient(145deg,#0c2238,#163d5b); border-color:#173b58; }
+  .treasury-metric.reference .k,.treasury-metric.reference .s { color:#9cb3c4; }
+  .treasury-metric.reference .metric-icon { color:#41cdaa; background:rgba(255,255,255,.09); }
   .data-note { margin-top:16px; }
   @media (max-width:980px) { .treasury-grid { grid-template-columns:1fr; } }
   @media (max-width:620px) { .treasury-tabs { overflow-x:auto; } .treasury-tabs button { white-space:nowrap; } .source-row { align-items:flex-start; flex-direction:column; } }
@@ -59,7 +75,7 @@
   <div class="pagehead">
     <div>
       <p class="eyebrow">Institutional intelligence</p>
-      <h1>Digital Asset Treasuries</h1>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="5"/><circle cx="16" cy="12" r="5"/><path d="M12 5v14"/></svg></span><h1>Digital Asset Treasuries</h1></div>
       <p>Track publicly reported Bitcoin and Ethereum reserves from one desk-ready view.</p>
     </div>
   </div>
@@ -77,7 +93,7 @@
   <section class="metrics" id="metrics" aria-label="Treasury summary"></section>
 
   <div class="treasury-grid" id="treasury-grid">
-    <section class="card table-card" aria-labelledby="table-h">
+    <section class="card table-card visual-card" aria-labelledby="table-h">
       <div class="table-title"><h2 id="table-h">Leading treasury entities</h2><span id="row-count"></span></div>
       <div class="table-scroll">
         <table>
@@ -87,8 +103,10 @@
       </div>
     </section>
 
-    <aside class="card bars" aria-labelledby="bars-h">
-      <h2 id="bars-h">Concentration</h2>
+    <aside class="card bars visual-card" aria-labelledby="bars-h">
+      <h2 id="bars-h">Ownership concentration</h2>
+      <p class="bars-sub">Share of reported holdings represented by the leading entity.</p>
+      <div class="donut-wrap" id="donut"></div>
       <div id="bars"></div>
     </aside>
   </div>
@@ -134,7 +152,14 @@
     $('source-status').textContent = 'Loading current data…';
     $('source-pip').style.background = 'var(--faint)';
   }
-  function metric(k, v, s) { return '<div class="metric"><div class="k">' + S.esc(k) + '</div><div class="v">' + v + '</div><div class="s">' + S.esc(s) + '</div></div>'; }
+  function metricIcon(kind) {
+    if (kind === 'asset') return '₿';
+    if (kind === 'eth') return 'Ξ';
+    var p=kind==='value'?'<path d="M4 18h16M6 15h12M8 12h8M12 4l8 5H4z"/>':kind==='entities'?'<circle cx="8" cy="9" r="3"/><circle cx="16" cy="13" r="3"/><path d="M3 19c1-4 9-4 10 0M12 19c1-3 7-3 9 0"/>':'<path d="M4 17 9 12l4 3 7-8"/><path d="M15 7h5v5"/>';
+    return '<svg viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>';
+  }
+  function metric(k, v, s, kind, dark) { return '<div class="metric treasury-metric '+(kind==='asset'?'asset ':kind==='eth'?'asset eth ':'')+(dark?'reference':'')+'"><span class="metric-icon" aria-hidden="true">'+metricIcon(kind)+'</span><div><div class="k">' + S.esc(k) + '</div><div class="v">' + v + '</div><div class="s">' + S.esc(s) + '</div></div></div>'; }
+  function total(v) { if (typeof v === 'number') return v; var m=String(v).match(/^([0-9.]+)([KMB])?$/i); if(!m)return 0; return Number(m[1])*({K:1e3,M:1e6,B:1e9}[String(m[2]||'').toUpperCase()]||1); }
 
   function render(d) {
     var isEth = d.asset === 'eth', unit = isEth ? 'ETH' : 'BTC', summary = d.summary;
@@ -146,8 +171,8 @@
     $('extra-head').textContent = isEth ? '30D' : 'mNAV';
     $('method-note').textContent = (isEth ? 'Ethereum entity data is refreshed from Strategic ETH Reserve’s public feed.' : 'Bitcoin data is refreshed from Bitcoin Treasuries’ public leaderboard while its formal API remains forthcoming.') + ' Holdings reflect the source’s latest reported disclosures and are not independently verified by Satstreet.';
     $('metrics').innerHTML = isEth
-      ? metric('Reported ETH reserves', compact(summary.holdings,'ETH'), 'across active entities') + metric('Indicative value', money(summary.value), 'at current ETH reference') + metric('Tracked entities', String(summary.entities), 'active source records') + metric('Share of supply', Number(summary.supply).toFixed(2) + '%', 'estimated circulating supply')
-      : metric('Public-company BTC', String(summary.holdings), 'reported holdings') + metric('Indicative value', String(summary.value), 'reported by source') + metric('Public companies', String(summary.entities), 'tracked entities') + metric('BTC reference', String(summary.price), String(summary.supply) + ' asset dominance');
+      ? metric('Reported ETH reserves', compact(summary.holdings,'ETH'), 'across active entities','eth') + metric('Indicative value', money(summary.value), 'at current ETH reference','value') + metric('Tracked entities', String(summary.entities), 'active source records','entities') + metric('Share of supply', Number(summary.supply).toFixed(2) + '%', 'estimated circulating supply','reference',true)
+      : metric('Public-company BTC', String(summary.holdings), 'reported holdings','asset') + metric('Indicative value', String(summary.value), 'reported by source','value') + metric('Public companies', String(summary.entities), 'tracked entities','entities') + metric('BTC reference', String(summary.price), String(summary.supply) + ' asset dominance','reference',true);
 
     $('row-count').textContent = 'Top ' + Math.min(20,d.rows.length) + ' shown';
     $('rows').innerHTML = d.rows.slice(0,20).map(function (r) {
@@ -156,7 +181,8 @@
       return '<tr><td class="rank">' + S.esc(r.rank) + '</td><td><span class="entity"><span class="entity-mark">' + S.esc((r.ticker || r.name).slice(0,2).toUpperCase()) + '</span><span><strong>' + S.esc(r.name) + '</strong><small>' + S.esc((r.country ? r.country + ' · ' : '') + (r.ticker || '—')) + '</small></span></span></td><td><strong>' + compact(r.holdings,unit) + '</strong>' + (isEth && r.value ? '<br><small style="color:var(--muted)">' + money(r.value) + '</small>' : '') + '</td><td class="' + extraClass + '">' + S.esc(extra) + '</td><td style="color:var(--muted)">' + S.esc(isEth ? date(r.asOf) : 'Latest disclosure') + '</td></tr>';
     }).join('');
 
-    var top = d.rows.slice(0,7), max = top.length ? top[0].holdings : 1;
+    var top = d.rows.slice(0,7), max = top.length ? top[0].holdings : 1, denominator=total(summary.holdings)||d.rows.reduce(function(n,r){return n+r.holdings;},0), share=top.length?Math.min(100,top[0].holdings/denominator*100):0;
+    $('donut').innerHTML='<div class="donut" style="--share:'+share.toFixed(2)+'"><div class="donut-copy"><strong>'+share.toFixed(1)+'%</strong><span>top entity share</span></div></div>';
     $('bars').innerHTML = top.map(function (r) { var pct = Math.max(1, r.holdings / max * 100); return '<div class="bar-row"><div class="bar-label"><strong>' + S.esc(r.name) + '</strong><span>' + compact(r.holdings,unit) + '</span></div><div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(2) + '%"></div></div></div>'; }).join('');
   }
 

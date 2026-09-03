@@ -30,6 +30,9 @@
   .search input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(0,104,255,0.12); }
   .search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--faint); }
   .count { font-size: 12.5px; color: var(--muted); margin-left: auto; }
+  #globals .metric { position:relative; overflow:hidden; padding-left:20px; }
+  #globals .metric::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(#0794cd,#21c2dd); }
+  #globals .metric::after { content:''; position:absolute; width:72px; height:72px; right:-31px; top:-38px; border-radius:50%; background:rgba(0,153,207,.055); }
 
   .tablewrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -73,7 +76,8 @@
 
   <div class="pagehead">
     <div>
-      <h1>Markets</h1>
+      <p class="eyebrow">Digital asset reference board</p>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 17 9 12l4 3 7-8"/><path d="M15 7h5v5"/></svg></span><h1>Markets</h1></div>
       <p>Reference pricing and market context across major digital assets.</p>
     </div>
     <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Loading…</span></span>

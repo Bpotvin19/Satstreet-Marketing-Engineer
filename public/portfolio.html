@@ -12,10 +12,11 @@
 <style>
   .privacy-note { margin-bottom: 18px; }
   .pnl-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .7fr); gap: 16px; margin-bottom: 16px; }
-  .pnl-card { position: relative; overflow: hidden; }
+  .pnl-card { position: relative; overflow: hidden; background:linear-gradient(145deg,#fff,#fbfdfe); }
+  .pnl-card::after { content:''; position:absolute; width:260px; height:260px; right:-110px; top:-145px; border-radius:50%; border:1px solid rgba(0,154,207,.09); box-shadow:0 0 0 42px rgba(0,154,207,.025),0 0 0 84px rgba(0,154,207,.018); pointer-events:none; }
   .pnl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .pnl-label { margin: 0; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .85px; text-transform: uppercase; }
-  .pnl-number { margin: 4px 0 0; font-size: clamp(38px, 5vw, 54px); line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -1.5px; }
+  .pnl-number { margin: 6px 0 0; font-family:var(--font-data); font-size: clamp(38px, 5vw, 54px); line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -2px; }
   .pnl-number.positive { color: var(--up); }
   .pnl-number.negative { color: var(--down); }
   .pnl-sub { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
@@ -26,7 +27,7 @@
   .chart-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 13.5px; text-align: center; padding: 18px; pointer-events: none; }
   .pnl-foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 15px; margin-top: 12px; border-top: 1px solid var(--border-2); }
   .pnl-stat .k { color: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .65px; text-transform: uppercase; }
-  .pnl-stat .v { margin-top: 1px; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pnl-stat .v { margin-top: 3px; font-family:var(--font-data); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .method h2 { font-size: 17px; margin: 0 0 12px; }
   .method-step { display: grid; grid-template-columns: 24px 1fr; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--border-2); }
   .method-step:last-of-type { border-bottom: 0; }
@@ -34,6 +35,7 @@
   .method-step strong { display: block; font-size: 13.5px; font-weight: 600; }
   .method-step span { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
   .method-warning { color: var(--muted); background: #fbf7ef; border: 1px solid #efe2c8; border-radius: 8px; padding: 10px 11px; margin-top: 12px; font-size: 12.5px; line-height: 1.5; }
+  .method-title { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
   .wallets { display: grid; gap: 10px; }
   .wallet { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 17px; }
   .wallet-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
@@ -42,6 +44,8 @@
   .wallet .bal { text-align: right; }
   .wallet .btc { font-size: 19px; line-height: 1.25; font-weight: 600; font-variant-numeric: tabular-nums; }
   .wallet .fiat { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .wallet-ident { display:flex; align-items:center; gap:10px; }
+  .wallet-mark { width:35px; height:35px; display:grid; place-items:center; flex:none; border-radius:50%; color:#d8790c; background:#fff0df; border:1px solid #f6dfc3; font-size:17px; font-weight:700; }
   .wallet-foot { display: flex; gap: 15px; flex-wrap: wrap; padding-top: 10px; margin-top: 11px; border-top: 1px solid var(--border-2); color: var(--muted); font-size: 12px; }
   .pending { color: var(--warn); font-weight: 600; }
   .iconbtn { font: inherit; color: var(--muted); background: none; border: 0; border-radius: 4px; cursor: pointer; padding: 3px 5px; }
@@ -63,13 +67,30 @@
   .flow-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
   .flow.in .flow-dot { background: var(--up); }
   .flow.out .flow-dot { background: var(--down); }
+  .empty-shell { padding:0; overflow:hidden; }
+  .portfolio-empty-grid { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr); min-height:330px; }
+  .portfolio-visual { position:relative; overflow:hidden; min-height:330px; padding:28px; color:#fff; background:linear-gradient(145deg,#0b2035,#153f5e); }
+  .portfolio-visual::after { content:''; position:absolute; width:360px; height:360px; right:-150px; bottom:-210px; border-radius:50%; border:1px solid rgba(77,204,235,.16); box-shadow:0 0 0 50px rgba(77,204,235,.035),0 0 0 100px rgba(77,204,235,.022); }
+  .preview-kicker { margin:0; color:#77c9e8; font-size:10.5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; }
+  .preview-value { margin:8px 0 2px; font-family:var(--font-data); font-size:37px; line-height:1; letter-spacing:-1.2px; }
+  .preview-sub { color:#9cb4c6; font-size:12.5px; }
+  .preview-chart { position:absolute; left:24px; right:24px; bottom:75px; height:105px; }
+  .preview-chart svg { width:100%; height:100%; }
+  .preview-stats { position:absolute; left:28px; right:28px; bottom:22px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; z-index:1; }
+  .preview-stat { padding-top:9px; border-top:1px solid rgba(255,255,255,.12); }
+  .preview-stat b { display:block; font-family:var(--font-data); font-size:13px; }
+  .preview-stat span { display:block; margin-top:2px; color:#91ab; font-size:9.5px; text-transform:uppercase; letter-spacing:.7px; }
+  .portfolio-empty-copy { display:grid; place-items:center; padding:28px; background:#fff; }
+  .portfolio-empty-copy .emptystate { padding:10px 12px; }
+  .empty-icon { width:52px; height:52px; display:grid; place-items:center; margin:0 auto 14px; border-radius:50%; color:#147fa9; background:#e8f4f8; }
+  .empty-icon svg { width:25px; height:25px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
   dialog { width: calc(100% - 32px); max-width: 460px; padding: 0; color: var(--ink); border: 0; border-radius: var(--radius); box-shadow: 0 18px 50px rgba(13,27,46,.22); }
   dialog::backdrop { background: rgba(13,27,46,.42); }
   .dlg { padding: 22px; }
   .dlg h2 { margin: 0 0 6px; font-size: 19px; font-weight: 600; }
   .dlg > p { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.55; }
   .dlgfoot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-  @media (max-width: 920px) { .pnl-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 920px) { .pnl-layout,.portfolio-empty-grid { grid-template-columns: 1fr; } }
   @media (max-width: 620px) {
     .pnl-chart { height: 220px; }
     .pnl-foot { grid-template-columns: 1fr 1fr; }
@@ -84,12 +105,13 @@
 <main class="shell">
   <div class="pagehead">
     <div>
-      <h1>Bitcoin Portfolio</h1>
+      <p class="eyebrow">Watch-only intelligence</p>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12h6M12 9v6"/></svg></span><h1>Bitcoin Portfolio</h1></div>
       <p>Watch public addresses, reconstruct their history and review an estimated P&amp;L.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-        <a class="btn" href="https://satstreet.com/services/tradedesk" target="_blank" rel="noopener noreferrer">Place a Trade <span aria-hidden="true">↗</span></a>
+        <a class="btn" href="https://desk.satstreet.com/auth/login?welcome=1788456624959" target="_blank" rel="noopener noreferrer">Place a Trade <span aria-hidden="true">↗</span></a>
         <button class="btn ghost" id="add-open" type="button">Add wallet</button>
       </div>
       <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">No wallets tracked</span></span>
@@ -144,8 +166,8 @@
       </div>
     </section>
 
-    <aside class="card method" aria-labelledby="method-title">
-      <h2 id="method-title">How this estimate works</h2>
+    <aside class="card method visual-card" aria-labelledby="method-title">
+      <div class="method-title"><span class="icon-medallion" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-5"/></svg></span><h2 id="method-title">How this estimate works</h2></div>
       <div class="method-step"><span class="n">1</span><div><strong>Read confirmed history</strong><span>Transactions come directly from mempool.space in this browser.</span></div></div>
       <div class="method-step"><span class="n">2</span><div><strong>Value each receipt</strong><span>Incoming BTC uses the daily market close on its confirmation date.</span></div></div>
       <div class="method-step"><span class="n">3</span><div><strong>Apply FIFO</strong><span>Outgoing BTC consumes the oldest estimated cost lots first.</span></div></div>
@@ -177,15 +199,26 @@
     <div class="wallets" id="wallets"></div>
   </div>
 
-  <div class="card" id="empty">
-    <div class="emptystate">
-      <h3>No wallets tracked yet.</h3>
-      <p>Add a public Bitcoin address for a live estimate, or open a clearly labelled sample to review the P&amp;L experience without sharing an address.</p>
-      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="btn" id="add-open-2" type="button">Add wallet</button>
-        <button class="btn ghost" id="sample-open" type="button">Preview sample P&amp;L</button>
+  <div class="card empty-shell" id="empty">
+    <div class="portfolio-empty-grid">
+      <div class="portfolio-visual" aria-hidden="true">
+        <p class="preview-kicker">Illustrative P&amp;L experience</p>
+        <div class="preview-value">+$182,460</div>
+        <div class="preview-sub">Estimated profit across reconstructed history</div>
+        <div class="preview-chart"><svg viewBox="0 0 620 105" preserveAspectRatio="none"><defs><linearGradient id="pfade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#2bd2a3" stop-opacity=".27"/><stop offset="1" stop-color="#2bd2a3" stop-opacity="0"/></linearGradient></defs><path d="M2 93 C45 82 68 94 108 70 S166 54 204 71 S268 89 310 52 S371 22 412 40 S481 67 520 32 S578 28 618 8 L618 105H2Z" fill="url(#pfade)"/><path d="M2 93 C45 82 68 94 108 70 S166 54 204 71 S268 89 310 52 S371 22 412 40 S481 67 520 32 S578 28 618 8" fill="none" stroke="#2bd2a3" stroke-width="3" stroke-linecap="round"/></svg></div>
+        <div class="preview-stats"><div class="preview-stat"><b>2.480 BTC</b><span>Balance</span></div><div class="preview-stat"><b>$116,204</b><span>Cost basis</span></div><div class="preview-stat"><b>+61.8%</b><span>Return</span></div></div>
+      </div>
+      <div class="portfolio-empty-copy"><div class="emptystate">
+        <div class="empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M4 10h16M8 7V5h8v2M8 15h3"/></svg></div>
+        <h3>No wallets tracked yet.</h3>
+        <p>Add a public Bitcoin address for a live estimate, or open a clearly labelled sample to review the P&amp;L experience without sharing an address.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn" id="add-open-2" type="button">Add wallet</button>
+          <button class="btn ghost" id="sample-open" type="button">Preview sample P&amp;L</button>
+        </div>
       </div>
     </div>
+  </div>
   </div>
 
   <div class="disclosure">
@@ -489,7 +522,7 @@
         body = '<div class="bal"><div class="btc">' + s.confirmed.toFixed(8) + ' BTC</div><div class="fiat">' + (finite(rates[ccy]) ? fmt.money(s.confirmed * rates[ccy], ccy, 0) : '—') + '</div></div>';
         foot = '<div class="wallet-foot">' + (s.pending ? '<span class="pending">' + signed(s.pending, 8) + ' BTC unconfirmed</span>' : '') + '<span>' + s.txCount.toLocaleString('en-US') + ' transactions</span><span>' + (s.truncated ? 'History exceeds analysis limit' : 'History complete') + '</span><span>mempool.space · ' + fmt.time(s.at) + '</span></div>';
       }
-      return '<article class="wallet"><div class="wallet-top"><div>' + (w.label ? '<p class="name">' + esc(w.label) + '</p>' : '') + '<span class="addr">' + esc(mask(w.address)) + '<button class="iconbtn" type="button" data-copy="' + esc(w.address) + '">Copy</button></span></div>' + body + '<div class="menuwrap"><button class="iconbtn" type="button" data-menu="' + esc(w.address) + '" aria-label="Wallet options">•••</button><div class="menu" hidden data-menufor="' + esc(w.address) + '"><button type="button" data-rename="' + esc(w.address) + '">Rename</button><hr><button type="button" class="danger" data-remove="' + esc(w.address) + '">Remove wallet</button></div></div></div>' + foot + '</article>';
+      return '<article class="wallet"><div class="wallet-top"><div class="wallet-ident"><span class="wallet-mark" aria-hidden="true">₿</span><div>' + (w.label ? '<p class="name">' + esc(w.label) + '</p>' : '<p class="name">Bitcoin wallet</p>') + '<span class="addr">' + esc(mask(w.address)) + '<button class="iconbtn" type="button" data-copy="' + esc(w.address) + '">Copy</button></span></div></div>' + body + '<div class="menuwrap"><button class="iconbtn" type="button" data-menu="' + esc(w.address) + '" aria-label="Wallet options">•••</button><div class="menu" hidden data-menufor="' + esc(w.address) + '"><button type="button" data-rename="' + esc(w.address) + '">Rename</button><hr><button type="button" class="danger" data-remove="' + esc(w.address) + '">Remove wallet</button></div></div></div>' + foot + '</article>';
     }).join('');
   }
 

@@ -31,6 +31,13 @@
   .dcell .s { font-size: 12px; color: var(--muted); }
   .venue { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-2); font-size: 12.5px; color: var(--muted); }
   .ctx { font-size: 14px; color: var(--ink-2); margin: 0 0 16px; max-width: 78ch; }
+  .tabs button { display:inline-flex; align-items:center; gap:7px; }
+  .tab-icon { width:21px; height:21px; display:grid; place-items:center; border-radius:50%; color:#4f7189; background:#eaf1f5; }
+  .tabs button[aria-selected="true"] .tab-icon { color:#087fac; background:#e3f3f8; }
+  .tab-icon svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .panelgrid .card { position:relative; overflow:hidden; }
+  .panelgrid .card::after { content:''; position:absolute; width:135px; height:135px; right:-73px; top:-73px; border-radius:50%; background:rgba(0,162,211,.045); pointer-events:none; }
+  .dcell .v { font-family:var(--font-data); }
 </style>
 </head>
 <body>
@@ -41,17 +48,18 @@
 
   <div class="pagehead">
     <div>
-      <h1>Market Structure</h1>
+      <p class="eyebrow">Positioning &amp; network intelligence</p>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 8-1M7 9l4 7m6-8-4 8"/></svg></span><h1>Market Structure</h1></div>
       <p>Positioning, network conditions and macro signals behind the price.</p>
     </div>
     <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Loading…</span></span>
   </div>
 
   <div class="tabs" role="tablist" aria-label="Market structure sections">
-    <button role="tab" id="tab-derivatives"   aria-selected="true"  aria-controls="p-derivatives"   data-t="derivatives">Derivatives</button>
-    <button role="tab" id="tab-network"       aria-selected="false" aria-controls="p-network"       data-t="network" tabindex="-1">Network</button>
-    <button role="tab" id="tab-macro"         aria-selected="false" aria-controls="p-macro"         data-t="macro" tabindex="-1">Macro</button>
-    <button role="tab" id="tab-institutional" aria-selected="false" aria-controls="p-institutional" data-t="institutional" tabindex="-1">Institutional</button>
+    <button role="tab" id="tab-derivatives" aria-selected="true" aria-controls="p-derivatives" data-t="derivatives"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
+    <button role="tab" id="tab-network" aria-selected="false" aria-controls="p-network" data-t="network" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
+    <button role="tab" id="tab-macro" aria-selected="false" aria-controls="p-macro" data-t="macro" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16"/></svg></span>Macro</button>
+    <button role="tab" id="tab-institutional" aria-selected="false" aria-controls="p-institutional" data-t="institutional" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>Institutional</button>
   </div>
 
   <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0">

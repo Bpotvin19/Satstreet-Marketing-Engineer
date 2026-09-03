@@ -19,24 +19,40 @@
   .gate-form .field { flex:1; margin:0; }
   .gate-error { color:var(--down); font-size:12.5px; margin-top:8px; }
   .brief-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(300px,.8fr); gap:16px; margin-bottom:16px; }
-  .lead-card { padding:23px; min-height:260px; background:linear-gradient(135deg,#fff 0%,#f9fbfe 100%); }
-  .lead-card h2 { margin:4px 0 12px; font-size:26px; font-weight:600; line-height:1.2; }
+  .lead-card { position:relative; overflow:hidden; padding:25px; min-height:282px; color:#fff; background:linear-gradient(145deg,#0b2035 0%,#143c59 100%); border-color:#183e5b; }
+  .lead-card::after { content:''; position:absolute; inset:auto -90px -145px auto; width:360px; height:360px; border-radius:50%; border:1px solid rgba(69,190,228,.13); box-shadow:0 0 0 44px rgba(69,190,228,.035),0 0 0 88px rgba(69,190,228,.025); pointer-events:none; }
+  .lead-card .eyebrow { color:#74c7e7; }
+  .lead-card h2 { margin:4px 0 12px; color:#fff; font-size:29px; line-height:1.15; }
+  .lead-pulse { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin:0 0 10px; }
+  .lead-pulse svg { width:240px; max-width:45%; height:62px; flex:none; }
+  .pulse-label { color:#91a9ba; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.15px; }
   .world-list { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 22px; counter-reset:brief; }
-  .world-list li { position:relative; padding:10px 0 10px 27px; border-top:1px solid var(--border-2); color:var(--ink-2); font-size:13.5px; line-height:1.48; counter-increment:brief; }
-  .world-list li::before { content:counter(brief,decimal-leading-zero); position:absolute; left:0; top:11px; color:var(--blue); font-size:10px; font-weight:700; letter-spacing:.4px; }
+  .world-list li { position:relative; z-index:1; padding:10px 0 10px 27px; border-top:1px solid rgba(255,255,255,.11); color:#d3e0e9; font-size:13.5px; line-height:1.48; counter-increment:brief; }
+  .world-list li::before { content:counter(brief,decimal-leading-zero); position:absolute; left:0; top:11px; color:#5ac7eb; font-size:10px; font-weight:700; letter-spacing:.4px; }
   .reads-card h2, .calendar-card h2, .so-what h2 { margin:0; font-size:18px; font-weight:600; }
-  .read { padding:12px 0; border-bottom:1px solid var(--border-2); }
+  .read { display:grid; grid-template-columns:31px 1fr; gap:10px; align-items:start; padding:12px 0; border-bottom:1px solid var(--border-2); }
+  .read-icon { width:29px; height:29px; display:grid; place-items:center; border-radius:50%; color:#147da8; background:#e9f4f8; }
+  .read-icon svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   .read:last-child { border-bottom:0; padding-bottom:0; }
   .read a { display:block; color:var(--ink); text-decoration:none; font-size:13.5px; font-weight:600; line-height:1.4; }
   .read a:hover { color:var(--blue); }
   .read small { display:block; margin-top:3px; color:var(--muted); font-size:11.5px; }
   .filterbar { display:flex; gap:7px; overflow-x:auto; padding:2px 0 12px; margin-bottom:3px; scrollbar-width:none; }
   .filterbar::-webkit-scrollbar { display:none; }
-  .filter { flex:none; border:1px solid var(--border); background:#fff; color:var(--muted); border-radius:7px; padding:7px 11px; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .filter { flex:none; display:inline-flex; align-items:center; gap:7px; border:1px solid var(--border); background:#fff; color:var(--muted); border-radius:999px; padding:7px 12px; font:inherit; font-size:12.5px; font-weight:600; cursor:pointer; }
   .filter[aria-pressed="true"] { color:var(--blue); background:#edf5ff; border-color:#b7d7ff; }
   .sector-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
   .sector { padding:0; overflow:hidden; }
-  .sector-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:18px 19px 14px; border-bottom:1px solid var(--border-2); background:#fbfcfe; }
+  .sector-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:18px 19px 14px; border-bottom:1px solid var(--border-2); background:linear-gradient(135deg,#fff,#f8fbfd); }
+  .sector-title { display:flex; gap:11px; align-items:center; }
+  .sector-icon { width:38px; height:38px; display:grid; place-items:center; flex:none; border-radius:50%; color:#167da8; background:#e8f3f8; }
+  .sector-icon svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .sector-icon.metals { color:#a57b28; background:#fbf2dc; }
+  .sector-icon.energy { color:#198b70; background:#e7f4ef; }
+  .sector-icon.crypto { color:#dd7b10; background:#fff0df; }
+  .sector-icon.world,.sector-icon.canada { color:#6e70a5; background:#eeeff8; }
+  .filter .sector-icon { width:20px; height:20px; margin:-2px 0; }
+  .filter .sector-icon svg { width:12px; height:12px; }
   .sector-kicker { margin:0 0 4px; color:var(--muted); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.85px; }
   .sector h2 { margin:0; font-size:18px; font-weight:600; }
   .sector-market { min-width:155px; text-align:right; }
@@ -67,7 +83,7 @@
   <div class="pagehead">
     <div>
       <p class="eyebrow">Institutional intelligence</p>
-      <h1>Macro Desk</h1>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V9m5 9V5m5 13v-7m5 7V3"/><path d="M2 21h20"/></svg></span><h1>Macro Desk</h1></div>
       <p>One organized daily view across geopolitics, rates, equities, commodities, crypto and Canada.</p>
     </div>
     <div class="desk-actions">
@@ -96,7 +112,7 @@
     <div class="brief-grid">
       <section class="card lead-card" aria-labelledby="world-title">
         <p class="eyebrow">Overnight and morning session</p>
-        <h2 id="world-title">World brief</h2>
+        <div class="lead-pulse"><div><h2 id="world-title">World brief</h2><span class="pulse-label">Overnight cross-asset pulse</span></div><svg viewBox="0 0 240 62" aria-hidden="true"><path d="M2 53H238" stroke="rgba(255,255,255,.13)"/><path d="M2 49 C26 45 35 26 55 34 S89 55 110 34 S144 13 165 27 S199 45 238 8" fill="none" stroke="#27d3a5" stroke-width="2.5" stroke-linecap="round"/><circle cx="238" cy="8" r="3" fill="#27d3a5"/></svg></div>
         <ol class="world-list" id="world-list"></ol>
       </section>
       <aside class="card reads-card" aria-labelledby="reads-title">
@@ -197,14 +213,18 @@
     var low=name.toLowerCase();
     return categoryMeta.find(function(m){return low.indexOf(m[1].toLowerCase())>=0;}) || ['other',name,name,''];
   }
+  function sectorIcon(key) {
+    var paths={rates:'<path d="M4 18h16M6 15h12M8 12h8M12 4l8 5H4z"/>',equities:'<path d="m4 17 5-5 4 3 7-8"/><path d="M15 7h5v5"/>',metals:'<path d="m12 3 8 15H4z"/><path d="M8 14h8"/>',energy:'<path d="M12 3c5 7 7 10 7 14a7 7 0 0 1-14 0c0-4 2-7 7-14z"/>',crypto:'<circle cx="12" cy="12" r="8"/><path d="M9 8h5a2 2 0 0 1 0 4H9m0 0h6a2 2 0 0 1 0 4H9m3-10v12"/>',world:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',canada:'<path d="m12 3 2 4 3-1-1 4 3 2-4 2 1 4-4-2-4 2 1-4-4-2 3-2-1-4 3 1z"/>'};
+    return '<span class="sector-icon '+key+'" aria-hidden="true"><svg viewBox="0 0 24 24">'+(paths[key]||paths.world)+'</svg></span>';
+  }
   function render(payload, preview) {
     var d=parse(payload);
     $('world-list').innerHTML=(d.world.length?d.world:['No world brief was included in this edition.']).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');
     $('read-count').textContent=d.reads.length+' items';
-    $('reads').innerHTML=(d.reads.length?d.reads:[{text:'No must-read list was included.',links:[]}]).slice(0,7).map(function(r){var href=(r.links[0]||{}).href; return '<div class="read">'+(href?'<a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(r.text)+'</a>':'<a>'+esc(r.text)+'</a>')+'<small>'+(href?new URL(href).hostname.replace(/^www\./,''):'Desk briefing')+'</small></div>';}).join('');
+    $('reads').innerHTML=(d.reads.length?d.reads:[{text:'No must-read list was included.',links:[]}]).slice(0,7).map(function(r){var href=(r.links[0]||{}).href; return '<div class="read"><span class="read-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><div>'+(href?'<a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(r.text)+'</a>':'<a>'+esc(r.text)+'</a>')+'<small>'+(href?new URL(href).hostname.replace(/^www\./,''):'Desk briefing')+'</small></div></div>';}).join('');
     var sectors=Object.keys(d.sectors).map(function(name){ var meta=sectorKey(name), lines=d.sectors[name], q=market[meta[3]], parts={what:'',why:'',watch:''}; lines.forEach(function(line){var m=line.match(/^(What|Why|Watch 72h):\s*(.*)$/i); if(m) parts[m[1].toLowerCase().split(' ')[0]]=m[2];}); return {key:meta[0],label:meta[2],name:name,q:q,parts:parts}; });
-    $('filters').innerHTML=[['all','All sectors']].concat(categoryMeta.map(function(m){return [m[0],m[2]];})).map(function(f,i){return '<button class="filter" type="button" data-filter="'+f[0]+'" aria-pressed="'+(i===0)+'">'+esc(f[1])+'</button>';}).join('');
-    $('sectors').innerHTML=sectors.map(function(s){var cls=s.q&&s.q.changePct<0?'down':'up'; return '<article class="card sector" data-sector="'+esc(s.key)+'"><div class="sector-head"><div><p class="sector-kicker">'+esc(s.label)+'</p><h2>'+esc(s.name)+'</h2></div><div class="sector-market"><span class="value">'+esc(price(s.q))+'</span>'+(s.q?Terminal.spark(s.q.spark,cls,150,42):'')+'</div></div><div class="sector-body"><div class="intel"><b>What</b><span>'+esc(s.parts.what||'No tape summary in this edition.')+'</span></div><div class="intel"><b>Why</b><span>'+esc(s.parts.why||'No driver note in this edition.')+'</span></div><div class="intel"><b>Watch</b><span>'+esc(s.parts.watch||'No 72-hour watch item in this edition.')+'</span></div></div></article>';}).join('');
+    $('filters').innerHTML=[['all','All sectors']].concat(categoryMeta.map(function(m){return [m[0],m[2]];})).map(function(f,i){return '<button class="filter" type="button" data-filter="'+f[0]+'" aria-pressed="'+(i===0)+'">'+(f[0]==='all'?'':sectorIcon(f[0]))+esc(f[1])+'</button>';}).join('');
+    $('sectors').innerHTML=sectors.map(function(s){var cls=s.q&&s.q.changePct<0?'down':'up'; return '<article class="card sector visual-card" data-sector="'+esc(s.key)+'"><div class="sector-head"><div class="sector-title">'+sectorIcon(s.key)+'<div><p class="sector-kicker">'+esc(s.label)+'</p><h2>'+esc(s.name)+'</h2></div></div><div class="sector-market"><span class="value data-face">'+esc(price(s.q))+'</span>'+(s.q?Terminal.spark(s.q.spark,cls,150,42):'')+'</div></div><div class="sector-body"><div class="intel"><b>What</b><span>'+esc(s.parts.what||'No tape summary in this edition.')+'</span></div><div class="intel"><b>Why</b><span>'+esc(s.parts.why||'No driver note in this edition.')+'</span></div><div class="intel"><b>Watch</b><span>'+esc(s.parts.watch||'No 72-hour watch item in this edition.')+'</span></div></div></article>';}).join('');
     $('calendar').innerHTML=(d.calendar.length?d.calendar:[['—','No calendar included','—']]).map(function(r){return '<tr><td>'+esc(r[0]||'')+'</td><td>'+esc(r[1]||'')+'</td><td>'+esc(r[2]||'')+'</td></tr>';}).join('');
     $('so-list').innerHTML=(d.so.length?d.so:['No Satstreet lens was included in this edition.']).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');
     $('source-meta').textContent=(preview?'Illustrative preview':'Notion · '+(payload.status||'Status not set'))+' · '+(payload.window||payload.date||'');
