@@ -17,7 +17,7 @@
     "marketing:chatid": "tsx --env-file-if-exists=marketing/.env marketing/find-chat.ts",
     "marketing:users": "tsx --env-file-if-exists=marketing/.env marketing/list-users.ts",
     "marketing:broadcast": "tsx --env-file-if-exists=marketing/.env marketing/check-broadcast.ts",
-    "test": "node --test test/"
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",

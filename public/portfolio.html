@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Satstreet · Bitcoin Wallet Monitor</title>
-<meta name="description" content="Track public Bitcoin addresses without connecting a wallet or sharing private keys." />
+<title>Satstreet · Wallet Performance</title>
+<meta name="description" content="Watch-only Bitcoin wallet performance — estimated P&L, cost basis and value over time." />
 
 <!--
-  Bitcoin Wallet Monitor.
+  Wallet Performance.
 
-  Named for what it is. It watches public addresses someone typed into this
-  browser; it is not a Satstreet account, and every part of the page is built
-  so that cannot be misread.
+  Watch-only throughout. It reads public blockchain data for addresses the
+  viewer entered on this device; it never asks for a seed phrase, private key,
+  password or signing permission, and it cannot move anything. Addresses live in
+  this browser's local storage and are never sent to Satstreet.
 
-  The correctness fix that mattered most: the previous version added
-  mempool amounts to the confirmed balance and presented the total as the
-  balance, while the footnote called it confirmed. Those are different
-  things — one is settled, one is a pending transaction that may never
-  confirm — so they are now counted and shown separately, and the summary
-  totals confirmed only.
+  Every P&L and cost-basis figure is an estimate and is labelled so. The method
+  is in pnl.js and summarised at the foot of the page: external receipts priced
+  at that day's BTC close, internal transfers between tracked wallets excluded
+  from basis, FIFO on external sends, realized and unrealized kept apart. It is
+  not a Satstreet statement of account.
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,35 +27,51 @@
 <link rel="stylesheet" href="./assets/terminal.css" />
 
 <style>
-  .wallets { display: grid; gap: 12px; }
-  .wallet { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; }
-  .wallet-top { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
-  .wallet .name { font-size: 15.5px; font-weight: 600; margin: 0 0 2px; }
-  .wallet .addr { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
-  .wallet .bal { text-align: right; }
-  .wallet .bal .btc { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .wallet .bal .fiat { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .wallet-foot { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--border-2); font-size: 12.5px; color: var(--muted); }
-  .pending { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--warn); background: var(--warn-soft); padding: 3px 9px; border-radius: 20px; }
-  .iconbtn { font: inherit; background: none; border: none; cursor: pointer; color: var(--muted); padding: 2px 4px; border-radius: 4px; line-height: 1; }
-  .iconbtn:hover { color: var(--blue); background: var(--border-2); }
-  .menuwrap { position: relative; }
-  .menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 168px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 6px 20px rgba(13,27,46,0.12); padding: 5px; }
-  .menu button { display: block; width: 100%; text-align: left; font: inherit; font-size: 13.5px; background: none; border: none; cursor: pointer; padding: 8px 10px; border-radius: 6px; color: var(--ink-2); }
-  .menu button:hover { background: var(--border-2); color: var(--ink); }
-  .menu button.danger { color: var(--down); }
-  .menu button.danger:hover { background: var(--down-soft); }
-  .menu hr { border: none; border-top: 1px solid var(--border-2); margin: 4px 0; }
-  dialog { border: none; border-radius: var(--radius); padding: 0; max-width: 460px; width: calc(100% - 32px); box-shadow: 0 18px 50px rgba(13,27,46,0.22); color: var(--ink); }
-  dialog::backdrop { background: rgba(13,27,46,0.42); }
+  .hero { min-width: 0; display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .pnlcard { min-width: 0; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px; }
+  .pnlcard .lbl { font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); }
+  .pnlbig { font-size: 46px; overflow-wrap: anywhere; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.05; margin: 6px 0 2px; letter-spacing: -0.5px; }
+  .pnlpct { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--muted); }
+  .subgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 18px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-2); }
+  .sub .k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); }
+  .sub .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .sidecard { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .est { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); background: var(--border-2); padding: 1px 6px; border-radius: 4px; vertical-align: middle; }
+
+  .chartcard { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 16px; }
+  .chartctl { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .chartctl .grow { margin-left: auto; }
+  .chartbox { position: relative; height: 320px; }
+  .chartbox canvas { width: 100%; height: 100%; display: block; }
+  .chartmsg { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13.5px; color: var(--muted); text-align: center; padding: 16px; pointer-events: none; }
+  .ttip { position: absolute; pointer-events: none; background: var(--navy); color: #fff; font-size: 12px; padding: 8px 10px; border-radius: 7px; box-shadow: 0 6px 20px rgba(13,27,46,.24); white-space: nowrap; z-index: 6; opacity: 0; transition: opacity .08s; }
+  .ttip b { font-variant-numeric: tabular-nums; }
+  select, .selbtn { font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; background: #fff; color: var(--ink); }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  thead th { position: sticky; top: 0; background: var(--card); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); padding: 10px 12px; text-align: right; white-space: nowrap; }
+  th.l, td.l { text-align: left; }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border-2); font-size: 14px; text-align: right; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--border-2); }
+  .addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .addr small { display: block; font-family: var(--font); font-size: 12px; color: var(--muted); }
+  .tablewrap { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
+  .rowbtn { font: inherit; font-size: 12.5px; font-weight: 600; color: var(--blue); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; }
+
+  dialog { border: none; border-radius: var(--radius); padding: 0; max-width: 560px; width: calc(100% - 32px); box-shadow: 0 18px 50px rgba(13,27,46,.22); color: var(--ink); }
+  dialog::backdrop { background: rgba(13,27,46,.42); }
   .dlg { padding: 22px; }
   .dlg h2 { font-size: 19px; font-weight: 600; margin: 0 0 6px; }
-  .dlg > p { font-size: 14px; color: var(--muted); margin: 0 0 16px; line-height: 1.55; }
-  .dlgfoot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
-  @media (max-width: 620px) {
-    .wallet-top { flex-direction: column; }
-    .wallet .bal { text-align: left; }
-  }
+  .dlg > p { font-size: 13.5px; color: var(--muted); margin: 0 0 16px; }
+  .dlgfoot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  .recrow { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border-2); font-size: 13px; }
+  .recrow:last-child { border-bottom: none; }
+  .recrow input, .recrow select { font: inherit; font-size: 12.5px; padding: 5px 7px; border: 1px solid var(--border); border-radius: 6px; }
+  .recrow input { width: 92px; }
+
+  @media (max-width: 820px) { .hero { grid-template-columns: 1fr; } .subgrid { grid-template-columns: repeat(2,1fr); } .pnlbig { font-size: 38px; } }
 </style>
 </head>
 <body>
@@ -66,371 +82,441 @@
 
   <div class="pagehead">
     <div>
-      <h1>Bitcoin Wallet Monitor</h1>
-      <p>Track public Bitcoin addresses without connecting a wallet or sharing private keys.</p>
+      <h1>Wallet Performance</h1>
+      <p>Estimated performance for public Bitcoin addresses tracked on this device. Watch-only — no wallet connection or private key.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
       <button class="btn" id="add-open" type="button">Add wallet</button>
-      <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">No wallets tracked</span></span>
+      <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">—</span></span>
     </div>
   </div>
 
-  <div class="srcnote" style="margin-bottom:18px">
+  <div class="srcnote" style="margin-bottom:16px">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    <span><strong style="color:var(--ink)">Watch-only.</strong> This page reads public blockchain data
-      for addresses you enter. It never asks for a private key, a seed phrase or a wallet connection,
-      and it cannot move or spend anything. Addresses are stored in this browser only and are never
-      sent to Satstreet.</span>
+    <span><strong style="color:var(--ink)">Watch-only.</strong> Reads public blockchain data only. Satstreet never requests a seed phrase, private key, password or signing permission, and this page cannot move or spend anything. Addresses stay in this browser.</span>
   </div>
 
-  <div class="metrics" id="summary" hidden>
-    <div class="metric"><div class="k">Confirmed balance</div><div class="v" id="s-btc">—</div><div class="s">on-chain, settled</div></div>
-    <div class="metric"><div class="k">Indicative USD</div><div class="v" id="s-usd">—</div><div class="s" id="s-usdsrc">—</div></div>
-    <div class="metric"><div class="k">Indicative CAD</div><div class="v" id="s-cad">—</div><div class="s">converted from USD</div></div>
-    <div class="metric"><div class="k">Wallets tracked</div><div class="v" id="s-n">0</div><div class="s" id="s-pending">—</div></div>
-  </div>
-
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px" id="listbar" hidden>
-    <h2 style="font-size:18px;font-weight:600;margin:0">Tracked wallets</h2>
-    <div style="display:flex;gap:8px;align-items:center">
-      <div class="segmented" role="group" aria-label="Display currency">
-        <button type="button" id="ccy-usd" aria-pressed="true">USD</button>
-        <button type="button" id="ccy-cad" aria-pressed="false">CAD</button>
-      </div>
-      <button class="btn ghost small" id="refresh" type="button">Refresh</button>
-      <div class="menuwrap">
-        <button class="btn ghost small" id="settings" type="button" aria-haspopup="true" aria-expanded="false">Settings</button>
-        <div class="menu" id="settings-menu" hidden role="menu">
-          <button type="button" id="forget-all" class="danger" role="menuitem">Remove all wallets…</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="wallets" id="wallets"></div>
-
+  <!-- Empty state -->
   <div class="card" id="empty" hidden>
     <div class="emptystate">
       <h3>No wallets tracked yet.</h3>
-      <p>Add a public Bitcoin address to monitor its balance on this device.
-         No wallet connection or private key is required.</p>
+      <p>Add a public Bitcoin address to estimate its performance on this device. No wallet connection or private key is required.</p>
       <button class="btn" id="add-open-2" type="button">Add wallet</button>
     </div>
   </div>
 
-  <section class="quote">
-    <h2>Trading rather than tracking?</h2>
-    <p>Speak directly with the Satstreet desk for competitive two-way pricing and white-glove
-       execution on size.</p>
-    <a class="btn" href="./overview.html#quote">Request a quote</a>
-    <p class="notlive"><strong>Not yet live.</strong> No approved destination for quote requests has
-      been configured, so nothing is collected or sent from this page. Please contact your Satstreet
-      representative directly in the meantime.</p>
-  </section>
+  <div id="app" hidden>
+    <!-- P&L hero -->
+    <div class="hero">
+      <div class="pnlcard">
+        <div class="lbl">Estimated total P&amp;L <span class="est">Estimated</span></div>
+        <div class="pnlbig" id="pnl-big">—</div>
+        <div class="pnlpct" id="pnl-pct">&nbsp;</div>
+        <div class="subgrid">
+          <div class="sub"><div class="k">Wallet value</div><div class="v" id="s-value">—</div></div>
+          <div class="sub"><div class="k">Cost basis</div><div class="v" id="s-cost">—</div></div>
+          <div class="sub"><div class="k">Confirmed BTC</div><div class="v" id="s-btc">—</div></div>
+          <div class="sub"><div class="k">Unrealized</div><div class="v" id="s-unreal">—</div></div>
+          <div class="sub"><div class="k">Realized</div><div class="v" id="s-real">—</div></div>
+          <div class="sub"><div class="k">Avg cost / BTC</div><div class="v" id="s-avg">—</div></div>
+        </div>
+      </div>
+      <div class="sidecard">
+        <div class="lbl">Scope</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label class="sr" for="scope">Wallet</label>
+          <select id="scope" style="flex:1"></select>
+        </div>
+        <div class="lbl" style="margin-top:6px">Display currency</div>
+        <div class="segmented" role="group" aria-label="Display currency">
+          <button type="button" id="ccy-usd" aria-pressed="true">USD</button>
+          <button type="button" id="ccy-cad" aria-pressed="false">CAD</button>
+        </div>
+        <p class="emptybox" id="partialnote" hidden style="margin-top:6px"></p>
+      </div>
+    </div>
 
-  <div class="disclosure">
-    <p><strong>Confirmed balance</strong> is the settled on-chain balance of each address: funds
-      received less funds spent, counting only transactions included in a block.</p>
-    <p><strong>Unconfirmed activity</strong> is shown separately and is never added to the confirmed
-      figure. It reflects transactions currently in the mempool, which have not been mined and may
-      be replaced or never confirm.</p>
-    <p><strong>Fiat values are indicative.</strong> They convert the confirmed balance at a
-      third-party reference rate, are not a quote, not an offer, and not the price at which Satstreet
-      will execute. CAD is derived from the USD reference rate.</p>
-    <p><strong>Source and storage.</strong> Blockchain data is requested directly from mempool.space
-      by this browser. Addresses and labels are stored in this browser's local storage on this device
-      only; they are not transmitted to Satstreet and are not recoverable if the browser's data is
-      cleared.</p>
-    <p><strong>This is not a statement of account.</strong> Figures reflect public addresses you
-      chose to watch and do not represent any holdings, positions or balances held with Satstreet.</p>
+    <!-- P&L over time -->
+    <div class="chartcard">
+      <div class="chartctl">
+        <strong style="font-size:15px">Estimated P&amp;L over time</strong>
+        <span class="est">Estimated</span>
+        <div class="segmented grow" role="group" aria-label="Chart range" id="ranges">
+          <button type="button" data-r="1M" aria-pressed="false">1M</button>
+          <button type="button" data-r="3M" aria-pressed="false">3M</button>
+          <button type="button" data-r="6M" aria-pressed="true">6M</button>
+          <button type="button" data-r="1Y" aria-pressed="false">1Y</button>
+          <button type="button" data-r="ALL" aria-pressed="false">All</button>
+        </div>
+      </div>
+      <div class="chartbox">
+        <canvas id="chart"></canvas>
+        <div class="chartmsg" id="chartmsg">Loading…</div>
+        <div class="ttip" id="ttip"></div>
+      </div>
+    </div>
+
+    <!-- Per-wallet table -->
+    <div class="tablewrap">
+      <table>
+        <caption class="sr">Per-wallet estimated performance</caption>
+        <thead><tr>
+          <th class="l">Wallet</th><th>Confirmed BTC</th><th>Value</th>
+          <th>Cost basis</th><th>Est. P&amp;L</th><th>Return</th><th>Txs</th><th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div class="disclosure" id="method">
+      <p><strong>How this is estimated.</strong> Each receipt from outside your tracked wallets is
+        treated as an acquisition priced at the BTC daily close on the day it confirmed. Transfers
+        between two wallets you track are internal — cost basis moves with the coins and no gain is
+        realized. Outgoing sends to outside addresses are matched to lots first-in-first-out to
+        realize P&amp;L. Realized and unrealized are kept separate. Unconfirmed transactions are
+        excluded until they confirm.</p>
+      <p><strong>Formula.</strong> Unrealized = current balance × current price − remaining cost
+        basis. Realized = Σ(proceeds − FIFO cost) on external sends. Total P&amp;L = realized +
+        unrealized. Return % = total P&amp;L ÷ cost basis.</p>
+      <p><strong>Why "estimated".</strong> Blockchain history cannot tell a purchase from a gift, an
+        internal move or coins from another custodian. Where a receipt predates the available price
+        history its basis is unknown and the figure is marked partial rather than guessed. Use
+        <em>Reconcile</em> on a wallet to correct a classification or acquisition price.</p>
+      <p><strong>Source.</strong> Balances and history: mempool.space. Historical and current BTC
+        price: <span id="pxsrc">Coinbase BTC-USD daily close</span>. This is not a Satstreet
+        statement of account and does not reflect holdings held with Satstreet.</p>
+    </div>
   </div>
 
 </main>
 
-<dialog id="add-dlg" aria-labelledby="add-title">
-  <form method="dialog" class="dlg" id="add-form">
-    <h2 id="add-title">Add a wallet to watch</h2>
-    <p>Only public blockchain data is read. Satstreet never asks for a private key, a seed phrase
-       or a wallet connection, and this page cannot move or spend anything.</p>
-    <div class="field">
-      <label for="w-addr">Bitcoin address</label>
-      <input id="w-addr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
-             placeholder="bc1… or 1… or 3…" aria-describedby="w-addr-msg" />
-      <span class="bad" id="w-addr-msg" role="alert"></span>
-    </div>
-    <div class="field">
-      <label for="w-label">Label <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-      <input id="w-label" type="text" autocomplete="off" placeholder="Treasury cold storage" />
-      <span class="help">Shown instead of the address. Stored on this device only.</span>
-    </div>
-    <div class="dlgfoot">
-      <button class="btn ghost" value="cancel" type="submit">Cancel</button>
-      <button class="btn" id="w-save" value="save" type="submit">Save wallet</button>
-    </div>
-  </form>
-</dialog>
+<dialog id="add-dlg"><form method="dialog" class="dlg" id="add-form">
+  <h2>Add a wallet to watch</h2>
+  <p>Only public blockchain data is read. No private key, seed phrase or wallet connection is ever requested.</p>
+  <div class="field"><label for="w-addr">Bitcoin address</label>
+    <input id="w-addr" type="text" spellcheck="false" autocomplete="off" placeholder="bc1… or 1… or 3…" />
+    <span class="bad" id="w-addr-msg" role="alert"></span></div>
+  <div class="field"><label for="w-label">Label <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+    <input id="w-label" type="text" autocomplete="off" placeholder="Treasury cold storage" /></div>
+  <div class="dlgfoot">
+    <button class="btn ghost" value="cancel" type="submit">Cancel</button>
+    <button class="btn" value="save" type="submit">Save wallet</button>
+  </div>
+</form></dialog>
 
-<dialog id="rename-dlg" aria-labelledby="rn-title">
-  <form method="dialog" class="dlg" id="rename-form">
-    <h2 id="rn-title">Rename wallet</h2>
-    <div class="field">
-      <label for="rn-label">Label</label>
-      <input id="rn-label" type="text" autocomplete="off" />
-    </div>
-    <div class="dlgfoot">
-      <button class="btn ghost" value="cancel" type="submit">Cancel</button>
-      <button class="btn" value="save" type="submit">Save</button>
-    </div>
-  </form>
-</dialog>
+<dialog id="rec-dlg"><form method="dialog" class="dlg" id="rec-form">
+  <h2>Reconcile receipts</h2>
+  <p>Correct how a receipt is treated. Changes are stored on this device and the estimate recomputes. Leave a price blank to use the daily close.</p>
+  <div id="rec-list" style="max-height:340px;overflow-y:auto"></div>
+  <div class="dlgfoot">
+    <button class="btn ghost" value="cancel" type="submit">Cancel</button>
+    <button class="btn" value="save" type="submit">Save &amp; recompute</button>
+  </div>
+</form></dialog>
 
 <script src="./assets/terminal.js"></script>
-<script>
-(function () {
-  'use strict';
-  var S = window.SATSTREET, $ = function (id) { return document.getElementById(id); };
-  var esc = S.esc, fmt = S.fmt;
-  var KEY = 'satstreet.portfolio.addresses';
-  var EXPLORER = 'https://mempool.space/api/address/';
-  var RATES = 'https://api.coinbase.com/v2/exchange-rates?currency=BTC';
+<script type="module">
+import { computePnl, pnlSeries } from './assets/pnl.js'
+const S = window.SATSTREET, $ = (id) => document.getElementById(id), esc = S.esc, fmt = S.fmt
+const KEY = 'satstreet.portfolio.addresses'
+const OVKEY = 'satstreet.portfolio.overrides'
+const EXPLORER = 'https://mempool.space/api/address/'
+const MAX_PAGES = 20   // ~ up to ~500 txs/wallet; beyond this basis is partial
 
-  S.mountHeader('Portfolio');
+S.mountHeader('Portfolio')
 
-  var ccy = 'USD', rates = { USD: null, CAD: null }, ratesAt = null;
-  var state = {};   // address -> { loading | confirmed, pending, txs, at, error }
-  var renaming = null;
+let ccy = 'USD', scope = 'combined', range = '6M'
+let rates = { USD: 1, CAD: null }
+let currentPrice = null, priceByDate = {}, priceCovers = null
+let txsByAddress = {}, result = null, lastRefresh = null
+let capped = []
 
-  /* ── storage ─────────────────────────────────────────────── */
-  function load() {
-    try {
-      var raw = localStorage.getItem(KEY);
-      var list = raw ? JSON.parse(raw) : [];
-      // Older versions stored bare strings. Keep those working.
-      return list.map(function (w) { return typeof w === 'string' ? { address: w, label: '' } : w; });
-    } catch (e) { return []; }
+/* ── storage ─────────────────────────────────────────────── */
+const loadWallets = () => { try { const r = localStorage.getItem(KEY); const l = r ? JSON.parse(r) : []; return l.map((w) => typeof w === 'string' ? { address: w, label: '' } : w) } catch (e) { return [] } }
+const saveWallets = (l) => { try { localStorage.setItem(KEY, JSON.stringify(l)); return true } catch (e) { return false } }
+const loadOv = () => { try { return JSON.parse(localStorage.getItem(OVKEY) || '{}') } catch (e) { return {} } }
+const saveOv = (o) => { try { localStorage.setItem(OVKEY, JSON.stringify(o)); return true } catch (e) { return false } }
+const valid = (a) => /^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/.test(a)
+const mask = (a) => a.length > 18 ? a.slice(0, 8) + '…' + a.slice(-6) : a
+
+/* ── money ───────────────────────────────────────────────── */
+function money(v, dp) {
+  if (v == null || !isFinite(v)) return '—'
+  const r = ccy === 'CAD' && rates.CAD ? rates.CAD : 1
+  return (ccy === 'CAD' ? 'CA$' : '$') + (v * r).toLocaleString('en-US', { maximumFractionDigits: dp == null ? 0 : dp, minimumFractionDigits: dp == null ? 0 : dp })
+}
+function signed(v, dp) {
+  if (v == null || !isFinite(v)) return { t: '—', c: 'flat' }
+  const r = ccy === 'CAD' && rates.CAD ? rates.CAD : 1
+  const x = v * r
+  const s = (x > 0 ? '+' : x < 0 ? '−' : '') + (ccy === 'CAD' ? 'CA$' : '$') + Math.abs(x).toLocaleString('en-US', { maximumFractionDigits: dp == null ? 0 : dp })
+  return { t: s, c: x > 0 ? 'up' : x < 0 ? 'down' : 'flat' }
+}
+const pct = (v) => v == null || !isFinite(v) ? '—' : (v > 0 ? '+' : '') + v.toFixed(2) + '%'
+
+/* ── data ────────────────────────────────────────────────── */
+async function fetchTxs(addr) {
+  const all = []
+  let url = EXPLORER + encodeURIComponent(addr) + '/txs'
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const r = await fetch(url)
+    if (r.status === 400) throw new Error('Not a valid address')
+    if (!r.ok) throw new Error('Lookup failed (' + r.status + ')')
+    const batch = await r.json()
+    if (!batch.length) break
+    all.push(...batch)
+    const last = batch[batch.length - 1]
+    if (batch.length < 25 && page > 0) break
+    url = EXPLORER + encodeURIComponent(addr) + '/txs/chain/' + last.txid
+    if (page === MAX_PAGES - 1) capped.push(addr)
   }
-  function save(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); return true; } catch (e) { return false; }
+  return all
+}
+
+async function loadPrices() {
+  const [hist, series] = await Promise.all([
+    fetch('/api/btc-history').then((r) => r.ok ? r.json() : null).catch(() => null),
+    fetch('/api/series?symbol=BTC&range=1D').then((r) => r.ok ? r.json() : null).catch(() => null),
+    fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD').then((r) => r.ok ? r.json() : null).then((d) => { rates.CAD = d && d.data ? parseFloat(d.data.rates.CAD) : null }).catch(() => {}),
+  ])
+  if (hist) { priceByDate = hist.prices || {}; priceCovers = hist.covers }
+  if (series && series.instruments && series.instruments[0]) currentPrice = series.instruments[0].price
+  // Fallback: today's close from history if the live call failed.
+  if (currentPrice == null && priceCovers) currentPrice = priceByDate[priceCovers.to]
+}
+
+async function refresh() {
+  const wallets = loadWallets()
+  $('empty').hidden = wallets.length > 0
+  $('app').hidden = wallets.length === 0
+  if (!wallets.length) { $('feedstate').textContent = 'No wallets tracked'; $('pip').className = 'pip'; return }
+
+  $('pip').className = 'pip'; $('feedstate').textContent = 'Loading…'
+  skeleton()
+  capped = []
+  try {
+    await loadPrices()
+    if (currentPrice == null) throw new Error('BTC price unavailable')
+    const entries = await Promise.all(wallets.map(async (w) => {
+      try { return [w.address, await fetchTxs(w.address)] } catch (e) { return [w.address, { error: e.message }] }
+    }))
+    txsByAddress = {}
+    let anyError = null
+    for (const [a, v] of entries) { if (v && v.error) anyError = v.error; else txsByAddress[a] = v }
+    result = computePnl({ wallets: wallets.filter((w) => txsByAddress[w.address]), txsByAddress, priceByDate, currentPrice, overrides: loadOv() })
+    lastRefresh = Date.now()
+    fillScope(wallets)
+    render()
+    const st = S.staleness(lastRefresh)
+    $('pip').className = 'pip ' + (anyError ? 'warn' : 'ok')
+    $('feedstate').innerHTML = 'Updated ' + fmt.time(lastRefresh) + (anyError ? ' · some lookups failed' : '')
+  } catch (e) {
+    $('app').innerHTML = '<div class="card">' + S.errorState('Could not load performance', e.message, 'retry') + '</div>'
+    $('app').hidden = false
+    $('pip').className = 'pip bad'; $('feedstate').textContent = 'Unavailable'
+    const b = $('retry'); if (b) b.addEventListener('click', refresh)
   }
-  var valid = function (a) { return /^(bc1[a-z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})$/.test(a); };
-  var mask = function (a) { return a.length > 18 ? a.slice(0, 8) + '…' + a.slice(-6) : a; };
+}
 
-  /* ── data ────────────────────────────────────────────────── */
-  function fetchRates() {
-    return fetch(RATES)
-      .then(function (r) { if (!r.ok) throw new Error('rate unavailable'); return r.json(); })
-      .then(function (d) {
-        var t = (d && d.data && d.data.rates) || {};
-        rates.USD = parseFloat(t.USD); rates.CAD = parseFloat(t.CAD); ratesAt = Date.now();
-      })
-      .catch(function () { rates.USD = rates.CAD = null; });
+function fillScope(wallets) {
+  $('scope').innerHTML = '<option value="combined">All wallets combined</option>' +
+    wallets.filter((w) => txsByAddress[w.address]).map((w) => '<option value="' + esc(w.address) + '">' + esc(w.label || mask(w.address)) + '</option>').join('')
+  $('scope').value = scope
+}
+
+function current() {
+  if (!result) return null
+  if (scope === 'combined') return result.combined
+  return result.perWallet.find((w) => w.address === scope) || result.combined
+}
+
+/* ── render ──────────────────────────────────────────────── */
+function render() {
+  if (!result) return
+  const c = current()
+  const big = signed(c.total, 0)
+  $('pnl-big').textContent = big.t; $('pnl-big').className = 'pnlbig ' + big.c
+  $('pnl-pct').innerHTML = '<span class="' + big.c + '">' + pct(c.pct) + '</span> <span style="color:var(--muted)">return</span>'
+  $('s-value').textContent = money(c.value, 0)
+  $('s-cost').textContent = c.costBasis == null ? 'Partial' : money(c.costBasis, 0)
+  $('s-btc').textContent = c.btc.toFixed(8) + ' BTC'
+  $('s-unreal').innerHTML = (() => { const s = signed(c.unrealized, 0); return '<span class="' + s.c + '">' + s.t + '</span>' })()
+  $('s-real').innerHTML = (() => { const s = signed(c.realized, 0); return '<span class="' + s.c + '">' + s.t + '</span>' })()
+  $('s-avg').textContent = c.avgCost == null ? '—' : money(c.avgCost, 0)
+
+  $('partialnote').hidden = !(c.partial || capped.length)
+  if (c.partial || capped.length) {
+    $('partialnote').textContent = capped.length
+      ? 'Some wallets have long histories; figures use the most recent transactions and are partial.'
+      : 'Some receipts predate the available price history, so cost basis is partial.'
   }
+  renderRows(); drawChart()
+}
 
-  /* Confirmed and unconfirmed are counted separately and never merged. One is
-     settled; the other is a pending transaction that may never confirm. */
-  function fetchBalance(addr) {
-    state[addr] = { loading: true };
-    render();
-    return fetch(EXPLORER + encodeURIComponent(addr))
-      .then(function (r) {
-        if (r.status === 400) throw new Error('Not a valid Bitcoin address');
-        if (!r.ok) throw new Error('Lookup failed (' + r.status + ')');
-        return r.json();
-      })
-      .then(function (d) {
-        var c = d.chain_stats || {}, m = d.mempool_stats || {};
-        state[addr] = {
-          confirmed: ((c.funded_txo_sum || 0) - (c.spent_txo_sum || 0)) / 1e8,
-          pending: ((m.funded_txo_sum || 0) - (m.spent_txo_sum || 0)) / 1e8,
-          txs: (c.tx_count || 0) + (m.tx_count || 0),
-          at: Date.now()
-        };
-      })
-      .catch(function (e) { state[addr] = { error: e.message, at: Date.now() }; })
-      .then(render);
+function renderRows() {
+  $('rows').innerHTML = result.perWallet.map((w) => {
+    const p = signed(w.total, 0), r = w.pct
+    return '<tr>' +
+      '<td class="l"><span class="addr">' + esc(w.label || mask(w.address)) + (w.label ? '<small>' + esc(mask(w.address)) + '</small>' : '') + '</span></td>' +
+      '<td>' + w.btc.toFixed(8) + '</td>' +
+      '<td>' + money(w.value, 0) + '</td>' +
+      '<td>' + (w.costBasis == null ? 'Partial' : money(w.costBasis, 0)) + '</td>' +
+      '<td class="' + p.c + '">' + p.t + '</td>' +
+      '<td class="' + p.c + '">' + pct(r) + '</td>' +
+      '<td>' + ((txsByAddress[w.address] || []).filter((t) => t.status && t.status.confirmed).length).toLocaleString('en-US') + '</td>' +
+      '<td><button class="rowbtn" data-rec="' + esc(w.address) + '">Reconcile</button></td>' +
+      '</tr>'
+  }).join('')
+}
+
+/* ── P&L chart: green above zero, red below, visible zero line ─ */
+let chartData = []
+function drawChart() {
+  const cv = $('chart'), msg = $('chartmsg')
+  const tl = scope === 'combined' ? result.timeline : rebuildTimeline(scope)
+  const fromDay = rangeFloor()
+  chartData = pnlSeries(tl, priceByDate, currentPrice, fromDay).filter((p) => p.pnl != null)
+  const box = cv.parentElement.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  cv.width = Math.max(1, box.width * dpr); cv.height = Math.max(1, box.height * dpr)
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, box.width, box.height)
+  if (chartData.length < 2) { msg.textContent = 'Not enough history to chart P&L for this range.'; return }
+  msg.textContent = ''
+  const r = ccy === 'CAD' && rates.CAD ? rates.CAD : 1
+  const vals = chartData.map((p) => p.pnl * r)
+  let lo = Math.min(0, ...vals), hi = Math.max(0, ...vals)
+  const padv = (hi - lo) * 0.12 || 1; lo -= padv; hi += padv
+  const W = box.width, H = box.height, L = 0, R = W - 66
+  const x = (i) => L + (i / (chartData.length - 1)) * (R - L)
+  const y = (v) => H - 14 - ((v - lo) / (hi - lo)) * (H - 28)
+  const zeroY = y(0)
+
+  // grid + right-edge labels
+  ctx.strokeStyle = '#eef2f8'; ctx.fillStyle = '#98a5b4'; ctx.font = '11px ' + getComputedStyle(document.body).fontFamily
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.lineWidth = 1
+  for (let g = 0; g <= 3; g++) { const v = lo + ((hi - lo) / 3) * g, yy = Math.round(y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(R, yy); ctx.stroke(); ctx.fillText((ccy === 'CAD' ? 'CA$' : '$') + Math.round(v).toLocaleString('en-US'), R + 8, yy) }
+
+  // split fill at zero: green above, red below
+  const line = new Path2D(); chartData.forEach((p, i) => { const px = x(i), py = y(p.pnl * r); i ? line.lineTo(px, py) : line.moveTo(px, py) })
+  function fillSide(above) {
+    ctx.save(); ctx.beginPath()
+    if (above) ctx.rect(0, 0, W, zeroY); else ctx.rect(0, zeroY, W, H - zeroY)
+    ctx.clip()
+    ctx.beginPath(); ctx.moveTo(x(0), zeroY)
+    chartData.forEach((p, i) => ctx.lineTo(x(i), y(p.pnl * r)))
+    ctx.lineTo(x(chartData.length - 1), zeroY); ctx.closePath()
+    ctx.fillStyle = above ? 'rgba(15,138,99,0.16)' : 'rgba(195,58,73,0.16)'; ctx.fill(); ctx.restore()
   }
+  fillSide(true); fillSide(false)
 
-  function refreshAll(force) {
-    var list = load();
-    if (!list.length) { render(); return; }
-    fetchRates().then(function () {
-      list.forEach(function (w) {
-        if (force || !state[w.address] || state[w.address].error) fetchBalance(w.address);
-      });
-      render();
-    });
-  }
+  // zero line, emphasised
+  ctx.strokeStyle = '#94a3b3'; ctx.lineWidth = 1.2; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(L, zeroY + 0.5); ctx.lineTo(R, zeroY + 0.5); ctx.stroke(); ctx.setLineDash([])
 
-  /* ── render ──────────────────────────────────────────────── */
-  function fiat(btc) {
-    var r = rates[ccy];
-    if (!isFinite(r) || !isFinite(btc)) return '—';
-    return fmt.money(btc * r, ccy, 2);
-  }
+  // the line, coloured by ending side
+  ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.lineCap = 'round'
+  ctx.strokeStyle = vals[vals.length - 1] >= 0 ? '#0f8a63' : '#c33a49'; ctx.stroke(line)
+}
 
-  function render() {
-    var list = load(), box = $('wallets');
-    $('empty').hidden = list.length > 0;
-    $('listbar').hidden = list.length === 0;
-    $('summary').hidden = list.length === 0;
+// Per-wallet timeline for the chart: recompute holdings/cost for one owner.
+function rebuildTimeline(addr) {
+  const one = computePnl({ wallets: loadWallets().filter((w) => w.address === addr && txsByAddress[w.address]), txsByAddress, priceByDate, currentPrice, overrides: loadOv() })
+  return one.timeline
+}
 
-    if (!list.length) {
-      box.innerHTML = '';
-      $('feedstate').textContent = 'No wallets tracked';
-      $('pip').className = 'pip';
-      return;
-    }
+function rangeFloor() {
+  if (range === 'ALL') return null
+  const days = { '1M': 30, '3M': 91, '6M': 182, '1Y': 365 }[range] || 182
+  return new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
+}
 
-    var totalConfirmed = 0, totalPending = 0, loaded = 0, failed = 0, newest = 0;
-    list.forEach(function (w) {
-      var s = state[w.address];
-      if (!s || s.loading) return;
-      if (s.error) { failed++; return; }
-      totalConfirmed += s.confirmed; totalPending += s.pending; loaded++;
-      if (s.at > newest) newest = s.at;
-    });
+/* ── hover tooltip ───────────────────────────────────────── */
+$('chart').addEventListener('mousemove', (e) => {
+  if (!chartData.length) return
+  const cv = $('chart'), box = cv.getBoundingClientRect(), tip = $('ttip')
+  const R = box.width - 66, i = Math.max(0, Math.min(chartData.length - 1, Math.round(((e.clientX - box.left) / R) * (chartData.length - 1))))
+  const p = chartData[i], r = ccy === 'CAD' && rates.CAD ? rates.CAD : 1
+  const s = signed(p.pnl, 0)
+  tip.innerHTML = '<div>' + new Date(p.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</div>' +
+    '<div>BTC ' + (ccy === 'CAD' ? 'CA$' : '$') + Math.round(p.price * r).toLocaleString('en-US') + '</div>' +
+    '<div>Value <b>' + money(p.value, 0) + '</b></div>' +
+    '<div>Cost <b>' + money(p.cost, 0) + '</b></div>' +
+    '<div>P&L <b class="' + s.c + '" style="color:' + (s.c === 'up' ? '#46c397' : s.c === 'down' ? '#f2687a' : '#fff') + '">' + s.t + '</b></div>'
+  tip.style.opacity = '1'
+  const tx = Math.min(box.width - 150, (e.clientX - box.left) + 12)
+  tip.style.left = tx + 'px'; tip.style.top = '8px'
+})
+$('chart').addEventListener('mouseleave', () => { $('ttip').style.opacity = '0' })
 
-    box.innerHTML = list.map(function (w) {
-      var s = state[w.address] || { loading: true };
-      var body;
-      if (s.loading) {
-        body = '<span class="skel" style="height:20px;width:120px"></span>';
-      } else if (s.error) {
-        body = '<div class="errbox"><b>Unavailable</b>' + esc(s.error) +
-          ' <button class="retry" type="button" data-retry="' + esc(w.address) + '">Try again</button></div>';
-      } else {
-        body = '<div class="bal"><div class="btc">' + s.confirmed.toFixed(8) + ' BTC</div>' +
-          '<div class="fiat">' + fiat(s.confirmed) + '</div></div>';
-      }
+/* ── skeleton ────────────────────────────────────────────── */
+function skeleton() {
+  $('pnl-big').innerHTML = '<span class="skel" style="height:44px;width:260px;display:inline-block"></span>'
+  $('rows').innerHTML = '<tr><td colspan="8" style="padding:10px 12px"><span class="skel" style="height:16px"></span></td></tr>'
+  $('chartmsg').textContent = 'Loading…'
+}
 
-      var foot = '';
-      if (!s.loading && !s.error) {
-        foot = '<div class="wallet-foot">' +
-          (s.pending ? '<span class="pending">' + (s.pending > 0 ? 'Incoming ' : 'Outgoing ') +
-            Math.abs(s.pending).toFixed(8) + ' BTC unconfirmed</span>' : '') +
-          '<span>' + s.txs.toLocaleString('en-US') + ' transaction' + (s.txs === 1 ? '' : 's') + '</span>' +
-          '<span>Updated ' + fmt.time(s.at) + '</span>' +
-          '<span>mempool.space</span></div>';
-      }
+/* ── controls ────────────────────────────────────────────── */
+$('scope').addEventListener('change', function () { scope = this.value; render() })
+$('ranges').addEventListener('click', (e) => { const b = e.target.closest('button[data-r]'); if (!b) return; range = b.getAttribute('data-r'); [...$('ranges').children].forEach((o) => o.setAttribute('aria-pressed', String(o === b))); drawChart() })
+function setCcy(n) { ccy = n; $('ccy-usd').setAttribute('aria-pressed', String(n === 'USD')); $('ccy-cad').setAttribute('aria-pressed', String(n === 'CAD')); if ($('ccy-cad').disabled && n === 'CAD') return; render() }
+$('ccy-usd').addEventListener('click', () => setCcy('USD'))
+$('ccy-cad').addEventListener('click', () => setCcy('CAD'))
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(drawChart, 140) })
 
-      return '<article class="wallet"><div class="wallet-top"><div>' +
-        (w.label ? '<p class="name">' + esc(w.label) + '</p>' : '') +
-        '<span class="addr">' + esc(mask(w.address)) +
-          '<button class="iconbtn" type="button" data-copy="' + esc(w.address) +
-          '" aria-label="Copy full address">Copy</button></span>' +
-        '</div>' + body +
-        '<div class="menuwrap"><button class="iconbtn" type="button" data-menu="' + esc(w.address) +
-          '" aria-haspopup="true" aria-expanded="false" aria-label="Wallet options">⋯</button>' +
-        '<div class="menu" hidden data-menufor="' + esc(w.address) + '" role="menu">' +
-          '<button type="button" data-rename="' + esc(w.address) + '" role="menuitem">Rename</button>' +
-          '<hr><button type="button" class="danger" data-remove="' + esc(w.address) + '" role="menuitem">Remove wallet</button>' +
-        '</div></div></div>' + foot + '</article>';
-    }).join('');
+/* ── add wallet ──────────────────────────────────────────── */
+$('add-open').addEventListener('click', () => { $('w-addr-msg').textContent = ''; $('add-dlg').showModal() })
+$('add-open-2').addEventListener('click', () => { $('w-addr-msg').textContent = ''; $('add-dlg').showModal() })
+$('add-form').addEventListener('submit', (e) => {
+  if (e.submitter && e.submitter.value === 'cancel') { $('w-addr').value = ''; $('w-label').value = ''; return }
+  const a = $('w-addr').value.trim(), l = $('w-label').value.trim()
+  if (!valid(a)) { e.preventDefault(); $('w-addr-msg').textContent = 'That does not look like a Bitcoin address.'; return }
+  const list = loadWallets()
+  if (list.some((w) => w.address === a)) { e.preventDefault(); $('w-addr-msg').textContent = 'Already watching that address.'; return }
+  list.push({ address: a, label: l }); saveWallets(list)
+  $('w-addr').value = ''; $('w-label').value = ''
+  refresh()
+})
 
-    $('s-btc').textContent = loaded ? totalConfirmed.toFixed(8) + ' BTC' : '—';
-    $('s-usd').textContent = loaded && isFinite(rates.USD) ? fmt.money(totalConfirmed * rates.USD, 'USD', 2) : '—';
-    $('s-cad').textContent = loaded && isFinite(rates.CAD) ? fmt.money(totalConfirmed * rates.CAD, 'CAD', 2) : '—';
-    $('s-usdsrc').textContent = ratesAt ? 'Coinbase reference, ' + fmt.time(ratesAt) : 'rate unavailable';
-    $('s-n').textContent = String(list.length);
-    $('s-pending').textContent = totalPending
-      ? Math.abs(totalPending).toFixed(8) + ' BTC unconfirmed, not counted'
-      : 'no unconfirmed activity';
+/* ── reconcile (overrides) ───────────────────────────────── */
+let recAddr = null
+$('rows').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-rec]'); if (!b) return
+  recAddr = b.getAttribute('data-rec'); openReconcile(recAddr)
+})
+function openReconcile(addr) {
+  const ov = loadOv()
+  const receipts = (txsByAddress[addr] || []).filter((t) => {
+    if (!(t.status && t.status.confirmed)) return false
+    const inFrom = (t.vin || []).some((v) => v.prevout && v.prevout.scriptpubkey_address === addr)
+    return !inFrom // receipts only
+  }).slice(0, 60)
+  $('rec-list').innerHTML = receipts.length ? receipts.map((t) => {
+    const day = t.status.block_time ? new Date(t.status.block_time * 1000).toISOString().slice(0, 10) : '—'
+    const o = ov[t.txid] || {}
+    return '<div class="recrow"><div><code style="font-size:11.5px">' + esc(t.txid.slice(0, 10)) + '…</code><br><span style="color:var(--muted)">' + day + '</span></div>' +
+      '<select data-ov-class="' + esc(t.txid) + '"><option value="external"' + (o.classification !== 'internal' ? ' selected' : '') + '>External (new basis)</option><option value="internal"' + (o.classification === 'internal' ? ' selected' : '') + '>Internal transfer</option></select>' +
+      '<input type="number" step="any" placeholder="auto $" data-ov-price="' + esc(t.txid) + '" value="' + (o.priceUsd != null ? o.priceUsd : '') + '" />' +
+      '</div>'
+  }).join('') : '<p class="emptybox">No external receipts to reconcile for this wallet.</p>'
+  $('rec-dlg').showModal()
+}
+$('rec-form').addEventListener('submit', (e) => {
+  if (e.submitter && e.submitter.value === 'cancel') return
+  const ov = loadOv()
+  $('rec-list').querySelectorAll('[data-ov-class]').forEach((sel) => {
+    const id = sel.getAttribute('data-ov-class')
+    const price = $('rec-list').querySelector('[data-ov-price="' + id + '"]').value.trim()
+    const entry = {}
+    if (sel.value === 'internal') entry.classification = 'internal'
+    if (price) entry.priceUsd = parseFloat(price)
+    if (Object.keys(entry).length) ov[id] = entry; else delete ov[id]
+  })
+  saveOv(ov)
+  result = computePnl({ wallets: loadWallets().filter((w) => txsByAddress[w.address]), txsByAddress, priceByDate, currentPrice, overrides: ov })
+  render()
+})
 
-    var st = newest ? S.staleness(newest) : null;
-    $('pip').className = 'pip ' + (failed === list.length ? 'bad' : st && st.stale ? 'warn' : 'ok');
-    $('feedstate').innerHTML = failed === list.length
-      ? 'All lookups failed'
-      : (st && st.stale ? '<span class="stale">Data ' + st.minutes + ' min old</span>'
-                        : 'Updated ' + fmt.time(newest)) +
-        (failed ? ' · ' + failed + ' failed' : '');
-  }
-
-  /* ── interactions ────────────────────────────────────────── */
-  document.addEventListener('click', function (e) {
-    var t = e.target.closest('button');
-    // Any click outside a menu closes the open ones.
-    if (!t || !t.hasAttribute('data-menu')) {
-      Array.prototype.forEach.call(document.querySelectorAll('.menu[data-menufor]'), function (m) { m.hidden = true; });
-      Array.prototype.forEach.call(document.querySelectorAll('[data-menu]'), function (b) { b.setAttribute('aria-expanded', 'false'); });
-    }
-    if (!t) return;
-
-    if (t.hasAttribute('data-menu')) {
-      var m = document.querySelector('.menu[data-menufor="' + t.getAttribute('data-menu') + '"]');
-      var open = m.hidden; m.hidden = !open; t.setAttribute('aria-expanded', String(open));
-    } else if (t.hasAttribute('data-copy')) {
-      var a = t.getAttribute('data-copy');
-      if (navigator.clipboard) navigator.clipboard.writeText(a);
-      var old = t.textContent; t.textContent = 'Copied'; setTimeout(function () { t.textContent = old; }, 1400);
-    } else if (t.hasAttribute('data-retry')) {
-      fetchBalance(t.getAttribute('data-retry'));
-    } else if (t.hasAttribute('data-rename')) {
-      renaming = t.getAttribute('data-rename');
-      var w = load().filter(function (x) { return x.address === renaming; })[0];
-      $('rn-label').value = (w && w.label) || '';
-      $('rename-dlg').showModal();
-    } else if (t.hasAttribute('data-remove')) {
-      var addr = t.getAttribute('data-remove');
-      var w2 = load().filter(function (x) { return x.address === addr; })[0];
-      if (!window.confirm('Stop watching ' + ((w2 && w2.label) || mask(addr)) + '?')) return;
-      save(load().filter(function (x) { return x.address !== addr; }));
-      delete state[addr];
-      render();
-    }
-  });
-
-  $('add-open').addEventListener('click', function () { $('w-addr-msg').textContent = ''; $('add-dlg').showModal(); });
-  $('add-open-2').addEventListener('click', function () { $('w-addr-msg').textContent = ''; $('add-dlg').showModal(); });
-
-  $('add-form').addEventListener('submit', function (e) {
-    if (e.submitter && e.submitter.value === 'cancel') { $('w-addr').value = ''; $('w-label').value = ''; return; }
-    var a = $('w-addr').value.trim(), l = $('w-label').value.trim();
-    if (!valid(a)) { e.preventDefault(); $('w-addr-msg').textContent = 'That does not look like a Bitcoin address.'; return; }
-    var list = load();
-    if (list.some(function (w) { return w.address === a; })) {
-      e.preventDefault(); $('w-addr-msg').textContent = 'You are already watching that address.'; return;
-    }
-    list.push({ address: a, label: l });
-    if (!save(list)) $('w-addr-msg').textContent = '';
-    $('w-addr').value = ''; $('w-label').value = ''; $('w-addr-msg').textContent = '';
-    fetchRates().then(function () { fetchBalance(a); });
-    render();
-  });
-
-  $('rename-form').addEventListener('submit', function (e) {
-    if (e.submitter && e.submitter.value === 'cancel') { renaming = null; return; }
-    var list = load().map(function (w) {
-      return w.address === renaming ? { address: w.address, label: $('rn-label').value.trim() } : w;
-    });
-    save(list); renaming = null; render();
-  });
-
-  $('settings').addEventListener('click', function (e) {
-    e.stopPropagation();
-    var m = $('settings-menu'), open = m.hidden;
-    m.hidden = !open; this.setAttribute('aria-expanded', String(open));
-  });
-  $('forget-all').addEventListener('click', function () {
-    var list = load();
-    if (!window.confirm('Remove all ' + list.length + ' watched wallet' + (list.length === 1 ? '' : 's') +
-        ' from this browser? This cannot be undone.')) return;
-    try { localStorage.removeItem(KEY); } catch (e) {}
-    state = {}; $('settings-menu').hidden = true; render();
-  });
-
-  $('refresh').addEventListener('click', function () { refreshAll(true); });
-  function setCcy(n) {
-    ccy = n;
-    $('ccy-usd').setAttribute('aria-pressed', String(n === 'USD'));
-    $('ccy-cad').setAttribute('aria-pressed', String(n === 'CAD'));
-    render();
-  }
-  $('ccy-usd').addEventListener('click', function () { setCcy('USD'); });
-  $('ccy-cad').addEventListener('click', function () { setCcy('CAD'); });
-
-  render();
-  refreshAll(false);
-})();
+if (priceCovers) $('pxsrc').textContent = 'Coinbase BTC-USD daily close, from ' + priceCovers.from
+refresh()
 </script>
 </body>
 </html>
