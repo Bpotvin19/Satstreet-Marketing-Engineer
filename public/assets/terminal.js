@@ -39,7 +39,6 @@ window.SATSTREET = (function () {
       '<button class="navtoggle" id="navtoggle" aria-expanded="false" aria-controls="mainnav">Menu</button>' +
       '<nav class="mainnav" id="mainnav" aria-label="Primary">' + links + '</nav>' +
       '<span class="spacer"></span>' +
-      '<a class="btn" href="./overview.html#quote">Request a Quote</a>' +
       '</div></header>';
   }
 
