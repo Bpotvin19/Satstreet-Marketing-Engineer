@@ -95,6 +95,8 @@
 
   .tickerwrap { background: var(--navy-2); border-bottom: 1px solid rgba(255,255,255,0.06); }
   .ticker { display: flex; overflow-x: auto; max-width: var(--max); margin: 0 auto; }
+  .ticker { scrollbar-width: none; }
+  .ticker::-webkit-scrollbar { display: none; }
   .tick { flex: 1 0 auto; min-width: 158px; padding: 11px 20px; border-right: 1px solid rgba(255,255,255,0.07); display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; align-items: center; }
   .tick:last-child { border-right: none; }
   .tick .nm { grid-column: 1; font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--on-navy-2); white-space: nowrap; }

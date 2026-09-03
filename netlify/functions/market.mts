@@ -53,7 +53,7 @@ interface Quote {
 }
 
 /* Yahoo's chart endpoint is undocumented and unversioned. It is the only free
-   source found that carries all four macro instruments, so it is used with
+   source found that carries the requested macro instruments, so it is used with
    that understood: every failure is caught per-symbol, and the strip renders
    without whatever is missing rather than failing whole. If it ever goes away
    the replacement is a paid feed, not a workaround. */
@@ -79,10 +79,21 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
 
     const result = (await r.json())?.chart?.result?.[0]
     const meta = result?.meta
-    const closes: number[] = (result?.indicators?.quote?.[0]?.close ?? [])
+    const quote = result?.indicators?.quote?.[0] ?? {}
+    const closes: number[] = (quote.close ?? [])
       .filter((n: unknown): n is number => typeof n === 'number' && isFinite(n))
     const price = Number(meta?.regularMarketPrice)
-    const prev = Number(meta?.chartPreviousClose ?? meta?.previousClose)
+    const previousFromMeta = Number(meta?.regularMarketPreviousClose ?? meta?.previousClose)
+    const prev = isFinite(previousFromMeta)
+      ? previousFromMeta
+      : closes.length > 1 ? closes[closes.length - 2] : Number(meta?.chartPreviousClose)
+    const lastFinite = (values: unknown[]): number | null => {
+      for (let i = values.length - 1; i >= 0; i--) {
+        const value = Number(values[i])
+        if (isFinite(value)) return value
+      }
+      return null
+    }
     if (!isFinite(price)) return { ...base, error: 'no price in response' }
 
     return {
@@ -91,9 +102,9 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
       changePct: isFinite(prev) && prev !== 0 ? ((price - prev) / prev) * 100 : null,
       changeAbs: isFinite(prev) ? price - prev : null,
       spark: closes.slice(-22),
-      open: isFinite(Number(meta?.regularMarketOpen)) ? Number(meta.regularMarketOpen) : null,
-      sessionHigh: isFinite(Number(meta?.regularMarketDayHigh)) ? Number(meta.regularMarketDayHigh) : null,
-      sessionLow: isFinite(Number(meta?.regularMarketDayLow)) ? Number(meta.regularMarketDayLow) : null,
+      open: isFinite(Number(meta?.regularMarketOpen)) ? Number(meta.regularMarketOpen) : lastFinite(quote.open ?? []),
+      sessionHigh: isFinite(Number(meta?.regularMarketDayHigh)) ? Number(meta.regularMarketDayHigh) : lastFinite(quote.high ?? []),
+      sessionLow: isFinite(Number(meta?.regularMarketDayLow)) ? Number(meta.regularMarketDayLow) : lastFinite(quote.low ?? []),
       marketState: typeof meta?.marketState === 'string' ? meta.marketState : null,
       asOf: isFinite(Number(meta?.regularMarketTime)) ? new Date(Number(meta.regularMarketTime) * 1000).toISOString() : null,
     }
