@@ -103,7 +103,7 @@
 
   <div class="metrics" id="summary" hidden>
     <div class="metric"><div class="k">Confirmed balance</div><div class="v" id="s-btc">—</div><div class="s">settled on-chain</div></div>
-    <div class="metric"><div class="k">Indicative value</div><div class="v" id="s-value">—</div><div class="s" id="s-rate">Coinbase reference</div></div>
+    <div class="metric"><div class="k">Indicative value</div><div class="v" id="s-value">—</div><div class="s" id="s-rate">Market reference</div></div>
     <div class="metric"><div class="k">Estimated total P&amp;L</div><div class="v" id="s-pnl">—</div><div class="s">realized + unrealized</div></div>
     <div class="metric"><div class="k">Wallets tracked</div><div class="v" id="s-count">0</div><div class="s" id="s-pending">no unconfirmed activity</div></div>
   </div>
@@ -147,7 +147,7 @@
     <aside class="card method" aria-labelledby="method-title">
       <h2 id="method-title">How this estimate works</h2>
       <div class="method-step"><span class="n">1</span><div><strong>Read confirmed history</strong><span>Transactions come directly from mempool.space in this browser.</span></div></div>
-      <div class="method-step"><span class="n">2</span><div><strong>Value each receipt</strong><span>Incoming BTC uses the Coinbase daily close on its confirmation date.</span></div></div>
+      <div class="method-step"><span class="n">2</span><div><strong>Value each receipt</strong><span>Incoming BTC uses the daily market close on its confirmation date.</span></div></div>
       <div class="method-step"><span class="n">3</span><div><strong>Apply FIFO</strong><span>Outgoing BTC consumes the oldest estimated cost lots first.</span></div></div>
       <div class="method-warning"><strong>Why “estimated”?</strong> An on-chain receipt may be a transfer you already owned, not a purchase. Transfers among tracked addresses are netted, but external transfers cannot be identified automatically.</div>
     </aside>
@@ -191,7 +191,7 @@
   <div class="disclosure">
     <p><strong>Estimated P&amp;L is not tax reporting or a statement of account.</strong> Incoming transfers are treated as acquisitions at a historical daily reference price and outgoing transfers use FIFO. This can differ materially from actual cost basis, especially when Bitcoin moved between wallets that are not all tracked here.</p>
     <p><strong>Completeness controls.</strong> P&amp;L is withheld when the fetched transaction history is truncated, historical pricing is missing, or reconstructed holdings do not reconcile to the current confirmed balance.</p>
-    <p><strong>Privacy.</strong> Addresses and labels are stored only in local browser storage. Address and transaction requests go directly from this browser to mempool.space; only date ranges, never wallet addresses, are used to request historical Coinbase prices.</p>
+    <p><strong>Privacy.</strong> Addresses and labels are stored only in local browser storage. Address and transaction requests go directly from this browser to mempool.space; only date ranges, never wallet addresses, are used to request historical market prices.</p>
     <p><strong>Indicative data only.</strong> Fiat values use third-party reference data and may be delayed or unavailable. Nothing on this page is investment, accounting or tax advice.</p>
   </div>
 </main>
@@ -433,7 +433,7 @@
     else list.forEach(function (w) { var s = state[w.address]; if (s && !s.error && !s.loading) { totalBtc += s.confirmed; totalPending += s.pending; } });
     $('s-btc').textContent = totalBtc.toFixed(8) + ' BTC';
     $('s-value').textContent = finite(rates[ccy]) ? fmt.money(totalBtc * rates[ccy], ccy, 0) : '—';
-    $('s-rate').textContent = mode === 'sample' ? 'Illustrative reference data' : (ratesAt ? 'Coinbase · ' + fmt.time(ratesAt) : 'Coinbase reference');
+    $('s-rate').textContent = mode === 'sample' ? 'Illustrative reference data' : (ratesAt ? 'Market reference · ' + fmt.time(ratesAt) : 'Market reference');
     $('s-pnl').textContent = analysis && analysis.valid ? cash(analysis.total) : '—';
     $('s-count').textContent = mode === 'sample' ? '2' : String(list.length);
     $('s-pending').textContent = totalPending ? signed(totalPending, 8) + ' BTC unconfirmed' : 'no unconfirmed activity';

@@ -90,7 +90,7 @@
       </div>
     </div>
     <div class="attrib">
-      <span id="src">Chart data by TradingView · reference price from Coinbase</span>
+      <span id="src">Chart data by TradingView · indicative reference price</span>
       <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">Chart by TradingView</a>
     </div>
   </div>
@@ -147,7 +147,7 @@
       return '<option value="' + esc(o[0]) + '"' + (o[0] === symbol ? ' selected' : '') + '>' +
         esc(o[1]) + ' · ' + esc(o[0]) + '</option>';
     }).join('');
-    $('pair').textContent = symbol + '/USD · Coinbase';
+    $('pair').textContent = symbol + '/USD';
   }
 
   $('asset').addEventListener('change', function () {
@@ -174,7 +174,7 @@
         $('mv').innerHTML = '<span class="' + d + '">' + (abs > 0 ? '+' : '−') +
           fmt.money(Math.abs(abs), 'USD', 2) + '  ' + fmt.pct(pct) + '</span> <span style="color:var(--muted)">today</span>';
       } else { $('mv').innerHTML = '<span style="color:var(--muted)">Daily change unavailable</span>'; }
-      $('stamp').textContent = 'Reference price · Coinbase · updated ' + fmt.time(Date.now());
+      $('stamp').textContent = 'Reference price · updated ' + fmt.time(Date.now());
     }).catch(function (e) {
       $('px').textContent = '—';
       $('mv').innerHTML = '<span style="color:var(--muted)">Reference price unavailable</span>';

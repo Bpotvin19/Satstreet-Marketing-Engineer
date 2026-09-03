@@ -17,8 +17,8 @@ const RANGE: Record<RangeKey, { days: number; yahooRange: string; yahooInterval:
 }
 
 const INSTRUMENTS: Record<string, { provider: 'coinbase' | 'yahoo'; symbol: string; source: string }> = {
-  'BTC-USD': { provider: 'coinbase', symbol: 'BTC-USD', source: 'Coinbase' },
-  'ETH-USD': { provider: 'coinbase', symbol: 'ETH-USD', source: 'Coinbase' },
+  'BTC-USD': { provider: 'coinbase', symbol: 'BTC-USD', source: 'Digital asset venue' },
+  'ETH-USD': { provider: 'coinbase', symbol: 'ETH-USD', source: 'Digital asset venue' },
   'GC=F': { provider: 'yahoo', symbol: 'GC=F', source: 'Yahoo Finance' },
   'CL=F': { provider: 'yahoo', symbol: 'CL=F', source: 'Yahoo Finance' },
   'CAD=X': { provider: 'yahoo', symbol: 'CAD=X', source: 'Yahoo Finance' },

@@ -49,7 +49,7 @@ body {
   font-family: var(--font); font-size: 15px; line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
-.shell { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+.shell { max-width: var(--max); margin: 0 auto; padding-left: 24px; padding-right: 24px; }
 .shell.wide { max-width: var(--max-wide); }
 a { color: var(--blue); }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 3px; }
@@ -59,11 +59,12 @@ a { color: var(--blue); }
 
 /* ── header ─────────────────────────────────────────────────── */
 .topbar { background: var(--navy); position: relative; }
-.topbar-in { display: flex; align-items: center; gap: 18px; height: 58px; max-width: var(--max-wide); margin: 0 auto; padding: 0 24px; }
+.topbar-in { display: flex; align-items: center; gap: 18px; height: 58px; max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+.topbar-in.wide { max-width: var(--max-wide); }
 .brand { display: flex; align-items: center; flex: none; }
 .brand img { height: 24px; width: auto; display: block; }
 .mainnav { display: flex; gap: 4px; margin-left: 6px; }
-.mainnav a { font-size: 14px; font-weight: 500; color: var(--on-navy-2); text-decoration: none; padding: 20px 12px 19px; border-bottom: 2px solid transparent; }
+.mainnav a { height:58px; display:flex; align-items:center; font-size: 14px; font-weight: 500; color: var(--on-navy-2); text-decoration: none; padding: 0 12px; border-bottom: 2px solid transparent; }
 .mainnav a:hover { color: #fff; }
 .mainnav a[aria-current="page"] { color: #fff; border-bottom-color: var(--cyan); }
 .topbar .spacer { margin-left: auto; }
@@ -170,7 +171,7 @@ footer.legal p:last-child { margin-bottom: 0; }
   .cols-2 { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
-  .shell, .topbar-in { padding: 0 16px; }
+  .shell, .topbar-in { padding-left:16px; padding-right:16px; }
   .mainnav { display: none; position: absolute; top: 58px; left: 0; right: 0; z-index: 20; flex-direction: column; gap: 0; background: var(--navy); padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
   .mainnav.open { display: flex; }
   .mainnav a { padding: 12px 20px; border-bottom: none; border-left: 3px solid transparent; }

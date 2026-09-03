@@ -118,7 +118,7 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
 async function coinbase(): Promise<Quote[]> {
   const out: Quote[] = []
   const spot = async (pair: string, label: string, kind: Quote['kind']): Promise<Quote> => {
-    const base: Quote = { symbol: pair, label, price: null, changePct: null, changeAbs: null, spark: [], kind, source: 'Coinbase' }
+    const base: Quote = { symbol: pair, label, price: null, changePct: null, changeAbs: null, spark: [], kind, source: 'Digital asset venue' }
     try {
       const [t, s, c] = await Promise.all([
         fetch(`https://api.exchange.coinbase.com/products/${pair}/ticker`, { signal: AbortSignal.timeout(6000) }),
