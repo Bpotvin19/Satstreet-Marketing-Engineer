@@ -138,8 +138,13 @@
   .asset-id { display:flex; align-items:center; min-width:0; gap:9px; }
   .asset-mark { width:28px; height:28px; flex:none; display:grid; place-items:center; border-radius:50%; color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.16); }
   .asset-mark svg { width:16px; height:16px; display:block; }
+  .asset-mark img { width:100%; height:100%; display:block; object-fit:contain; }
+  .asset-mark.crypto-logo, .asset-mark.index-logo { background:transparent; box-shadow:none; }
+  .asset-mark.crypto-logo.eth img { width:24px; height:24px; }
+  .asset-mark.index-logo svg { width:25px; height:21px; }
   .asset-mark.btc{background:#f7931a}.asset-mark.eth{background:#5b6ee1}.asset-mark.gold{background:#bd8b21}.asset-mark.oil{background:#294654}
   .asset-mark.fx{background:#148477}.asset-mark.bond{background:#4b6780}.asset-mark.ndq{background:#465cc0}.asset-mark.spx{background:#176e96}
+  .asset-mark.crypto-logo, .asset-mark.index-logo { background:transparent; }
   .asset-tile .tile-name { display:block; overflow:hidden; text-overflow:ellipsis; font-size:12px; line-height:1.15; font-weight:650; letter-spacing:0; color:var(--ink); white-space:nowrap; }
   .tile-code { display:block; margin-top:2px; font-size:9.5px; line-height:1.2; letter-spacing:.25px; text-transform:uppercase; color:var(--faint); white-space:nowrap; }
   .tile-change { font-size:11px; font-weight:650; font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -452,18 +457,19 @@
     'CAD=X': 'FX', '^TNX': '10Y', '^IXIC': 'NDQ', '^GSPC': 'SPX'
   };
   var ASSETS = {
-    'BTC-USD': { cls:'btc', code:'BTC / USD · Coinbase', icon:'<path d="M9 4v16M13 4v16M6 7h9a3 3 0 0 1 0 6H6h10a3 3 0 0 1 0 6H6"/>' },
-    'ETH-USD': { cls:'eth', code:'ETH / USD · Coinbase', icon:'<path d="M12 3 6.5 12 12 15l5.5-3L12 3Zm0 12v6l5.5-8.5L12 15Z" fill="currentColor" stroke="none"/>' },
+    'BTC-USD': { cls:'btc crypto-logo', code:'BTC / USD · Coinbase', image:'https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png?1696501400' },
+    'ETH-USD': { cls:'eth crypto-logo', code:'ETH / USD · Coinbase', image:'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628' },
     'GC=F': { cls:'gold', code:'XAU / USD', icon:'<path d="m6 9 2-4h8l2 4M5 10h14l2 8H3l2-8Z"/><path d="M8 14h8"/>' },
     'CL=F': { cls:'oil', code:'CL front month', icon:'<path d="M12 3c3 4 6 7.3 6 11a6 6 0 1 1-12 0c0-3.7 3-7 6-11Z"/><path d="M9 16c.7 1 1.7 1.5 3 1.5"/>' },
     'CAD=X': { cls:'fx', code:'Spot FX', icon:'<path d="M5 8h12l-3-3M19 16H7l3 3"/>' },
     '^TNX': { cls:'bond', code:'Treasury yield', icon:'<path d="M4 9h16M6 9v8m4-8v8m4-8v8m4-8v8M3 18h18M12 3l9 4H3l9-4Z"/>' },
-    '^IXIC': { cls:'ndq', code:'NDX index', icon:'<path d="M5 18V6l6 8V6l8 12V6"/>' },
+    '^IXIC': { cls:'ndq index-logo', code:'NDX index', icon:'<path d="M2 22 8.4 3h7.1L9.1 22H2Zm15-19h7.1l-6.4 19h-7.1L17 3Z" fill="#0096b9" stroke="none"/><path d="M11.4 7.2h2.4c2.8 0 4.5 1.5 5.2 3.8l-2.2 6.4c-.7-2.3-2.2-3.7-4.5-3.7H9.2l2.2-6.5Z" fill="#0096b9" stroke="none"/>' },
     '^GSPC': { cls:'spx', code:'SPX index', icon:'<path d="m4 16 4-4 3 2 5-6 4 2"/><path d="M4 20h16"/>' }
   };
   function assetIcon(symbol) {
     var a = ASSETS[symbol] || { cls:'bond', icon:'<circle cx="12" cy="12" r="3"/>' };
-    return '<span class="asset-mark ' + a.cls + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></span>';
+    var body = a.image ? '<img src="' + a.image + '" alt="" loading="lazy" />' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg>';
+    return '<span class="asset-mark ' + a.cls + '" aria-hidden="true">' + body + '</span>';
   }
 
   function skeletonTicker() {
@@ -575,7 +581,7 @@
     var meta = ASSETS[q.symbol] || { cls:'bond', code:q.symbol };
     $('focus-name').textContent = q.label;
     $('focus-label').textContent = meta.code;
-    $('focus-icon').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + meta.icon + '</svg>';
+    $('focus-icon').innerHTML = meta.image ? '<img src="' + meta.image + '" alt="" />' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + meta.icon + '</svg>';
     $('focus-icon').className = 'coin asset-mark ' + meta.cls;
     $('chart').setAttribute('aria-label', q.label + ' reference price chart');
     if (q.price === null) {
