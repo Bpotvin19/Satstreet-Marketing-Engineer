@@ -40,7 +40,7 @@
     --blue:      #0068ff;
     --cyan:      #00c2ff;
 
-    --bg:        #f4f7fb;
+    --bg:        #edf4f8;
     --card:      #ffffff;
     --border:    #dfe6f0;
     --border-2:  #eef2f8;
@@ -58,7 +58,7 @@
     --radius:    10px;
     --shadow:    0 1px 2px rgba(13, 27, 46, 0.04);
     --font: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    --max: 1264px;
+    --max: 1240px;
   }
 
   * { box-sizing: border-box; }
@@ -109,8 +109,8 @@
   .tick .spark { grid-column: 2; grid-row: 1 / span 3; }
   .up { color: #35c48d; } .down { color: #f0808f; } .flat { color: var(--on-navy-2); }
 
-  main { padding: 24px 0 8px; }
-  .intro { position: relative; margin-bottom: 20px; padding-right: 270px; }
+  main { padding: 34px 0 8px; }
+  .intro { position: relative; margin-bottom: 26px; padding-right: 270px; }
   .datestamp { font-size: 12px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
   h1 { font-size: 30px; line-height: 1.2; font-weight: 600; margin: 0 0 8px; }
   .summary { font-size: 16px; color: var(--ink-2); margin: 0; max-width: 74ch; }
@@ -123,24 +123,52 @@
   .cols { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); }
   .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-  .marketboard { margin-bottom: 16px; padding: 17px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
-  .marketboard > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
-  .marketboard h2 { font-size: 17px; font-weight: 600; margin: 0; }
-  .marketboard .hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .marketboard { margin-bottom: 18px; padding: 21px; background: var(--card); border: 1px solid #d5e0ea; border-radius: 11px; box-shadow: 0 8px 24px rgba(13,27,46,.035); }
+  .marketboard > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+  .marketboard h2 { font-size: 20px; line-height: 1.2; font-weight: 500; margin: 4px 0 0; }
+  .board-status { display:flex; align-items:center; gap:16px; color:var(--muted); font-size:11px; white-space:nowrap; }
+  .board-status span { display:inline-flex; align-items:center; gap:6px; }
+  .board-status i { width:6px; height:6px; border-radius:50%; background:var(--up); }
+  .board-status i.session { background:#237bad; }
   .asset-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .asset-tile { position: relative; min-width: 0; min-height: 96px; text-align: left; cursor: pointer; font: inherit; color: var(--ink); background: #fbfcfe; border: 1px solid var(--border); border-radius: 8px; padding: 12px 13px 10px; overflow: hidden; }
+  .asset-tile { position: relative; min-width: 0; min-height: 116px; text-align: left; cursor: pointer; font: inherit; color: var(--ink); background: #fcfdfe; border: 1px solid #d8e2eb; border-radius: 9px; padding: 13px 14px 10px; overflow: hidden; }
   .asset-tile:hover { border-color: #b9c8dc; }
   .asset-tile[aria-pressed="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue), 0 4px 14px rgba(0,104,255,.08); }
-  .asset-tile .tile-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
-  .asset-tile .tile-name { font-size: 11px; line-height: 1.2; font-weight: 700; letter-spacing: .72px; text-transform: uppercase; color: var(--muted); }
-  .asset-tile .tile-state { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; background: var(--faint); }
-  .asset-tile .tile-state.open { background: var(--up); }
-  .asset-tile .tile-px { display: block; margin-top: 5px; font-size: 20px; line-height: 1.15; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .asset-tile .tile-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+  .asset-id { display:flex; align-items:center; min-width:0; gap:9px; }
+  .asset-mark { width:28px; height:28px; flex:none; display:grid; place-items:center; border-radius:50%; color:#fff; box-shadow:inset 0 0 0 1px rgba(255,255,255,.16); }
+  .asset-mark svg { width:16px; height:16px; display:block; }
+  .asset-mark.btc{background:#f7931a}.asset-mark.eth{background:#5b6ee1}.asset-mark.gold{background:#bd8b21}.asset-mark.oil{background:#294654}
+  .asset-mark.fx{background:#148477}.asset-mark.bond{background:#4b6780}.asset-mark.ndq{background:#465cc0}.asset-mark.spx{background:#176e96}
+  .asset-tile .tile-name { display:block; overflow:hidden; text-overflow:ellipsis; font-size:12px; line-height:1.15; font-weight:650; letter-spacing:0; color:var(--ink); white-space:nowrap; }
+  .tile-code { display:block; margin-top:2px; font-size:9.5px; line-height:1.2; letter-spacing:.25px; text-transform:uppercase; color:var(--faint); white-space:nowrap; }
+  .tile-change { font-size:11px; font-weight:650; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .asset-tile .tile-px { display: block; margin-top: 10px; font-size: 18px; line-height: 1.15; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .asset-tile .tile-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 9px; }
   .asset-tile .tile-foot .ch { font-size: 12px; font-variant-numeric: tabular-nums; }
   .asset-tile .tile-spark { width: 72px; height: 28px; flex: none; }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+  .focus-panel { margin-top:14px; border:1px solid #d8e2eb; border-radius:9px; overflow:hidden; background:#fff; }
+  .focus-head { min-height:72px; display:flex; align-items:center; gap:10px; padding:13px 17px; border-bottom:1px solid var(--border-2); }
+  .focus-head .coin { width:34px; height:34px; }
+  .focus-title { min-width:0; }
+  .focus-title strong { display:block; font-size:14px; font-weight:650; }
+  .focus-title .eyebrow { margin-top:1px; font-size:9.5px; letter-spacing:.25px; font-weight:500; text-transform:none; }
+  .focus-price { margin-left:auto; text-align:right; }
+  .focus-price .heroPx { font-size:25px; }
+  .focus-price .heroMove { font-size:11px; }
+  .focus-body { display:grid; grid-template-columns:minmax(0,1fr) 216px; }
+  .focus-chart { min-width:0; padding:6px 17px 13px; }
+  .focus-aside { padding:12px 16px; background:#f8fafc; border-left:1px solid var(--border-2); }
+  .focus-aside .stats { display:block; margin:0; padding:0; border:0; }
+  .focus-aside .stat { display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .focus-aside .stat:last-child { border-bottom:0; }
+  .focus-aside .stat .k { font-size:9.5px; }
+  .focus-aside .stat .v { max-width:120px; text-align:right; font-size:12px; }
+  .source-note { margin-top:12px; padding:11px; border-radius:8px; background:#e8f5f9; color:#526b7a; font-size:10.5px; line-height:1.4; }
+  .source-note b { display:block; margin-bottom:2px; color:#2c5368; }
+
+  .card { background: var(--card); border: 1px solid #d5e0ea; border-radius: var(--radius); box-shadow: 0 5px 18px rgba(13,27,46,.025); padding: 22px; }
   .card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
   .card h2 { font-size: 18px; font-weight: 600; margin: 0; }
   .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; color: var(--muted); margin: 0; }
@@ -157,7 +185,7 @@
   .segmented button:hover:not([aria-pressed="true"]) { background: var(--border-2); color: var(--ink); }
   .segmented button[disabled] { opacity: 0.45; cursor: not-allowed; }
 
-  .chartbox { position: relative; margin: 18px 0 4px; height: 232px; }
+  .chartbox { position: relative; margin: 0 0 7px; height: 230px; }
   .chartbox canvas { width: 100%; height: 100%; display: block; }
   .chartmsg { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13.5px; color: var(--muted); text-align: center; padding: 12px; pointer-events: none; }
 
@@ -210,6 +238,9 @@
   @media (max-width: 980px) {
     .cols, .cols-2 { grid-template-columns: minmax(0, 1fr); }
     .asset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .focus-body { grid-template-columns:1fr; }
+    .focus-aside { border-left:0; border-top:1px solid var(--border-2); }
+    .focus-aside .stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 16px; }
   }
   @media (max-width: 760px) {
     .shell, .topbar-in { padding: 0 16px; }
@@ -226,6 +257,8 @@
     .intro > .feedstate { position: static; }
     .asset-grid { display: flex; overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; scroll-snap-type: x mandatory; }
     .asset-tile { min-width: 190px; scroll-snap-align: start; }
+    .focus-head { align-items:flex-start; flex-wrap:wrap; }
+    .focus-price { width:100%; margin-left:44px; text-align:left; }
     .marketboard > header { align-items: flex-start; flex-direction: column; gap: 2px; }
     .cat { grid-template-columns: 54px 1fr; }
     .cat .impact { grid-column: 2; justify-self: start; }
@@ -265,71 +298,71 @@
 
   <section class="marketboard" aria-labelledby="board-h">
     <header>
-      <h2 id="board-h">Cross-asset monitor</h2>
-      <p class="hint">Select a market to inspect its history below</p>
+      <div><p class="eyebrow">Cross-asset monitor</p><h2 id="board-h">Markets at a glance</h2></div>
+      <div class="board-status" aria-label="Market availability"><span><i></i>24/7</span><span><i class="session"></i>Market session</span></div>
     </header>
     <div class="asset-grid" id="asset-grid" aria-label="Covered markets"></div>
-  </section>
 
-  <div class="grid cols">
-
-    <section class="card" aria-labelledby="focus-h">
+    <section class="focus-panel" aria-labelledby="focus-h">
       <h2 id="focus-h" class="sr">Selected market panel</h2>
-      <div class="heroTop">
+      <div class="focus-head">
         <div class="coin" id="focus-icon" aria-hidden="true">&#8383;</div>
-        <div style="flex:1 1 190px">
-          <p class="eyebrow" id="focus-label">Bitcoin · reference price</p>
+        <div class="focus-title">
+          <strong id="focus-name">Bitcoin</strong>
+          <p class="eyebrow" id="focus-label">BTC / USD · Coinbase</p>
+        </div>
+        <div class="focus-price">
           <p class="heroPx" id="focus-px">—</p>
           <p class="heroMove" id="focus-move">&nbsp;</p>
         </div>
       </div>
-
-      <div class="chartbox">
-        <canvas id="chart" role="img" aria-label="Selected market reference price chart"></canvas>
-        <div class="chartmsg" id="chartmsg">Loading chart…</div>
-      </div>
-
-      <div class="segmented" role="group" aria-label="Chart timeframe" id="ranges">
-        <button type="button" data-r="1D" aria-pressed="false">1D</button>
-        <button type="button" data-r="1W" aria-pressed="true">1W</button>
-        <button type="button" data-r="1M" aria-pressed="false">1M</button>
-        <button type="button" data-r="3M" aria-pressed="false">3M</button>
-        <button type="button" data-r="1Y" aria-pressed="false">1Y</button>
-      </div>
-
-      <div class="stats">
-        <div class="stat"><div class="k">Session open</div><div class="v" id="focus-open">—</div></div>
-        <div class="stat"><div class="k">Session high</div><div class="v" id="focus-hi">—</div></div>
-        <div class="stat"><div class="k">Session low</div><div class="v" id="focus-lo">—</div></div>
-        <div class="stat"><div class="k">Source · status</div><div class="v" style="font-size:14px" id="focus-src">—</div></div>
+      <div class="focus-body">
+        <div class="focus-chart">
+          <div class="chartbox">
+            <canvas id="chart" role="img" aria-label="Selected market reference price chart"></canvas>
+            <div class="chartmsg" id="chartmsg">Loading chart…</div>
+          </div>
+          <div class="segmented" role="group" aria-label="Chart timeframe" id="ranges">
+            <button type="button" data-r="1D" aria-pressed="false">1D</button>
+            <button type="button" data-r="1W" aria-pressed="true">1W</button>
+            <button type="button" data-r="1M" aria-pressed="false">1M</button>
+            <button type="button" data-r="3M" aria-pressed="false">3M</button>
+            <button type="button" data-r="1Y" aria-pressed="false">1Y</button>
+          </div>
+        </div>
+        <aside class="focus-aside" aria-label="Selected market statistics">
+          <div class="stats">
+            <div class="stat"><div class="k">Open</div><div class="v" id="focus-open">—</div></div>
+            <div class="stat"><div class="k">Session high</div><div class="v" id="focus-hi">—</div></div>
+            <div class="stat"><div class="k">Session low</div><div class="v" id="focus-lo">—</div></div>
+            <div class="stat"><div class="k">Source</div><div class="v" id="focus-src">—</div></div>
+          </div>
+          <div class="source-note"><b>Normalized market data</b>One timestamp, one currency convention and one source label for every instrument.</div>
+        </aside>
       </div>
     </section>
-
-    <div class="grid" style="align-content:start">
-      <section class="card" aria-labelledby="brief-h">
-        <header><h2 id="brief-h">What matters today</h2></header>
-        <div id="brief"></div>
-      </section>
-
-      <section class="card" aria-labelledby="desk-h">
-        <header>
-          <h2 id="desk-h">Satstreet desk view</h2>
-          <span class="verified" id="desk-badge" hidden>Desk verified</span>
-        </header>
-        <div id="desk"></div>
-      </section>
-    </div>
-  </div>
+  </section>
 
   <div class="grid cols-2" style="margin-top:16px">
-    <section class="card" aria-labelledby="cat-h">
-      <header><h2 id="cat-h">Upcoming catalysts</h2></header>
-      <div id="cats"></div>
+    <section class="card" aria-labelledby="desk-h">
+      <header>
+        <div><p class="eyebrow">Satstreet desk view</p><h2 id="desk-h" class="sr">Satstreet desk view</h2></div>
+        <span class="verified" id="desk-badge" hidden>Desk verified</span>
+      </header>
+      <div id="desk"></div>
     </section>
 
-    <section class="card" aria-labelledby="pf-h">
+    <section class="card" aria-labelledby="cat-h">
+      <header><p class="eyebrow" id="cat-h">Upcoming catalysts</p></header>
+      <div id="cats"></div>
+    </section>
+  </div>
+
+  <div style="margin-top:28px">
+    <p class="eyebrow">Watch-only analytics</p>
+    <section class="card" aria-labelledby="pf-h" style="margin-top:7px">
       <header>
-        <h2 id="pf-h">Portfolio</h2>
+        <h2 id="pf-h">Wallet performance snapshot</h2>
         <button class="btn ghost small" id="pf-settings" aria-expanded="false" aria-controls="pf-manage">Manage</button>
       </header>
       <div class="srcnote">
@@ -418,6 +451,20 @@
     'BTC-USD': '₿', 'ETH-USD': 'Ξ', 'GC=F': 'AU', 'CL=F': 'WTI',
     'CAD=X': 'FX', '^TNX': '10Y', '^IXIC': 'NDQ', '^GSPC': 'SPX'
   };
+  var ASSETS = {
+    'BTC-USD': { cls:'btc', code:'BTC / USD · Coinbase', icon:'<path d="M9 4v16M13 4v16M6 7h9a3 3 0 0 1 0 6H6h10a3 3 0 0 1 0 6H6"/>' },
+    'ETH-USD': { cls:'eth', code:'ETH / USD · Coinbase', icon:'<path d="M12 3 6.5 12 12 15l5.5-3L12 3Zm0 12v6l5.5-8.5L12 15Z" fill="currentColor" stroke="none"/>' },
+    'GC=F': { cls:'gold', code:'XAU / USD', icon:'<path d="m6 9 2-4h8l2 4M5 10h14l2 8H3l2-8Z"/><path d="M8 14h8"/>' },
+    'CL=F': { cls:'oil', code:'CL front month', icon:'<path d="M12 3c3 4 6 7.3 6 11a6 6 0 1 1-12 0c0-3.7 3-7 6-11Z"/><path d="M9 16c.7 1 1.7 1.5 3 1.5"/>' },
+    'CAD=X': { cls:'fx', code:'Spot FX', icon:'<path d="M5 8h12l-3-3M19 16H7l3 3"/>' },
+    '^TNX': { cls:'bond', code:'Treasury yield', icon:'<path d="M4 9h16M6 9v8m4-8v8m4-8v8m4-8v8M3 18h18M12 3l9 4H3l9-4Z"/>' },
+    '^IXIC': { cls:'ndq', code:'NDX index', icon:'<path d="M5 18V6l6 8V6l8 12V6"/>' },
+    '^GSPC': { cls:'spx', code:'SPX index', icon:'<path d="m4 16 4-4 3 2 5-6 4 2"/><path d="M4 20h16"/>' }
+  };
+  function assetIcon(symbol) {
+    var a = ASSETS[symbol] || { cls:'bond', icon:'<circle cx="12" cy="12" r="3"/>' };
+    return '<span class="asset-mark ' + a.cls + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + a.icon + '</svg></span>';
+  }
 
   function skeletonTicker() {
     var t = $('ticker');
@@ -458,9 +505,10 @@
     $('asset-grid').innerHTML = d.quotes.map(function (q) {
       var m = move(q), active = q.symbol === selectedSymbol;
       var state = q.error ? 'Unavailable' : (q.marketState === 'REGULAR' ? 'Open' : (q.marketState || 'Reference'));
+      var meta = ASSETS[q.symbol] || { code:q.symbol };
       return '<button type="button" class="asset-tile" data-symbol="' + esc(q.symbol) + '" aria-pressed="' + active + '" title="' + esc(q.source + ' · ' + state) + '">' +
-        '<span class="tile-top"><span class="tile-name">' + esc(q.label) + '</span><span class="tile-state' + (q.marketState === 'REGULAR' ? ' open' : '') + '" aria-hidden="true"></span></span>' +
-        '<span class="tile-px">' + fmtPrice(q, q.price) + '</span><span class="tile-foot"><span class="ch ' + m.c + '">' + m.t + '</span>' + tileSpark(q.spark, m.c) + '</span></button>';
+        '<span class="tile-top"><span class="asset-id">' + assetIcon(q.symbol) + '<span><span class="tile-name">' + esc(q.label) + '</span><span class="tile-code">' + esc(meta.code) + '</span></span></span><span class="tile-change ' + m.c + '">' + m.t + '</span></span>' +
+        '<span class="tile-px">' + fmtPrice(q, q.price) + '</span><span class="tile-foot"><span></span>' + tileSpark(q.spark, m.c) + '</span></button>';
     }).join('');
   }
   function summarise(d) {
@@ -524,9 +572,11 @@
 
   function renderFocus(q) {
     if (!q) return;
-    $('focus-label').textContent = q.label + ' · reference price';
-    $('focus-icon').textContent = ICONS[q.symbol] || '•';
-    $('focus-icon').className = 'coin' + (q.symbol === 'BTC-USD' || q.symbol === 'ETH-USD' ? '' : ' macro');
+    var meta = ASSETS[q.symbol] || { cls:'bond', code:q.symbol };
+    $('focus-name').textContent = q.label;
+    $('focus-label').textContent = meta.code;
+    $('focus-icon').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + meta.icon + '</svg>';
+    $('focus-icon').className = 'coin asset-mark ' + meta.cls;
     $('chart').setAttribute('aria-label', q.label + ' reference price chart');
     if (q.price === null) {
       $('focus-px').textContent = '—';
@@ -545,7 +595,7 @@
     $('focus-lo').textContent = fmtPrice(q, q.sessionLow);
     var state = q.marketState === 'REGULAR' ? 'Open' : (q.marketState || 'Reference');
     var asOf = q.asOf ? new Date(q.asOf).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
-    $('focus-src').textContent = q.source + ' · ' + state + (asOf ? ' · ' + asOf : '');
+    $('focus-src').textContent = q.source + (asOf ? ' · ' + asOf : '');
   }
 
   function selectedQuote() {
@@ -579,16 +629,18 @@
       ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(R, yy); ctx.stroke();
       ctx.fillText(fmtAxis(selectedQuote(), v), R + 8, yy);
     }
+    var chartColors = { 'BTC-USD':['#f17b00','rgba(241,123,0,.14)'], 'ETH-USD':['#5b6ee1','rgba(91,110,225,.14)'], 'GC=F':['#b4861e','rgba(180,134,30,.14)'], 'CL=F':['#294654','rgba(41,70,84,.13)'] };
+    var palette = chartColors[selectedSymbol] || ['#0f8a78','rgba(15,138,120,.13)'];
     var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, 'rgba(0,104,255,0.14)');
-    grad.addColorStop(1, 'rgba(0,104,255,0)');
+    grad.addColorStop(0, palette[1]);
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.beginPath(); ctx.moveTo(x(0), y(pts[0]));
     pts.forEach(function (p, i) { ctx.lineTo(x(i), y(p)); });
     ctx.lineTo(x(pts.length - 1), H); ctx.lineTo(x(0), H); ctx.closePath();
     ctx.fillStyle = grad; ctx.fill();
     ctx.beginPath(); ctx.moveTo(x(0), y(pts[0]));
     pts.forEach(function (p, i) { ctx.lineTo(x(i), y(p)); });
-    ctx.strokeStyle = '#0068ff'; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.strokeStyle = palette[0]; ctx.lineWidth = 1.7; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
   }
 
   function fmtAxis(q, value) {
@@ -645,8 +697,6 @@
   });
   var rz;
   window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(drawChart, 140); });
-
-  $('brief').innerHTML = '<p class="emptybox"><strong style="color:var(--ink)">Not available today.</strong><br>The daily drivers come from the desk’s reviewed briefing. When none has been published, nothing is shown here rather than an automated summary.</p>';
 
   function loadDesk() {
     $('desk').innerHTML = '<div class="skel" style="height:14px;width:88%;margin-bottom:8px"></div><div class="skel" style="height:14px;width:96%;margin-bottom:8px"></div><div class="skel" style="height:14px;width:74%"></div>';
