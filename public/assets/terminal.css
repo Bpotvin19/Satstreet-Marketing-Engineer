@@ -67,6 +67,8 @@ a { color: var(--blue); }
 .mainnav a:hover { color: #fff; }
 .mainnav a[aria-current="page"] { color: #fff; border-bottom-color: var(--cyan); }
 .topbar .spacer { margin-left: auto; }
+.feed-badge { display: inline-flex; align-items: center; gap: 7px; color: var(--on-navy-2); font-size: 12px; white-space: nowrap; }
+.feed-badge i { width: 7px; height: 7px; border-radius: 50%; background: #35c48d; box-shadow: 0 0 0 3px rgba(53,196,141,.12); }
 .navtoggle { display: none; background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 7px; padding: 7px 10px; cursor: pointer; font: inherit; }
 
 /* ── buttons ────────────────────────────────────────────────── */
@@ -151,15 +153,6 @@ main { padding: 28px 0 8px; }
 /* ── tooltips ───────────────────────────────────────────────── */
 .tip { border-bottom: 1px dotted var(--faint); cursor: help; }
 
-/* ── quote panel ────────────────────────────────────────────── */
-.quote { background: var(--navy); color: #fff; border-radius: var(--radius); padding: 26px; margin-top: 16px; }
-.quote h2 { font-size: 21px; font-weight: 600; margin: 0 0 8px; color: #fff; }
-.quote p { color: var(--on-navy-2); margin: 0 0 16px; max-width: 62ch; font-size: 15px; }
-.quote .btn { background: #fff; color: var(--navy); }
-.quote .btn:hover { background: #e8eef7; }
-.quote .notlive { margin-top: 14px; font-size: 12.5px; border-top: 1px solid rgba(255,255,255,0.14); padding-top: 13px; max-width: 70ch; }
-.quote .notlive strong { color: #fff; }
-
 /* ── disclosures ────────────────────────────────────────────── */
 .disclosure { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--muted); }
 .disclosure p { margin: 0 0 8px; max-width: 92ch; line-height: 1.65; }
@@ -180,7 +173,7 @@ footer.legal p:last-child { margin-bottom: 0; }
   .mainnav a[aria-current="page"] { border-bottom: none; border-left-color: var(--cyan); }
   .navtoggle { display: block; }
   .pagehead h1 { font-size: 24px; }
-  .quote { padding: 20px; }
+  .feed-badge { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }

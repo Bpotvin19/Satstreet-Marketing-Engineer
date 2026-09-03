@@ -25,9 +25,8 @@
   desk view is whatever the desk marked Reviewed in Notion, and the catalysts
   are dates verified against the institutions that set them.
 
-  Request a Quote is the loudest thing on the page and submits nowhere. No
-  approved destination for a client's trade intent has been configured, so the
-  panel collects nothing and says so.
+  Cross-asset context is the focal point: every covered market is visible at a
+  glance, while one larger focus chart supports closer inspection.
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -84,6 +83,8 @@
   .mainnav a:hover { color: #fff; }
   .mainnav a[aria-current="page"] { color: #fff; border-bottom-color: var(--cyan); }
   .topbar .spacer { margin-left: auto; }
+  .feed-badge { display: inline-flex; align-items: center; gap: 7px; color: var(--on-navy-2); font-size: 12px; font-weight: 600; letter-spacing: .45px; text-transform: uppercase; white-space: nowrap; }
+  .feed-badge i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 3px rgba(0,194,255,.12); }
 
   .btn { font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 9px 16px; border-radius: 7px; border: 1px solid transparent; background: var(--blue); color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
   .btn:hover { background: #0057d6; }
@@ -115,6 +116,23 @@
   .cols { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); }
   .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
+  .marketboard { margin-bottom: 16px; }
+  .marketboard > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .marketboard h2 { font-size: 17px; font-weight: 600; margin: 0; }
+  .marketboard .hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .asset-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .asset-tile { position: relative; min-width: 0; min-height: 112px; text-align: left; cursor: pointer; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px 11px; box-shadow: var(--shadow); overflow: hidden; }
+  .asset-tile:hover { border-color: #b9c8dc; }
+  .asset-tile[aria-pressed="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue), 0 4px 14px rgba(0,104,255,.08); }
+  .asset-tile .tile-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+  .asset-tile .tile-name { font-size: 11px; line-height: 1.2; font-weight: 700; letter-spacing: .72px; text-transform: uppercase; color: var(--muted); }
+  .asset-tile .tile-state { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; background: var(--faint); }
+  .asset-tile .tile-state.open { background: var(--up); }
+  .asset-tile .tile-px { display: block; margin-top: 5px; font-size: 20px; line-height: 1.15; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .asset-tile .tile-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 9px; }
+  .asset-tile .tile-foot .ch { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .asset-tile .tile-spark { width: 72px; height: 28px; flex: none; }
+
   .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
   .card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
   .card h2 { font-size: 18px; font-weight: 600; margin: 0; }
@@ -122,6 +140,7 @@
 
   .heroTop { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   .coin { width: 38px; height: 38px; border-radius: 50%; flex: none; background: #f7931a; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 19px; }
+  .coin.macro { border-radius: 9px; background: var(--navy-2); font-size: 12px; letter-spacing: .25px; }
   .heroPx { font-size: 38px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 2px 0 0; }
   .heroMove { font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
   .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
@@ -166,14 +185,6 @@
   .field input:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(0,104,255,0.12); }
   .rowbtns { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-  .quote { background: var(--navy); color: #fff; border-radius: var(--radius); padding: 30px; margin-top: 16px; }
-  .quote h2 { font-size: 24px; font-weight: 600; margin: 0 0 8px; color: #fff; }
-  .quote p { color: var(--on-navy-2); margin: 0 0 18px; max-width: 62ch; font-size: 15.5px; }
-  .quote .btn { background: #fff; color: var(--navy); }
-  .quote .btn:hover { background: #e8eef7; }
-  .notlive { margin-top: 16px; font-size: 12.5px; color: var(--on-navy-2); border-top: 1px solid rgba(255,255,255,0.14); padding-top: 14px; max-width: 70ch; }
-  .notlive strong { color: #fff; }
-
   /* A class that sets display beats the browser's own [hidden] rule, which is
      how a "Desk verified" badge ended up next to "no note published today".
      Anything hidden stays hidden. */
@@ -189,7 +200,10 @@
   footer.legal p { margin: 0 0 8px; max-width: 92ch; line-height: 1.65; }
   footer.legal p:last-child { margin-bottom: 0; }
 
-  @media (max-width: 980px) { .cols, .cols-2 { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 980px) {
+    .cols, .cols-2 { grid-template-columns: minmax(0, 1fr); }
+    .asset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 760px) {
     .shell, .topbar-in { padding: 0 16px; }
     .mainnav { display: none; position: absolute; top: 62px; left: 0; right: 0; z-index: 20; flex-direction: column; gap: 0; background: var(--navy); padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
@@ -199,7 +213,10 @@
     .navtoggle { display: block; }
     h1 { font-size: 25px; }
     .heroPx { font-size: 32px; }
-    .quote { padding: 22px; }
+    .feed-badge { display: none; }
+    .asset-grid { display: flex; overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; scroll-snap-type: x mandatory; }
+    .asset-tile { min-width: 190px; scroll-snap-align: start; }
+    .marketboard > header { align-items: flex-start; flex-direction: column; gap: 2px; }
     .cat { grid-template-columns: 54px 1fr; }
     .cat .impact { grid-column: 2; justify-self: start; }
   }
@@ -220,7 +237,7 @@
       <a href="./portfolio.html">Portfolio</a>
     </nav>
     <span class="spacer"></span>
-    <a class="btn" href="#quote">Request a Quote</a>
+    <span class="feed-badge"><i aria-hidden="true"></i> Data terminal</span>
   </div>
 </header>
 
@@ -237,25 +254,29 @@
     <p class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Connecting to the price feed…</span></p>
   </section>
 
+  <section class="marketboard" aria-labelledby="board-h">
+    <header>
+      <h2 id="board-h">Cross-asset monitor</h2>
+      <p class="hint">Select a market to inspect its history below</p>
+    </header>
+    <div class="asset-grid" id="asset-grid" aria-label="Covered markets"></div>
+  </section>
+
   <div class="grid cols">
 
-    <section class="card" aria-labelledby="btc-h">
-      <h2 id="btc-h" class="sr">Bitcoin market panel</h2>
+    <section class="card" aria-labelledby="focus-h">
+      <h2 id="focus-h" class="sr">Selected market panel</h2>
       <div class="heroTop">
-        <div class="coin" aria-hidden="true">&#8383;</div>
+        <div class="coin" id="focus-icon" aria-hidden="true">&#8383;</div>
         <div style="flex:1 1 190px">
-          <p class="eyebrow">Bitcoin · reference price</p>
-          <p class="heroPx" id="btc-px">—</p>
-          <p class="heroMove" id="btc-move">&nbsp;</p>
-        </div>
-        <div class="segmented" role="group" aria-label="Quote currency">
-          <button type="button" id="ccy-usd" aria-pressed="true">USD</button>
-          <button type="button" id="ccy-cad" aria-pressed="false">CAD</button>
+          <p class="eyebrow" id="focus-label">Bitcoin · reference price</p>
+          <p class="heroPx" id="focus-px">—</p>
+          <p class="heroMove" id="focus-move">&nbsp;</p>
         </div>
       </div>
 
       <div class="chartbox">
-        <canvas id="chart" role="img" aria-label="Bitcoin reference price chart"></canvas>
+        <canvas id="chart" role="img" aria-label="Selected market reference price chart"></canvas>
         <div class="chartmsg" id="chartmsg">Loading chart…</div>
       </div>
 
@@ -268,10 +289,10 @@
       </div>
 
       <div class="stats">
-        <div class="stat"><div class="k">24h high</div><div class="v" id="btc-hi">—</div></div>
-        <div class="stat"><div class="k">24h low</div><div class="v" id="btc-lo">—</div></div>
-        <div class="stat"><div class="k">24h volume</div><div class="v" id="btc-vol">—</div></div>
-        <div class="stat"><div class="k">Source</div><div class="v" style="font-size:14px" id="btc-src">—</div></div>
+        <div class="stat"><div class="k">Session open</div><div class="v" id="focus-open">—</div></div>
+        <div class="stat"><div class="k">Session high</div><div class="v" id="focus-hi">—</div></div>
+        <div class="stat"><div class="k">Session low</div><div class="v" id="focus-lo">—</div></div>
+        <div class="stat"><div class="k">Source · status</div><div class="v" style="font-size:14px" id="focus-src">—</div></div>
       </div>
     </section>
 
@@ -326,15 +347,8 @@
     </section>
   </div>
 
-  <section class="quote" id="quote" aria-labelledby="q-h">
-    <h2 id="q-h">Request a quote</h2>
-    <p>Speak directly with the Satstreet desk for competitive two-way pricing and white-glove execution. A person responds — there is no automated matching and no order book.</p>
-    <a class="btn" href="#quote">Contact the desk</a>
-    <p class="notlive"><strong>Not yet live.</strong> This is the interface only. No approved destination for quote requests has been configured, so nothing is collected, stored or sent from this page. Please contact your Satstreet representative directly in the meantime.</p>
-  </section>
-
   <footer class="legal">
-    <p><strong>Indicative reference prices only.</strong> Figures shown are indicative references drawn from third-party venues. They are not a quote, not an offer, and not the price at which Satstreet will execute. Two-way pricing is available from the desk on request.</p>
+    <p><strong>Indicative reference prices only.</strong> Figures shown are indicative references drawn from third-party venues. They are not executable prices or an offer. Exchange-traded and macro feeds may be delayed.</p>
     <p>Market data is provided for information only and may be delayed or unavailable. Nothing on this page is investment advice or a recommendation to transact in any asset. Digital asset values can fall as well as rise.</p>
     <p>Portfolio figures reflect public blockchain data for addresses entered by the viewer on this device. They are not a statement of account and do not reflect any holdings, positions or balances held with Satstreet.</p>
   </footer>
@@ -387,7 +401,14 @@
     return '<svg class="spark" width="' + w + '" height="' + hg + '" viewBox="0 0 ' + w + ' ' + hg + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
 
-  var market = null, ccy = 'USD', cadRate = null;
+  var market = null;
+  var selectedSymbol = 'BTC-USD';
+  var range = '1W', series = [];
+  var usePreview = new URLSearchParams(window.location.search).get('sample') === '1' || /\.chatgpt\.site$/.test(window.location.hostname);
+  var ICONS = {
+    'BTC-USD': '₿', 'ETH-USD': 'Ξ', 'GC=F': 'AU', 'CL=F': 'WTI',
+    'CAD=X': 'FX', '^TNX': '10Y', '^IXIC': 'NDQ', '^GSPC': 'SPX'
+  };
 
   function skeletonTicker() {
     var t = $('ticker'); t.innerHTML = '';
@@ -397,6 +418,9 @@
       d.innerHTML = '<span class="nm skel" style="height:11px;width:52px">&nbsp;</span><span class="px skel" style="height:15px;width:78px;margin-top:4px">&nbsp;</span><span class="ch skel" style="height:12px;width:44px;margin-top:4px">&nbsp;</span>';
       t.appendChild(d);
     }
+    $('asset-grid').innerHTML = Array(9).join('x').split('x').map(function () {
+      return '<span class="asset-tile" aria-hidden="true"><span class="skel" style="display:block;width:52px;height:11px"></span><span class="skel" style="display:block;width:86px;height:20px;margin-top:8px"></span><span class="skel" style="display:block;width:100%;height:24px;margin-top:11px"></span></span>';
+    }).join('');
   }
   function renderTicker(d) {
     var t = $('ticker'); t.innerHTML = '';
@@ -409,34 +433,68 @@
       t.appendChild(el);
     });
   }
+  function tileSpark(points, cls) {
+    if (!points || points.length < 3) return '';
+    var w = 72, h = 28, lo = Math.min.apply(null, points), hi = Math.max.apply(null, points), span = hi - lo || 1;
+    var d = points.map(function (p, i) {
+      return (i ? 'L' : 'M') + (i / (points.length - 1) * w).toFixed(1) + ' ' + (h - 2 - ((p - lo) / span) * (h - 4)).toFixed(1);
+    }).join(' ');
+    var stroke = cls === 'up' ? '#0f8a63' : cls === 'down' ? '#c33a49' : '#98a5b4';
+    return '<svg class="tile-spark" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  }
+  function renderAssetGrid(d) {
+    $('asset-grid').innerHTML = d.quotes.map(function (q) {
+      var m = move(q), active = q.symbol === selectedSymbol;
+      var state = q.error ? 'Unavailable' : (q.marketState === 'REGULAR' ? 'Open' : (q.marketState || 'Reference'));
+      return '<button type="button" class="asset-tile" data-symbol="' + esc(q.symbol) + '" aria-pressed="' + active + '" title="' + esc(q.source + ' · ' + state) + '">' +
+        '<span class="tile-top"><span class="tile-name">' + esc(q.label) + '</span><span class="tile-state' + (q.marketState === 'REGULAR' ? ' open' : '') + '" aria-hidden="true"></span></span>' +
+        '<span class="tile-px">' + fmtPrice(q, q.price) + '</span><span class="tile-foot"><span class="ch ' + m.c + '">' + m.t + '</span>' + tileSpark(q.spark, m.c) + '</span></button>';
+    }).join('');
+  }
   function summarise(d) {
     var by = {};
     d.quotes.forEach(function (q) { by[q.label] = q; });
-    var btc = by['Bitcoin'], ten = by['US 10Y'], cad = by['CAD/USD'];
+    var btc = by['Bitcoin'], ten = by['US 10Y'], cad = by['USD/CAD'];
     if (!btc || btc.price === null) return 'Reference prices are loading.';
     var bits = ['Bitcoin is trading at ' + fmtPrice(btc, btc.price)];
     if (btc.changePct !== null) bits[0] += ', ' + (btc.changePct >= 0 ? 'up ' : 'down ') + Math.abs(btc.changePct).toFixed(2) + '% on the session';
     if (ten && ten.price !== null) bits.push('the US 10-year is at ' + ten.price.toFixed(2) + '%');
-    if (cad && cad.price !== null) bits.push('CAD/USD at ' + cad.price.toFixed(4));
+    if (cad && cad.price !== null) bits.push('USD/CAD at ' + cad.price.toFixed(4));
     return bits.join(', ') + '.';
   }
 
+  function previewMarket() {
+    var now = new Date().toISOString();
+    var rows = [
+      ['BTC-USD', 'Bitcoin', 109240, 1.62, 'usd'], ['ETH-USD', 'Ethereum', 4380, 2.31, 'usd'],
+      ['GC=F', 'Gold', 3494, .42, 'usd'], ['CL=F', 'WTI Oil', 64.18, -.74, 'usd'],
+      ['CAD=X', 'USD/CAD', 1.3812, .18, 'fx'], ['^TNX', 'US 10Y', 4.22, .04, 'pct'],
+      ['^IXIC', 'Nasdaq', 21870, 1.08, 'level'], ['^GSPC', 'S&P 500', 6482, .63, 'level']
+    ];
+    var quotes = rows.map(function (r, index) {
+      var absolute = r[4] === 'pct' ? r[3] : r[2] * r[3] / 100;
+      var open = r[2] - absolute, points = [];
+      for (var i = 0; i < 22; i++) points.push(open + absolute * i / 21 + Math.sin(i * .82 + index) * Math.abs(absolute || r[2] * .002) * .32);
+      return { symbol: r[0], label: r[1], price: r[2], changePct: r[4] === 'pct' ? null : r[3], changeAbs: absolute, spark: points, open: open, sessionHigh: Math.max.apply(null, points.concat([r[2]])), sessionLow: Math.min.apply(null, points.concat([r[2]])), kind: r[4], source: 'Illustrative preview', marketState: 'SAMPLE', asOf: now };
+    });
+    return { asOf: now, quotes: quotes, degraded: [], preview: true };
+  }
+
   function loadMarket() {
-    skeletonTicker();
-    return fetch('/api/market', { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    if (!market) skeletonTicker();
+    var request = usePreview ? Promise.resolve(previewMarket()) : fetch('/api/market', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    return request
       .then(function (d) {
         market = d;
         renderTicker(d);
+        renderAssetGrid(d);
         $('summary').textContent = summarise(d);
         var t = new Date(d.asOf);
         $('pip').className = 'pip ' + (d.degraded.length === d.quotes.length ? 'bad' : 'ok');
-        $('feedstate').textContent = (d.degraded.length ? d.degraded.length + ' feed(s) unavailable · ' : 'Live · ') + 'updated ' + t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        var btc = d.quotes.filter(function (q) { return q.label === 'Bitcoin'; })[0];
-        var cad = d.quotes.filter(function (q) { return q.label === 'CAD/USD'; })[0];
-        cadRate = cad && cad.price !== null ? cad.price : null;
-        $('ccy-cad').disabled = cadRate === null;
-        renderHero(btc);
+        $('feedstate').textContent = d.preview ? 'Illustrative preview data · live feeds are not used' : (d.degraded.length ? d.degraded.length + ' feed(s) unavailable · ' : '') + 'Updated ' + t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) + ' · indicative feeds';
+        renderFocus(d.quotes.filter(function (q) { return q.symbol === selectedSymbol; })[0]);
+        drawChart();
         renderPortfolio();
       })
       .catch(function (e) {
@@ -447,31 +505,40 @@
       });
   }
 
-  function conv(v) { return ccy === 'CAD' && cadRate ? v * cadRate : v; }
   function money(v, dp) {
     if (v === null || v === undefined || !isFinite(v)) return '—';
-    return (ccy === 'CAD' ? 'CA$' : '$') + conv(v).toLocaleString('en-US', { maximumFractionDigits: dp === undefined ? 0 : dp });
+    return '$' + v.toLocaleString('en-US', { maximumFractionDigits: dp === undefined ? 0 : dp });
   }
 
-  function renderHero(btc) {
-    if (!btc || btc.price === null) {
-      $('btc-px').textContent = '—';
-      $('btc-move').textContent = 'Price unavailable';
+  function renderFocus(q) {
+    if (!q) return;
+    $('focus-label').textContent = q.label + ' · reference price';
+    $('focus-icon').textContent = ICONS[q.symbol] || '•';
+    $('focus-icon').className = 'coin' + (q.symbol === 'BTC-USD' || q.symbol === 'ETH-USD' ? '' : ' macro');
+    $('chart').setAttribute('aria-label', q.label + ' reference price chart');
+    if (q.price === null) {
+      $('focus-px').textContent = '—';
+      $('focus-move').textContent = 'Price unavailable';
+      $('focus-open').textContent = $('focus-hi').textContent = $('focus-lo').textContent = '—';
+      $('focus-src').textContent = q.source;
       return;
     }
-    $('btc-px').textContent = money(btc.price);
-    var m = move(btc);
+    $('focus-px').textContent = fmtPrice(q, q.price);
+    var m = move(q);
     var col = m.c === 'up' ? 'var(--up)' : m.c === 'down' ? 'var(--down)' : 'var(--muted)';
-    var abs = btc.changeAbs === null ? '' : (btc.changeAbs > 0 ? '+' : '−') + money(Math.abs(btc.changeAbs)) + '  ';
-    $('btc-move').innerHTML = '<span style="color:' + col + '">' + esc(abs) + m.t + '</span> <span style="color:var(--muted)">today</span>';
-    $('btc-hi').textContent = money(btc.high24h);
-    $('btc-lo').textContent = money(btc.low24h);
-    $('btc-vol').textContent = (btc.volume24h === null || btc.volume24h === undefined) ? '—' : btc.volume24h.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' BTC';
-    $('btc-src').textContent = btc.source;
+    var abs = q.changeAbs === null ? '' : (q.changeAbs > 0 ? '+' : '−') + fmtPrice(q, Math.abs(q.changeAbs)) + '  ';
+    $('focus-move').innerHTML = '<span style="color:' + col + '">' + esc(abs) + m.t + '</span> <span style="color:var(--muted)">session</span>';
+    $('focus-open').textContent = fmtPrice(q, q.open);
+    $('focus-hi').textContent = fmtPrice(q, q.sessionHigh);
+    $('focus-lo').textContent = fmtPrice(q, q.sessionLow);
+    var state = q.marketState === 'REGULAR' ? 'Open' : (q.marketState || 'Reference');
+    var asOf = q.asOf ? new Date(q.asOf).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
+    $('focus-src').textContent = q.source + ' · ' + state + (asOf ? ' · ' + asOf : '');
   }
 
-  var RANGES = { '1D': { g: 300, n: 288 }, '1W': { g: 3600, n: 168 }, '1M': { g: 21600, n: 120 }, '3M': { g: 86400, n: 90 }, '1Y': { g: 86400, n: 300 } };
-  var range = '1W', series = [];
+  function selectedQuote() {
+    return market && market.quotes.filter(function (q) { return q.symbol === selectedSymbol; })[0];
+  }
 
   function drawChart() {
     var cv = $('chart');
@@ -484,7 +551,7 @@
     ctx.clearRect(0, 0, box.width, box.height);
     if (series.length < 2) return;
 
-    var pts = series.map(conv);
+    var pts = series.map(function (p) { return p.v; });
     var lo = Math.min.apply(null, pts), hi = Math.max.apply(null, pts);
     var pad = (hi - lo) * 0.12 || 1;
     lo -= pad; hi += pad;
@@ -498,7 +565,7 @@
     for (var g = 0; g <= 3; g++) {
       var v = lo + ((hi - lo) / 3) * g, yy = Math.round(y(v)) + 0.5;
       ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(R, yy); ctx.stroke();
-      ctx.fillText((ccy === 'CAD' ? 'CA$' : '$') + Math.round(v).toLocaleString('en-US'), R + 8, yy);
+      ctx.fillText(fmtAxis(selectedQuote(), v), R + 8, yy);
     }
     var grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, 'rgba(0,104,255,0.14)');
@@ -512,16 +579,34 @@
     ctx.strokeStyle = '#0068ff'; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
   }
 
+  function fmtAxis(q, value) {
+    if (!q) return String(value);
+    if (q.kind === 'pct') return value.toFixed(2) + '%';
+    if (q.kind === 'fx') return value.toFixed(3);
+    if (q.kind === 'level') return Math.round(value).toLocaleString('en-US');
+    return '$' + (value < 100 ? value.toFixed(1) : Math.round(value).toLocaleString('en-US'));
+  }
+
   function loadChart() {
-    var cfg = RANGES[range], msg = $('chartmsg');
+    var msg = $('chartmsg'), requestSymbol = selectedSymbol;
     series = []; msg.textContent = 'Loading chart…'; drawChart();
-    var end = new Date(), start = new Date(end.getTime() - cfg.g * cfg.n * 1000);
-    var url = 'https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=' + cfg.g + '&start=' + start.toISOString() + '&end=' + end.toISOString();
-    return fetch(url)
+    if (usePreview) {
+      var q = selectedQuote(), count = range === '1D' ? 78 : range === '1W' ? 84 : range === '1M' ? 90 : range === '3M' ? 90 : 120;
+      var days = range === '1D' ? 1 : range === '1W' ? 7 : range === '1M' ? 30 : range === '3M' ? 90 : 365;
+      var end = Date.now(), start = end - days * 86400000, base = q ? q.price : 100;
+      series = [];
+      for (var i = 0; i < count; i++) {
+        var progress = i / (count - 1), wave = Math.sin(i * .21 + Object.keys(ICONS).indexOf(selectedSymbol)) * .014 + Math.sin(i * .067) * .008;
+        series.push({ t: start + (end - start) * progress, v: base * (.94 + progress * .06 + wave) });
+      }
+      msg.textContent = ''; drawChart(); return Promise.resolve();
+    }
+    return fetch('/api/history?symbol=' + encodeURIComponent(requestSymbol) + '&range=' + encodeURIComponent(range), { cache: 'no-store' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (rows) {
-        if (!Array.isArray(rows) || rows.length < 2) throw new Error('no data returned');
-        series = rows.slice().sort(function (a, b) { return a[0] - b[0]; }).map(function (r) { return r[4]; }).filter(function (n) { return isFinite(n); });
+      .then(function (d) {
+        if (requestSymbol !== selectedSymbol) return;
+        if (!d || !Array.isArray(d.points) || d.points.length < 2) throw new Error('no data returned');
+        series = d.points.filter(function (p) { return p && isFinite(p.t) && isFinite(p.v); });
         if (series.length < 2) throw new Error('not enough data');
         msg.textContent = ''; drawChart();
       })
@@ -538,15 +623,14 @@
     Array.prototype.forEach.call(this.querySelectorAll('button'), function (o) { o.setAttribute('aria-pressed', String(o === b)); });
     loadChart();
   });
-  function setCcy(next) {
-    ccy = next;
-    $('ccy-usd').setAttribute('aria-pressed', String(next === 'USD'));
-    $('ccy-cad').setAttribute('aria-pressed', String(next === 'CAD'));
-    if (market) renderHero(market.quotes.filter(function (q) { return q.label === 'Bitcoin'; })[0]);
-    drawChart(); renderPortfolio();
-  }
-  $('ccy-usd').addEventListener('click', function () { setCcy('USD'); });
-  $('ccy-cad').addEventListener('click', function () { setCcy('CAD'); });
+  $('asset-grid').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-symbol]');
+    if (!b || b.getAttribute('data-symbol') === selectedSymbol) return;
+    selectedSymbol = b.getAttribute('data-symbol');
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+    renderFocus(selectedQuote());
+    loadChart();
+  });
   var rz;
   window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(drawChart, 140); });
 
@@ -620,7 +704,7 @@
         .then(function (r) { if (!r.ok) throw new Error(r.status === 400 ? 'invalid address' : 'lookup failed'); return r.json(); })
         .then(function (d) {
           var c = d.chain_stats || {}, m = d.mempool_stats || {};
-          balances[w.address] = { btc: ((c.funded_txo_sum || 0) - (c.spent_txo_sum || 0) + ((m.funded_txo_sum || 0) - (m.spent_txo_sum || 0))) / 1e8 };
+          balances[w.address] = { btc: ((c.funded_txo_sum || 0) - (c.spent_txo_sum || 0)) / 1e8 };
           renderPortfolio();
         })
         .catch(function (e) { balances[w.address] = { error: e.message }; renderPortfolio(); });
