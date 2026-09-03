@@ -111,7 +111,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
-        <a class="btn" href="https://desk.satstreet.com/auth/login?welcome=1788456624959" target="_blank" rel="noopener noreferrer">Place a Trade <span aria-hidden="true">↗</span></a>
+        <a class="btn" href="https://desk.satstreet.com/auth/login" target="_blank" rel="noopener noreferrer">Place a Trade <span aria-hidden="true">↗</span></a>
         <button class="btn ghost" id="add-open" type="button">Add wallet</button>
       </div>
       <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">No wallets tracked</span></span>
@@ -502,13 +502,16 @@
 
   function renderActivity() {
     var rows = analysis && analysis.events ? analysis.events.slice().sort(function (a, b) { return b.t - a.t; }).slice(0, 8) : [];
-    $('activity-count').textContent = rows.length ? 'Latest ' + rows.length : '';
+    // Running P&L is only shown when the headline P&L stands. Printing a
+    // total built from truncated history would contradict the withheld figure.
+    var withheld = !analysis || !analysis.valid;
+    $('activity-count').textContent = rows.length ? (withheld ? 'Latest ' + rows.length + ' · P&L withheld' : 'Latest ' + rows.length) : '';
     $('activity-rows').innerHTML = rows.length ? rows.map(function (e) {
       var incoming = e.net > 0;
       return '<tr><td>' + new Date(e.t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + '</td>' +
         '<td><span class="flow ' + (incoming ? 'in' : 'out') + '"><span class="flow-dot"></span>' + (incoming ? 'Receipt' : 'Sent') + '</span></td>' +
         '<td class="' + (incoming ? 'up' : 'down') + '">' + signed(e.net, 8) + '</td><td>' + (isFinite(e.price) ? '$' + e.price.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—') + '</td>' +
-        '<td class="' + (e.running >= 0 ? 'up' : 'down') + '">' + (isFinite(e.running) ? cash(e.running) : '—') + '</td></tr>';
+        (withheld ? '<td style="color:var(--muted)">—</td>' : '<td class="' + (e.running >= 0 ? 'up' : 'down') + '">' + (isFinite(e.running) ? cash(e.running) : '—') + '</td>') + '</tr>';
     }).join('') : '<tr><td colspan="5" style="text-align:left;color:var(--muted)">No confirmed activity to show.</td></tr>';
   }
 

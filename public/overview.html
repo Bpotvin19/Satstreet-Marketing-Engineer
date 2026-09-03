@@ -153,6 +153,8 @@
   .asset-tile .tile-px { display: block; margin-top: 10px; font-size: 18px; line-height: 1.15; font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .asset-tile .tile-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 9px; }
   .asset-tile .tile-foot .ch { font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tile-state { font-size: 9.5px; line-height: 1.2; letter-spacing: .3px; text-transform: uppercase; color: var(--muted); }
+  .tile-state.warn { color: var(--down); font-weight: 600; }
   .asset-tile .tile-spark { width: 72px; height: 28px; flex: none; }
 
   .focus-panel { margin-top:14px; border:1px solid #d8e2eb; border-radius:9px; overflow:hidden; background:#fff; }
@@ -291,7 +293,7 @@
     </nav>
     <span class="spacer"></span>
     <button class="top-icon" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>
-    <span class="avatar" aria-label="Ben Potvin">BP</span>
+    <button class="avatar" id="avatar" type="button" style="cursor:pointer" aria-label="Set your name" title="Set your name">·</button>
   </div>
 </header>
 
@@ -299,7 +301,7 @@
 
   <section class="intro" aria-labelledby="greeting">
     <p class="datestamp" id="datestamp"></p>
-    <h1 id="greeting">Good morning, Ben.</h1>
+    <h1 id="greeting">Good morning.</h1>
     <p class="summary" id="summary"></p>
     <p class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Connecting to the price feed…</span></p>
   </section>
@@ -420,8 +422,27 @@
 
   var now = new Date();
   $('datestamp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  var hr = now.getHours();
-  $('greeting').textContent = 'Good ' + (hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening') + ', Ben.';
+
+  // The greeting is per-viewer. The name never leaves this browser.
+  var NAMEKEY = 'satstreet.user.name';
+  function userName() { try { return (localStorage.getItem(NAMEKEY) || '').trim(); } catch (e) { return ''; } }
+  function applyGreeting() {
+    var hr = new Date().getHours();
+    var part = hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening';
+    var name = userName();
+    $('greeting').textContent = 'Good ' + part + (name ? ', ' + name : '') + '.';
+    var initials = name ? name.split(/\s+/).map(function (w) { return w.charAt(0); }).join('').slice(0, 2).toUpperCase() : '';
+    $('avatar').textContent = initials || '·';
+    $('avatar').setAttribute('aria-label', name ? name + ' — change your name' : 'Set your name');
+    $('avatar').title = $('avatar').getAttribute('aria-label');
+  }
+  $('avatar').addEventListener('click', function () {
+    var next = window.prompt('First name to greet you with on this device (kept in this browser only):', userName());
+    if (next === null) return;
+    try { if (next.trim()) localStorage.setItem(NAMEKEY, next.trim()); else localStorage.removeItem(NAMEKEY); } catch (e) {}
+    applyGreeting();
+  });
+  applyGreeting();
 
   function fmtPrice(q, v) {
     if (v === null || v === undefined || !isFinite(v)) return '—';
@@ -462,7 +483,7 @@
   var ASSETS = {
     'BTC-USD': { cls:'btc crypto-logo', code:'BTC / USD', image:'https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png?1696501400' },
     'ETH-USD': { cls:'eth crypto-logo', code:'ETH / USD', image:'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628' },
-    'GC=F': { cls:'gold', code:'XAU / USD', icon:'<path d="m6 9 2-4h8l2 4M5 10h14l2 8H3l2-8Z"/><path d="M8 14h8"/>' },
+    'GC=F': { cls:'gold', code:'COMEX front month', icon:'<path d="m6 9 2-4h8l2 4M5 10h14l2 8H3l2-8Z"/><path d="M8 14h8"/>' },
     'CL=F': { cls:'oil', code:'CL front month', icon:'<path d="M12 3c3 4 6 7.3 6 11a6 6 0 1 1-12 0c0-3.7 3-7 6-11Z"/><path d="M9 16c.7 1 1.7 1.5 3 1.5"/>' },
     'CAD=X': { cls:'fx', code:'Spot FX', icon:'<path d="M5 8h12l-3-3M19 16H7l3 3"/>' },
     '^TNX': { cls:'bond', code:'Treasury yield', icon:'<path d="M4 9h16M6 9v8m4-8v8m4-8v8m4-8v8M3 18h18M12 3l9 4H3l9-4Z"/>' },
@@ -510,15 +531,73 @@
     var stroke = cls === 'up' ? '#0f8a63' : cls === 'down' ? '#c33a49' : '#98a5b4';
     return '<svg class="tile-spark" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   }
+  /* Session status is derived from each venue's own schedule in New York
+     time. The upstream feed's marketState is null for every non-crypto
+     instrument, so trusting it would label an open NYSE as "Reference". */
+  var CLS = { 'BTC-USD':'crypto', 'ETH-USD':'crypto', 'GC=F':'futures', 'CL=F':'futures', 'CAD=X':'fx', '^TNX':'bond', '^IXIC':'equity', '^GSPC':'equity' };
+  function nyClock() {
+    var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date());
+    var o = {};
+    parts.forEach(function (p) { o[p.type] = p.value; });
+    return { day: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(o.weekday), min: (parseInt(o.hour, 10) % 24) * 60 + parseInt(o.minute, 10) };
+  }
+  function sessionOpen(cls) {
+    var n = nyClock(), d = n.day, m = n.min;
+    if (cls === 'crypto') return true;
+    if (cls === 'equity') return d >= 1 && d <= 5 && m >= 570 && m < 960;          // NYSE/Nasdaq 9:30–16:00
+    if (cls === 'bond') return d >= 1 && d <= 5 && m >= 480 && m < 1020;           // cash treasuries approx 8:00–17:00
+    if (cls === 'futures') {                                                        // CME Sun 18:00 – Fri 17:00, daily 17:00–18:00 break
+      if (d === 6) return false;
+      if (d === 0) return m >= 1080;
+      if (d === 5) return m < 1020;
+      return m < 1020 || m >= 1080;
+    }
+    if (cls === 'fx') {                                                             // spot FX Sun 17:00 – Fri 17:00
+      if (d === 6) return false;
+      if (d === 0) return m >= 1020;
+      if (d === 5) return m < 1020;
+      return true;
+    }
+    return false;
+  }
+  function feedLagMin(q) { return q.asOf ? (Date.now() - new Date(q.asOf).getTime()) / 60000 : 0; }
+  function sessionState(q) {
+    if (q.error) return { t: 'Unavailable', warn: true };
+    if (q.marketState === 'SAMPLE') return { t: 'Sample', warn: false };
+    var cls = CLS[q.symbol] || 'equity';
+    if (cls === 'crypto') return feedLagMin(q) > 15 ? { t: 'Stale', warn: true } : { t: '24/7', warn: false };
+    if (!sessionOpen(cls)) return { t: 'Closed', warn: false };
+    return feedLagMin(q) > 20 ? { t: 'Delayed', warn: true } : { t: 'Open', warn: false };
+  }
+
+  function tileFootHTML(q, m, st) {
+    return '<span class="tile-state' + (st.warn ? ' warn' : '') + '">' + esc(st.t) + '</span>' + tileSpark(q.spark, m.c);
+  }
+  function tileLabel(q, m, st) {
+    return q.label + ', ' + fmtPrice(q, q.price) + ', ' + (m.t === '—' ? 'no change data' : m.t) + ', ' + st.t;
+  }
+  function tileHTML(q) {
+    var m = move(q), st = sessionState(q), active = q.symbol === selectedSymbol;
+    var meta = ASSETS[q.symbol] || { code: q.symbol };
+    return '<button type="button" class="asset-tile" data-symbol="' + esc(q.symbol) + '" aria-pressed="' + active + '" aria-label="' + esc(tileLabel(q, m, st)) + '" title="' + esc(q.source + ' · ' + st.t) + '">' +
+      '<span class="tile-top"><span class="asset-id">' + assetIcon(q.symbol) + '<span><span class="tile-name">' + esc(q.label) + '</span><span class="tile-code">' + esc(meta.code) + '</span></span></span><span class="tile-change ' + m.c + '">' + m.t + '</span></span>' +
+      '<span class="tile-px">' + fmtPrice(q, q.price) + '</span><span class="tile-foot">' + tileFootHTML(q, m, st) + '</span></button>';
+  }
   function renderAssetGrid(d) {
-    $('asset-grid').innerHTML = d.quotes.map(function (q) {
-      var m = move(q), active = q.symbol === selectedSymbol;
-      var state = q.error ? 'Unavailable' : (q.marketState === 'REGULAR' ? 'Open' : (q.marketState || 'Reference'));
-      var meta = ASSETS[q.symbol] || { code:q.symbol };
-      return '<button type="button" class="asset-tile" data-symbol="' + esc(q.symbol) + '" aria-pressed="' + active + '" title="' + esc(q.source + ' · ' + state) + '">' +
-        '<span class="tile-top"><span class="asset-id">' + assetIcon(q.symbol) + '<span><span class="tile-name">' + esc(q.label) + '</span><span class="tile-code">' + esc(meta.code) + '</span></span></span><span class="tile-change ' + m.c + '">' + m.t + '</span></span>' +
-        '<span class="tile-px">' + fmtPrice(q, q.price) + '</span><span class="tile-foot"><span></span>' + tileSpark(q.spark, m.c) + '</span></button>';
-    }).join('');
+    var grid = $('asset-grid');
+    var tiles = grid.querySelectorAll('button[data-symbol]');
+    var patchable = tiles.length === d.quotes.length && d.quotes.every(function (q, i) { return tiles[i].getAttribute('data-symbol') === q.symbol; });
+    if (!patchable) { grid.innerHTML = d.quotes.map(tileHTML).join(''); return; }
+    // Refresh values in place so hover and keyboard focus survive the tick.
+    d.quotes.forEach(function (q, i) {
+      var b = tiles[i], m = move(q), st = sessionState(q);
+      b.querySelector('.tile-px').textContent = fmtPrice(q, q.price);
+      var ch = b.querySelector('.tile-change');
+      ch.className = 'tile-change ' + m.c; ch.textContent = m.t;
+      b.querySelector('.tile-foot').innerHTML = tileFootHTML(q, m, st);
+      b.setAttribute('aria-label', tileLabel(q, m, st));
+      b.title = q.source + ' · ' + st.t;
+    });
   }
   function summarise(d) {
     var by = {};
@@ -602,9 +681,9 @@
     $('focus-open').textContent = fmtPrice(q, q.open);
     $('focus-hi').textContent = fmtPrice(q, q.sessionHigh);
     $('focus-lo').textContent = fmtPrice(q, q.sessionLow);
-    var state = q.marketState === 'REGULAR' ? 'Open' : (q.marketState || 'Reference');
+    var st = sessionState(q);
     var asOf = q.asOf ? new Date(q.asOf).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
-    $('focus-src').textContent = q.source + (asOf ? ' · ' + asOf : '');
+    $('focus-src').textContent = q.source + ' · ' + st.t + (asOf ? ' · ' + asOf : '');
   }
 
   function selectedQuote() {
@@ -713,7 +792,8 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || !d.note || !d.note.paragraphs || !d.note.paragraphs.length) {
-          $('desk').innerHTML = '<p class="emptybox">No desk note has been published today. Your Satstreet representative can talk you through the market directly.</p>';
+          var hint = d && d.reason && /draft/i.test(d.reason) ? ' Today’s note is written and awaiting review.' : '';
+          $('desk').innerHTML = '<p class="emptybox">No desk note has been published yet today.' + hint + ' Your Satstreet representative can talk you through the market directly.</p>';
           return;
         }
         var n = d.note, html = '';

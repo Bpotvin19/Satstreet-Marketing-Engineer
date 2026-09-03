@@ -102,7 +102,8 @@ export default async function handler(request: Request): Promise<Response> {
   const expected = process.env.TERMINAL_NEWS_KEY?.trim() ?? ''
   if (!expected) return json({ error: 'The protected news feed is not configured.' }, 503)
   const supplied = request.headers.get('x-terminal-key')?.trim() ?? ''
-  if (!sameSecret(supplied, expected)) return json({ error: 'Access key required.' }, 401)
+  if (!supplied) return json({ error: 'Access key required.' }, 401)
+  if (!sameSecret(supplied, expected)) return json({ error: 'That access key is not correct.' }, 401)
 
   try {
     const query = await notion(`/databases/${DB}/query`, {
