@@ -75,7 +75,7 @@
   .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
   .topbar { background: var(--navy); position: relative; }
-  .topbar-in { display: flex; align-items: center; gap: 22px; height: 62px; max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+  .topbar-in { display: flex; align-items: center; gap: 18px; height: 58px; max-width: var(--max); margin: 0 auto; padding: 0 24px; }
   .brand { display: flex; align-items: center; flex: none; }
   .brand img { height: 24px; width: auto; display: block; }
   .mainnav { display: flex; gap: 4px; margin-left: 6px; }
@@ -83,8 +83,12 @@
   .mainnav a:hover { color: #fff; }
   .mainnav a[aria-current="page"] { color: #fff; border-bottom-color: var(--cyan); }
   .topbar .spacer { margin-left: auto; }
-  .feed-badge { display: inline-flex; align-items: center; gap: 7px; color: var(--on-navy-2); font-size: 12px; font-weight: 600; letter-spacing: .45px; text-transform: uppercase; white-space: nowrap; }
-  .feed-badge i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 3px rgba(0,194,255,.12); }
+  .feed-badge { display: inline-flex; align-items: center; gap: 7px; color: var(--on-navy-2); font-size: 12px; white-space: nowrap; }
+  .feed-badge i { width: 7px; height: 7px; border-radius: 50%; background: #35c48d; box-shadow: 0 0 0 3px rgba(53,196,141,.12); }
+  .top-icon { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; color: var(--on-navy-2); border: 0; background: transparent; border-radius: 50%; cursor: pointer; }
+  .top-icon:hover { color: #fff; background: rgba(255,255,255,.06); }
+  .top-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .avatar { width: 29px; height: 29px; display: grid; place-items: center; flex: none; border-radius: 50%; color: #d9e6f4; background: #20364d; border: 1px solid rgba(255,255,255,.08); font-size: 10px; font-weight: 700; letter-spacing: .35px; }
 
   .btn { font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 9px 16px; border-radius: 7px; border: 1px solid transparent; background: var(--blue); color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
   .btn:hover { background: #0057d6; }
@@ -105,12 +109,13 @@
   .tick .spark { grid-column: 2; grid-row: 1 / span 3; }
   .up { color: #35c48d; } .down { color: #f0808f; } .flat { color: var(--on-navy-2); }
 
-  main { padding: 28px 0 8px; }
-  .intro { margin-bottom: 22px; }
+  main { padding: 24px 0 8px; }
+  .intro { position: relative; margin-bottom: 20px; padding-right: 270px; }
   .datestamp { font-size: 12px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
   h1 { font-size: 30px; line-height: 1.2; font-weight: 600; margin: 0 0 8px; }
   .summary { font-size: 16px; color: var(--ink-2); margin: 0; max-width: 74ch; }
   .feedstate { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .intro > .feedstate { position: absolute; right: 0; bottom: 2px; }
   .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
   .pip.ok { background: var(--up); } .pip.bad { background: var(--down); }
 
@@ -118,12 +123,12 @@
   .cols { grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); }
   .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-  .marketboard { margin-bottom: 16px; }
+  .marketboard { margin-bottom: 16px; padding: 17px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
   .marketboard > header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
   .marketboard h2 { font-size: 17px; font-weight: 600; margin: 0; }
   .marketboard .hint { font-size: 12.5px; color: var(--muted); margin: 0; }
   .asset-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-  .asset-tile { position: relative; min-width: 0; min-height: 112px; text-align: left; cursor: pointer; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 13px 14px 11px; box-shadow: var(--shadow); overflow: hidden; }
+  .asset-tile { position: relative; min-width: 0; min-height: 96px; text-align: left; cursor: pointer; font: inherit; color: var(--ink); background: #fbfcfe; border: 1px solid var(--border); border-radius: 8px; padding: 12px 13px 10px; overflow: hidden; }
   .asset-tile:hover { border-color: #b9c8dc; }
   .asset-tile[aria-pressed="true"] { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue), 0 4px 14px rgba(0,104,255,.08); }
   .asset-tile .tile-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
@@ -208,7 +213,7 @@
   }
   @media (max-width: 760px) {
     .shell, .topbar-in { padding: 0 16px; }
-    .mainnav { display: none; position: absolute; top: 62px; left: 0; right: 0; z-index: 20; flex-direction: column; gap: 0; background: var(--navy); padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
+    .mainnav { display: none; position: absolute; top: 58px; left: 0; right: 0; z-index: 20; flex-direction: column; gap: 0; background: var(--navy); padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
     .mainnav.open { display: flex; }
     .mainnav a { padding: 12px 20px; border-bottom: none; border-left: 3px solid transparent; }
     .mainnav a[aria-current="page"] { border-bottom: none; border-left-color: var(--cyan); }
@@ -216,6 +221,9 @@
     h1 { font-size: 25px; }
     .heroPx { font-size: 32px; }
     .feed-badge { display: none; }
+    .top-icon, .avatar { display: none; }
+    .intro { padding-right: 0; }
+    .intro > .feedstate { position: static; }
     .asset-grid { display: flex; overflow-x: auto; margin: 0 -16px; padding: 0 16px 8px; scroll-snap-type: x mandatory; }
     .asset-tile { min-width: 190px; scroll-snap-align: start; }
     .marketboard > header { align-items: flex-start; flex-direction: column; gap: 2px; }
@@ -236,22 +244,21 @@
       <a href="./ticker.html">Markets</a>
       <a href="./structure.html">Structure</a>
       <a href="./chart.html">Chart</a>
+      <a href="./news.html">News</a>
       <a href="./portfolio.html">Portfolio</a>
     </nav>
     <span class="spacer"></span>
-    <span class="feed-badge"><i aria-hidden="true"></i> Data terminal</span>
+    <span class="feed-badge"><i aria-hidden="true"></i> Feeds connected</span>
+    <button class="top-icon" type="button" aria-label="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>
+    <span class="avatar" aria-label="Ben Potvin">BP</span>
   </div>
 </header>
-
-<div class="tickerwrap">
-  <div class="ticker" id="ticker" role="region" aria-label="Reference prices"></div>
-</div>
 
 <main class="shell">
 
   <section class="intro" aria-labelledby="greeting">
     <p class="datestamp" id="datestamp"></p>
-    <h1 id="greeting">Good morning</h1>
+    <h1 id="greeting">Good morning, Ben.</h1>
     <p class="summary" id="summary"></p>
     <p class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Connecting to the price feed…</span></p>
   </section>
@@ -373,7 +380,7 @@
   var now = new Date();
   $('datestamp').textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   var hr = now.getHours();
-  $('greeting').textContent = 'Good ' + (hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening');
+  $('greeting').textContent = 'Good ' + (hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening') + ', Ben.';
 
   function fmtPrice(q, v) {
     if (v === null || v === undefined || !isFinite(v)) return '—';
@@ -413,19 +420,22 @@
   };
 
   function skeletonTicker() {
-    var t = $('ticker'); t.innerHTML = '';
+    var t = $('ticker');
+    if (t) t.innerHTML = '';
     for (var i = 0; i < 8; i++) {
       var d = document.createElement('div');
       d.className = 'tick';
       d.innerHTML = '<span class="nm skel" style="height:11px;width:52px">&nbsp;</span><span class="px skel" style="height:15px;width:78px;margin-top:4px">&nbsp;</span><span class="ch skel" style="height:12px;width:44px;margin-top:4px">&nbsp;</span>';
-      t.appendChild(d);
+      if (t) t.appendChild(d);
     }
     $('asset-grid').innerHTML = Array(9).join('x').split('x').map(function () {
       return '<span class="asset-tile" aria-hidden="true"><span class="skel" style="display:block;width:52px;height:11px"></span><span class="skel" style="display:block;width:86px;height:20px;margin-top:8px"></span><span class="skel" style="display:block;width:100%;height:24px;margin-top:11px"></span></span>';
     }).join('');
   }
   function renderTicker(d) {
-    var t = $('ticker'); t.innerHTML = '';
+    var t = $('ticker');
+    if (!t) return;
+    t.innerHTML = '';
     d.quotes.forEach(function (q) {
       var m = move(q);
       var el = document.createElement('div');
@@ -503,7 +513,7 @@
         $('pip').className = 'pip bad';
         $('feedstate').textContent = 'Price feed unavailable';
         $('summary').textContent = '';
-        $('ticker').innerHTML = '<div class="tick" style="min-width:auto"><span class="nm">Market data</span><span class="px">Unavailable</span><span class="ch flat">' + esc(e.message) + '</span></div>';
+        if ($('ticker')) $('ticker').innerHTML = '<div class="tick" style="min-width:auto"><span class="nm">Market data</span><span class="px">Unavailable</span><span class="ch flat">' + esc(e.message) + '</span></div>';
       });
   }
 

@@ -17,6 +17,7 @@ window.SATSTREET = (function () {
     ['Markets',   './ticker.html'],
     ['Structure', './structure.html'],
     ['Chart',     './chart.html'],
+    ['News',      './news.html'],
     ['Portfolio', './portfolio.html']
   ];
 
@@ -39,7 +40,10 @@ window.SATSTREET = (function () {
       '<button class="navtoggle" id="navtoggle" aria-expanded="false" aria-controls="mainnav">Menu</button>' +
       '<nav class="mainnav" id="mainnav" aria-label="Primary">' + links + '</nav>' +
       '<span class="spacer"></span>' +
-      '<span class="feed-badge"><i></i> Data terminal</span>' +
+      '<span class="feed-badge"><i></i> Feeds connected</span>' +
+      '<button class="top-icon" type="button" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>' +
+      '<span class="avatar" aria-label="Ben Potvin">BP</span>' +
       '</div></header>';
   }
 

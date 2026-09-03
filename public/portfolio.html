@@ -87,8 +87,11 @@
       <h1>Bitcoin Portfolio</h1>
       <p>Watch public addresses, reconstruct their history and review an estimated P&amp;L.</p>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
-      <button class="btn" id="add-open" type="button">Add wallet</button>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <a class="btn" href="https://satstreet.com/services/tradedesk" target="_blank" rel="noopener noreferrer">Place a Trade <span aria-hidden="true">↗</span></a>
+        <button class="btn ghost" id="add-open" type="button">Add wallet</button>
+      </div>
       <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">No wallets tracked</span></span>
     </div>
   </div>

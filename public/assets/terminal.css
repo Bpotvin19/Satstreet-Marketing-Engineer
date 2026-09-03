@@ -59,7 +59,7 @@ a { color: var(--blue); }
 
 /* ── header ─────────────────────────────────────────────────── */
 .topbar { background: var(--navy); position: relative; }
-.topbar-in { display: flex; align-items: center; gap: 22px; height: 62px; max-width: var(--max-wide); margin: 0 auto; padding: 0 24px; }
+.topbar-in { display: flex; align-items: center; gap: 18px; height: 58px; max-width: var(--max-wide); margin: 0 auto; padding: 0 24px; }
 .brand { display: flex; align-items: center; flex: none; }
 .brand img { height: 24px; width: auto; display: block; }
 .mainnav { display: flex; gap: 4px; margin-left: 6px; }
@@ -69,6 +69,10 @@ a { color: var(--blue); }
 .topbar .spacer { margin-left: auto; }
 .feed-badge { display: inline-flex; align-items: center; gap: 7px; color: var(--on-navy-2); font-size: 12px; white-space: nowrap; }
 .feed-badge i { width: 7px; height: 7px; border-radius: 50%; background: #35c48d; box-shadow: 0 0 0 3px rgba(53,196,141,.12); }
+.top-icon { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; color: var(--on-navy-2); border: 0; background: transparent; border-radius: 50%; cursor: pointer; }
+.top-icon:hover { color: #fff; background: rgba(255,255,255,.06); }
+.top-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.avatar { width: 29px; height: 29px; display: grid; place-items: center; flex: none; border-radius: 50%; color: #d9e6f4; background: #20364d; border: 1px solid rgba(255,255,255,.08); font-size: 10px; font-weight: 700; letter-spacing: .35px; }
 .navtoggle { display: none; background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 7px; padding: 7px 10px; cursor: pointer; font: inherit; }
 
 /* ── buttons ────────────────────────────────────────────────── */
@@ -167,13 +171,14 @@ footer.legal p:last-child { margin-bottom: 0; }
 }
 @media (max-width: 760px) {
   .shell, .topbar-in { padding: 0 16px; }
-  .mainnav { display: none; position: absolute; top: 62px; left: 0; right: 0; z-index: 20; flex-direction: column; gap: 0; background: var(--navy); padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
+  .mainnav { display: none; position: absolute; top: 58px; left: 0; right: 0; z-index: 20; flex-direction: column; gap: 0; background: var(--navy); padding: 6px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 0; }
   .mainnav.open { display: flex; }
   .mainnav a { padding: 12px 20px; border-bottom: none; border-left: 3px solid transparent; }
   .mainnav a[aria-current="page"] { border-bottom: none; border-left-color: var(--cyan); }
   .navtoggle { display: block; }
   .pagehead h1 { font-size: 24px; }
   .feed-badge { display: none; }
+  .top-icon, .avatar { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
