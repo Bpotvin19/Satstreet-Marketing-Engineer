@@ -4,7 +4,7 @@
   var esc = S.esc, fmt = S.fmt;
   S.mountHeader('Structure');
 
-  var TABS = ['derivatives', 'network', 'macro', 'institutional'];
+  var TABS = ['institutional', 'derivatives', 'network'];
   var loaded = {}, updated = {};
 
   var DISCLOSURE = {
@@ -15,9 +15,6 @@
     network:
       '<p><strong>Source.</strong> Bitcoin network figures come from mempool.space and describe the public blockchain. Hashrate is an estimate derived from observed block times and is not directly measurable.</p>' +
       '<p>Fee estimates change continuously and are indicative of conditions at the time shown.</p>',
-    macro:
-      '<p><strong>Source.</strong> Equity, rate, metal and dollar levels are indicative reference prices from third-party venues and may be delayed. Foreign exchange is a reference rate.</p>' +
-      '<p>Movements shown are since the previous close. Yields are quoted in basis points. Nothing here is a forecast or a statement about how any market will affect another.</p>',
     institutional:
       '<p><strong>Source.</strong> Spot Bitcoin ETF flow figures come from the public daily tape published by <a href="https://www.tftc.io/bitcoin-etf-flows" target="_blank" rel="noopener noreferrer">TFTC</a>, compiled from SoSoValue and <a href="https://farside.co.uk/btc/" target="_blank" rel="noopener noreferrer">Farside Investors</a>. Satstreet does not originate this series.</p>' +
       '<p><strong>Method.</strong> Daily net flow is creations minus redemptions in USD. A positive print is a net inflow; a negative print is a net outflow. Weekend and holiday sessions are omitted because creations settle on US equity-market days. The latest session can revise as issuers finalize.</p>' +
@@ -28,11 +25,13 @@
     TABS.forEach(function (t) {
       var sel = t === name;
       var btn = $('tab-' + t);
+      if (!btn) return;
       btn.setAttribute('aria-selected', String(sel));
       btn.tabIndex = sel ? 0 : -1;
-      $('p-' + t).hidden = !sel;
+      var panel = $('p-' + t);
+      if (panel) panel.hidden = !sel;
     });
-    $('disclosure').innerHTML = DISCLOSURE[name];
+    $('disclosure').innerHTML = DISCLOSURE[name] || '';
     stamp(name);
     if (!loaded[name]) { loaded[name] = true; (LOAD[name] || function () {})(); }
   }
@@ -154,29 +153,6 @@
     });
   }
 
-  function loadMacro() {
-    $('macro').innerHTML = Array(6).join('x').split('x').map(function () { return '<div class="metric">' + S.skeleton(2, 16) + '</div>'; }).join('');
-    fetch('/api/market', { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (d) {
-        var want = ['USD/CAD', 'S&P 500', 'Nasdaq', 'Gold', 'WTI Oil', 'US 10Y'];
-        var by = {}; d.quotes.forEach(function (q) { by[q.label] = q; });
-        $('macro').innerHTML = want.filter(function (l) { return by[l]; }).map(function (l) {
-          var q = by[l];
-          var val = q.price === null ? '\u2014' : q.kind === 'pct' ? q.price.toFixed(2) + '%' : q.kind === 'fx' ? q.price.toFixed(4) : q.price.toLocaleString('en-US', { maximumFractionDigits: 2 });
-          var mv = q.kind === 'pct' ? fmt.bps(q.changeAbs) : fmt.pct(q.changePct);
-          var cls = fmt.dir(q.kind === 'pct' ? q.changeAbs : q.changePct);
-          return '<div class="metric"><div class="k">' + esc(q.label) + '</div><div class="v">' + val + '</div><div class="s"><span class="' + cls + '">' + mv + '</span> \u00b7 ' + esc(q.source) + '</div>' + (q.spark && q.spark.length > 2 ? '<div style="margin-top:8px">' + S.spark(q.spark, cls, 100, 26) + '</div>' : '') + '</div>';
-        }).join('');
-        updated.macro = new Date(d.asOf).getTime(); stamp('macro');
-      })
-      .catch(function (e) {
-        $('macro').innerHTML = '<div class="card">' + S.errorState('Macro data unavailable', e.message, 'retry-m') + '</div>';
-        updated.macro = 'error'; stamp('macro');
-        var r = $('retry-m'); if (r) r.addEventListener('click', function () { loaded.macro = false; show('macro'); });
-      });
-  }
-
   function money(n) {
     if (n == null || !isFinite(n)) return '\u2014';
     var sign = n < 0 ? '-' : n > 0 ? '+' : '';
@@ -226,7 +202,7 @@
           (issuers.length? issuers.map(function(x){
             var print = x.lastFlowUsd != null ? x.lastFlowUsd : x.aumUsd;
             return '<div class="issuer"><div><strong>'+esc(x.ticker)+'</strong><div class="s">'+esc(x.name||'')+'</div></div>' +
-              '<div style="text-align:right"><div class="v" style="font-size:16px" class="'+fmt.dir(print)+'">'+money(print)+'</div></div></div>';
+              '<div style="text-align:right"><div class="v" style="font-size:16px">'+money(print)+'</div></div></div>';
           }).join('') : '<p class="ctx">Per-fund prints were not included in this refresh.</p>') +
           '<div class="venue"><span>Updated '+fmt.time(d.asOf)+'</span></div>';
         var rows = d.days.slice(-12).reverse();
@@ -249,6 +225,6 @@
       });
   }
 
-  var LOAD = { derivatives: loadDerivatives, network: loadNetwork, macro: loadMacro, institutional: loadInstitutional };
-  show('derivatives');
+  var LOAD = { institutional: loadInstitutional, derivatives: loadDerivatives, network: loadNetwork };
+  show('institutional');
 })();
