@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Satstreet · Resource Centre</title>
-  <meta name="description" content="Satstreet's terminal-native digital asset Knowledge Centre, powered by live Notion content.">
-  <link rel="stylesheet" href="./assets/terminal.css?v=7">
-  <link rel="stylesheet" href="./assets/resource-native.css?v=7">
+  <meta name="description" content="Satstreet's terminal-native digital asset Knowledge Centre.">
+  <link rel="stylesheet" href="./assets/terminal.css?v=8">
+  <link rel="stylesheet" href="./assets/resource-native.css?v=8">
 </head>
 <body>
   <div id="shell-header"></div>
@@ -15,7 +15,7 @@
       <div>
         <p class="eyebrow">Research &amp; learning</p>
         <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span><h1>Resource Centre</h1></div>
-        <p>Learn about digital assets directly inside the Satstreet terminal. Notion powers the content behind the scenes; the client experience lives here.</p>
+        <p>Explore Satstreet's digital-asset knowledge base directly inside the terminal — from first principles to protocol mechanics.</p>
       </div>
       <span class="feedstate"><span class="pip ok" id="pip"></span><span id="state">Knowledge Centre</span></span>
     </div>
@@ -23,36 +23,36 @@
     <section class="research rc-research" id="research-panel">
       <p class="eyebrow" style="color:#79d6f1">Research the Hub</p>
       <h2>Ask the Satstreet Knowledge Centre.</h2>
-      <p>Search Satstreet's live educational material in plain English. Answers are grounded in the Knowledge Hub.</p>
+      <p>Search the educational library in plain English and jump directly into the supporting material.</p>
       <form class="ask rc-ask" id="ask"><textarea id="question" placeholder="How does Bitcoin mining secure the network, and how is that different from Ethereum staking?"></textarea><button id="askbtn" type="submit">Research</button></form>
       <div class="answer rc-answer" id="answer" hidden></div>
     </section>
 
     <section class="hero rc-hero" id="landing-hero">
-      <div class="box rc-card rc-searchbox"><p class="eyebrow">Knowledge Hub</p><h2>Choose an ecosystem and learn at your own pace.</h2><p>Open Bitcoin, Ethereum, Solana and other ecosystems to read the full Satstreet learning material without leaving the terminal.</p><input class="search rc-search" id="search" type="search" placeholder="Search Bitcoin, custody, stablecoins, security…"><div class="results" id="results"></div></div>
-      <aside class="box rc-card rc-start"><p class="eyebrow">Start here</p><h2 style="font-size:22px">New to digital assets?</h2><p>Begin with the foundational lessons, then choose an ecosystem.</p><div id="quick" class="rc-foundation"><button data-page="3b9e562f-a5bd-8045-bdcf-e2f3efbe905c" data-title="What is Cryptocurrency?">What is Cryptocurrency?</button><button data-page="3b9e562f-a5bd-8057-9abc-ed451550ab90" data-title="Types of Cryptocurrency">Types of Cryptocurrency</button><button data-page="3b9e562f-a5bd-8063-b99c-d655e7090b2f" data-title="How Blockchains Work">How Blockchains Work</button></div></aside>
+      <div class="box rc-card rc-searchbox"><p class="eyebrow">Knowledge Hub</p><h2>Choose an ecosystem and learn at your own pace.</h2><p>Open Bitcoin, Ethereum, Solana and other ecosystems to explore Satstreet's full educational library without leaving the terminal.</p><input class="search rc-search" id="search" type="search" placeholder="Search Bitcoin, custody, stablecoins, security…"><div class="results" id="results"></div></div>
+      <aside class="box rc-card rc-start"><p class="eyebrow">Start here</p><h2 style="font-size:22px">New to digital assets?</h2><p>Begin with the foundations, then choose the ecosystem you want to understand.</p><div id="quick" class="rc-foundation"><button data-page="3b9e562f-a5bd-8045-bdcf-e2f3efbe905c" data-title="What is Cryptocurrency?">What is Cryptocurrency?</button><button data-page="3b9e562f-a5bd-8057-9abc-ed451550ab90" data-title="Types of Cryptocurrency">Types of Cryptocurrency</button><button data-page="3b9e562f-a5bd-8063-b99c-d655e7090b2f" data-title="How Blockchains Work">How Blockchains Work</button></div></aside>
     </section>
 
     <section class="section rc-section" id="ecosystems-section">
-      <h2>Choose an ecosystem</h2><p>Each ecosystem opens as a complete learning experience inside the terminal.</p>
+      <h2>Choose an ecosystem</h2><p>Open any ecosystem to explore its overview, learning levels, diagrams and deeper protocol topics.</p>
       <div id="hub" class="rc-ecosystems">
-        <button class="rc-eco" data-page="3c7e562f-a5bd-81bf-9966-dbf9707087e3" data-title="Bitcoin" data-icon="₿"><div class="rc-eco-top"><span class="rc-eco-icon">₿</span></div><h3>Bitcoin</h3><p>Wallets, transactions, mining, nodes, custody and protocol security.</p><span class="rc-eco-cta">Learn about Bitcoin →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-819a-89e7-fa5eb082bba7" data-title="Ethereum" data-icon="◆"><div class="rc-eco-top"><span class="rc-eco-icon">◆</span></div><h3>Ethereum</h3><p>Smart contracts, gas, staking, DeFi, rollups and protocol architecture.</p><span class="rc-eco-cta">Learn about Ethereum →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-81ef-aa62-e75e150e5f77" data-title="Stablecoins" data-icon="💵"><div class="rc-eco-top"><span class="rc-eco-icon">💵</span></div><h3>Stablecoins</h3><p>Reserve models, redemptions, peg mechanics and issuer or protocol risk.</p><span class="rc-eco-cta">Learn about Stablecoins →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-8168-98c7-d8cd162feef1" data-title="Solana" data-icon="◎"><div class="rc-eco-top"><span class="rc-eco-icon">◎</span></div><h3>Solana</h3><p>Transactions, programs, validators, staking and runtime design.</p><span class="rc-eco-cta">Learn about Solana →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-8130-9b3a-deab4b3ac6ab" data-title="XRP" data-icon="✕"><div class="rc-eco-top"><span class="rc-eco-icon">✕</span></div><h3>XRP</h3><p>Payments, issued assets, settlement, DEX mechanics and consensus.</p><span class="rc-eco-cta">Learn about XRP →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-81df-a3c4-de3805979a15" data-title="Bittensor" data-icon="τ"><div class="rc-eco-top"><span class="rc-eco-icon">τ</span></div><h3>Bittensor</h3><p>Subnets, miners, validators, emissions and decentralized intelligence markets.</p><span class="rc-eco-cta">Learn about Bittensor →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-812e-9b8e-fd7fc28f5f29" data-title="Hyperliquid" data-icon="H"><div class="rc-eco-top"><span class="rc-eco-icon">H</span></div><h3>Hyperliquid</h3><p>HyperCore, HyperEVM, perpetuals, validators and onchain market structure.</p><span class="rc-eco-cta">Learn about Hyperliquid →</span></button>
-        <button class="rc-eco" data-page="3c8e562f-a5bd-814e-9ad1-f3de37551e1b" data-title="Zcash" data-icon="🛡️"><div class="rc-eco-top"><span class="rc-eco-icon">🛡️</span></div><h3>Zcash</h3><p>Shielded transactions, zero-knowledge proofs, mining and privacy trade-offs.</p><span class="rc-eco-cta">Learn about Zcash →</span></button>
-        <button class="rc-eco" data-page="3c8e562f-a5bd-8110-aeab-f504a3216a22" data-title="BNB Chain" data-icon="🟡"><div class="rc-eco-top"><span class="rc-eco-icon">🟡</span></div><h3>BNB Chain</h3><p>BNB, BSC, validators, opBNB, Greenfield and ecosystem security.</p><span class="rc-eco-cta">Learn about BNB Chain →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-81bf-9966-dbf9707087e3" data-title="Bitcoin" data-icon="₿"><div class="rc-eco-top"><span class="rc-eco-icon">₿</span></div><h3>Bitcoin</h3><p>Wallets, transactions, mining, nodes, custody and protocol security.</p><span class="rc-eco-cta">Explore Bitcoin →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-819a-89e7-fa5eb082bba7" data-title="Ethereum" data-icon="◆"><div class="rc-eco-top"><span class="rc-eco-icon">◆</span></div><h3>Ethereum</h3><p>Smart contracts, gas, staking, DeFi, rollups and protocol architecture.</p><span class="rc-eco-cta">Explore Ethereum →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-81ef-aa62-e75e150e5f77" data-title="Stablecoins" data-icon="💵"><div class="rc-eco-top"><span class="rc-eco-icon">💵</span></div><h3>Stablecoins</h3><p>Reserve models, redemptions, peg mechanics and issuer or protocol risk.</p><span class="rc-eco-cta">Explore Stablecoins →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-8168-98c7-d8cd162feef1" data-title="Solana" data-icon="◎"><div class="rc-eco-top"><span class="rc-eco-icon">◎</span></div><h3>Solana</h3><p>Transactions, programs, validators, staking and runtime design.</p><span class="rc-eco-cta">Explore Solana →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-8130-9b3a-deab4b3ac6ab" data-title="XRP" data-icon="✕"><div class="rc-eco-top"><span class="rc-eco-icon">✕</span></div><h3>XRP</h3><p>Payments, issued assets, settlement, DEX mechanics and consensus.</p><span class="rc-eco-cta">Explore XRP →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-81df-a3c4-de3805979a15" data-title="Bittensor" data-icon="τ"><div class="rc-eco-top"><span class="rc-eco-icon">τ</span></div><h3>Bittensor</h3><p>Subnets, miners, validators, emissions and decentralized intelligence markets.</p><span class="rc-eco-cta">Explore Bittensor →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-812e-9b8e-fd7fc28f5f29" data-title="Hyperliquid" data-icon="H"><div class="rc-eco-top"><span class="rc-eco-icon">H</span></div><h3>Hyperliquid</h3><p>HyperCore, HyperEVM, perpetuals, validators and onchain market structure.</p><span class="rc-eco-cta">Explore Hyperliquid →</span></button>
+        <button class="rc-eco" data-page="3c8e562f-a5bd-814e-9ad1-f3de37551e1b" data-title="Zcash" data-icon="🛡️"><div class="rc-eco-top"><span class="rc-eco-icon">🛡️</span></div><h3>Zcash</h3><p>Shielded transactions, zero-knowledge proofs, mining and privacy trade-offs.</p><span class="rc-eco-cta">Explore Zcash →</span></button>
+        <button class="rc-eco" data-page="3c8e562f-a5bd-8110-aeab-f504a3216a22" data-title="BNB Chain" data-icon="🟡"><div class="rc-eco-top"><span class="rc-eco-icon">🟡</span></div><h3>BNB Chain</h3><p>BNB, BSC, validators, opBNB, Greenfield and ecosystem security.</p><span class="rc-eco-cta">Explore BNB Chain →</span></button>
       </div>
     </section>
 
     <section class="section rc-section" id="resources-section"><h2>Satstreet resources</h2><p>Company information, FAQs, tools, newsletter and practical references.</p><div id="resources" class="rc-resource-grid"></div></section>
     <section class="reader rc-reader" id="reader" hidden></section>
-    <div class="disclosure"><p><strong>Live source.</strong> Content is retrieved from Satstreet's Notion Resources workspace and presented natively in the terminal.</p><p><strong>Educational material.</strong> General information only; not investment, legal, tax or custody advice.</p></div>
+    <div class="disclosure"><p><strong>Automatically refreshed.</strong> Educational content is maintained by Satstreet and synchronized into the terminal.</p><p><strong>Educational material.</strong> General information only; not investment, legal, tax or custody advice.</p></div>
   </main>
-  <script defer src="./assets/terminal.js?v=7"></script>
-  <script defer src="./assets/resource-native.js?v=7"></script>
+  <script defer src="./assets/terminal.js?v=8"></script>
+  <script defer src="./assets/resource-native.js?v=8"></script>
 </body>
 </html>
