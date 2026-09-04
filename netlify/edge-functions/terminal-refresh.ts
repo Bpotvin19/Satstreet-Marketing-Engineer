@@ -19,6 +19,12 @@ export default async function terminalRefresh(_request: Request, context: any) {
   const js = `<script data-terminal-refresh>(function(){function run(){var nav=document.getElementById('mainnav')||document.querySelector('.mainnav');if(nav){var links=[].slice.call(nav.querySelectorAll('a'));var chart=links.find(a=>/chart\\.html$/.test(a.getAttribute('href')||''));var structure=links.find(a=>/structure\\.html$/.test(a.getAttribute('href')||''));if(chart&&structure)nav.insertBefore(chart,structure);var r=nav.querySelector('a[href$="resources.html"]');if(!r){r=document.createElement('a');r.href='./resources.html';r.textContent='Resources';var p=links.find(a=>/portfolio\\.html$/.test(a.getAttribute('href')||''));nav.insertBefore(r,p||null)}if(/resources\\.html$/.test(location.pathname)){nav.querySelectorAll('a').forEach(a=>a.removeAttribute('aria-current'));r.setAttribute('aria-current','page')}}document.querySelectorAll('.avatar').forEach(x=>x.remove());var g=document.getElementById('greeting');if(g){var h=new Date().getHours();g.textContent='Good '+(h<12?'morning':h<17?'afternoon':'evening')+'.'}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run()})();</script>`;
 
   html = html.replace('</head>', css + '</head>').replace('</body>', js + '</body>');
+
+  if (_request.url.includes('/resources.html')) {
+    html = html.replace('</head>', '<link rel="stylesheet" href="./assets/resource-upgrade.css"></head>');
+    html = html.replace('</body>', '<script src="./assets/resource-upgrade.js"></script></body>');
+  }
+
   const headers = new Headers(response.headers); headers.delete('content-length'); headers.delete('etag');
   return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
