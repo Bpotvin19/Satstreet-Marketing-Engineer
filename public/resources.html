@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Satstreet · Knowledge Centre</title>
   <meta name="description" content="Satstreet's terminal-native digital asset Knowledge Centre.">
-  <link rel="stylesheet" href="./assets/terminal.css?v=10">
-  <link rel="stylesheet" href="./assets/resource-native.css?v=10">
+  <link rel="stylesheet" href="./assets/terminal.css?v=11">
+  <link rel="stylesheet" href="./assets/resource-native.css?v=11">
+  <style>
+    .rc-eco-icon,.rc-reader-icon{overflow:hidden}
+    .rc-crypto-logo{display:block;width:30px;height:30px;object-fit:contain;border-radius:50%}
+    .rc-reader-crypto-logo{width:31px;height:31px}
+  </style>
 </head>
 <body>
   <div id="shell-header"></div>
@@ -62,15 +67,15 @@
     <section class="rc-section" id="ecosystems-section">
       <div class="rc-section-head"><div><p class="eyebrow">Explore by ecosystem</p><h2>Choose what you want to understand.</h2></div><p>Each ecosystem is organized from foundational concepts through advanced protocol mechanics.</p></div>
       <div id="hub" class="rc-ecosystems">
-        <button class="rc-eco" data-page="3c7e562f-a5bd-81bf-9966-dbf9707087e3" data-title="Bitcoin" data-icon="₿"><div class="rc-eco-top"><span class="rc-eco-icon">₿</span><span class="rc-depth">Beginner · Intermediate · Advanced</span></div><h3>Bitcoin</h3><p>Scarce digital money and settlement. Wallets, mining, nodes, custody and protocol security.</p><span class="rc-eco-cta">Explore Bitcoin →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-819a-89e7-fa5eb082bba7" data-title="Ethereum" data-icon="◆"><div class="rc-eco-top"><span class="rc-eco-icon">◆</span><span class="rc-depth">Beginner · Intermediate · Advanced</span></div><h3>Ethereum</h3><p>Programmable ownership and settlement. Smart contracts, gas, staking, DeFi and rollups.</p><span class="rc-eco-cta">Explore Ethereum →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-81ef-aa62-e75e150e5f77" data-title="Stablecoins" data-icon="💵"><div class="rc-eco-top"><span class="rc-eco-icon">💵</span><span class="rc-depth">Explore by depth</span></div><h3>Stablecoins</h3><p>Digital dollars and onchain settlement. Reserves, redemptions, peg mechanics and issuer risk.</p><span class="rc-eco-cta">Explore Stablecoins →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-8168-98c7-d8cd162feef1" data-title="Solana" data-icon="◎"><div class="rc-eco-top"><span class="rc-eco-icon">◎</span><span class="rc-depth">Explore by depth</span></div><h3>Solana</h3><p>High-throughput applications. Transactions, programs, validators, staking and runtime design.</p><span class="rc-eco-cta">Explore Solana →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-8130-9b3a-deab4b3ac6ab" data-title="XRP" data-icon="✕"><div class="rc-eco-top"><span class="rc-eco-icon">✕</span><span class="rc-depth">Explore by depth</span></div><h3>XRP Ledger</h3><p>Payments and liquidity. Issued assets, settlement, the decentralized exchange and consensus.</p><span class="rc-eco-cta">Explore XRP →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-81df-a3c4-de3805979a15" data-title="Bittensor" data-icon="τ"><div class="rc-eco-top"><span class="rc-eco-icon">τ</span><span class="rc-depth">Explore by depth</span></div><h3>Bittensor</h3><p>Decentralized intelligence markets. Subnets, miners, validators, emissions and incentives.</p><span class="rc-eco-cta">Explore Bittensor →</span></button>
-        <button class="rc-eco" data-page="3c7e562f-a5bd-812e-9b8e-fd7fc28f5f29" data-title="Hyperliquid" data-icon="H"><div class="rc-eco-top"><span class="rc-eco-icon">H</span><span class="rc-depth">Explore by depth</span></div><h3>Hyperliquid</h3><p>Onchain financial markets. HyperCore, HyperEVM, perpetuals, validators and market structure.</p><span class="rc-eco-cta">Explore Hyperliquid →</span></button>
-        <button class="rc-eco" data-page="3c8e562f-a5bd-814e-9ad1-f3de37551e1b" data-title="Zcash" data-icon="🛡️"><div class="rc-eco-top"><span class="rc-eco-icon">🛡️</span><span class="rc-depth">Explore by depth</span></div><h3>Zcash</h3><p>Privacy-preserving digital payments. Shielded transactions, zero-knowledge proofs and mining.</p><span class="rc-eco-cta">Explore Zcash →</span></button>
-        <button class="rc-eco" data-page="3c8e562f-a5bd-8110-aeab-f504a3216a22" data-title="BNB Chain" data-icon="🟡"><div class="rc-eco-top"><span class="rc-eco-icon">🟡</span><span class="rc-depth">Explore by depth</span></div><h3>BNB Chain</h3><p>EVM applications and multi-network infrastructure. BSC, validators, opBNB and Greenfield.</p><span class="rc-eco-cta">Explore BNB Chain →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-81bf-9966-dbf9707087e3" data-title="Bitcoin"><div class="rc-eco-top"><span class="rc-eco-icon">₿</span><span class="rc-depth">Beginner · Intermediate · Advanced</span></div><h3>Bitcoin</h3><p>Scarce digital money and settlement. Wallets, mining, nodes, custody and protocol security.</p><span class="rc-eco-cta">Explore Bitcoin →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-819a-89e7-fa5eb082bba7" data-title="Ethereum"><div class="rc-eco-top"><span class="rc-eco-icon">◆</span><span class="rc-depth">Beginner · Intermediate · Advanced</span></div><h3>Ethereum</h3><p>Programmable ownership and settlement. Smart contracts, gas, staking, DeFi and rollups.</p><span class="rc-eco-cta">Explore Ethereum →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-81ef-aa62-e75e150e5f77" data-title="Stablecoins"><div class="rc-eco-top"><span class="rc-eco-icon">💵</span><span class="rc-depth">Explore by depth</span></div><h3>Stablecoins</h3><p>Digital dollars and onchain settlement. Reserves, redemptions, peg mechanics and issuer risk.</p><span class="rc-eco-cta">Explore Stablecoins →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-8168-98c7-d8cd162feef1" data-title="Solana"><div class="rc-eco-top"><span class="rc-eco-icon">◎</span><span class="rc-depth">Explore by depth</span></div><h3>Solana</h3><p>High-throughput applications. Transactions, programs, validators, staking and runtime design.</p><span class="rc-eco-cta">Explore Solana →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-8130-9b3a-deab4b3ac6ab" data-title="XRP"><div class="rc-eco-top"><span class="rc-eco-icon">✕</span><span class="rc-depth">Explore by depth</span></div><h3>XRP Ledger</h3><p>Payments and liquidity. Issued assets, settlement, the decentralized exchange and consensus.</p><span class="rc-eco-cta">Explore XRP →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-81df-a3c4-de3805979a15" data-title="Bittensor"><div class="rc-eco-top"><span class="rc-eco-icon">τ</span><span class="rc-depth">Explore by depth</span></div><h3>Bittensor</h3><p>Decentralized intelligence markets. Subnets, miners, validators, emissions and incentives.</p><span class="rc-eco-cta">Explore Bittensor →</span></button>
+        <button class="rc-eco" data-page="3c7e562f-a5bd-812e-9b8e-fd7fc28f5f29" data-title="Hyperliquid"><div class="rc-eco-top"><span class="rc-eco-icon">H</span><span class="rc-depth">Explore by depth</span></div><h3>Hyperliquid</h3><p>Onchain financial markets. HyperCore, HyperEVM, perpetuals, validators and market structure.</p><span class="rc-eco-cta">Explore Hyperliquid →</span></button>
+        <button class="rc-eco" data-page="3c8e562f-a5bd-814e-9ad1-f3de37551e1b" data-title="Zcash"><div class="rc-eco-top"><span class="rc-eco-icon">🛡️</span><span class="rc-depth">Explore by depth</span></div><h3>Zcash</h3><p>Privacy-preserving digital payments. Shielded transactions, zero-knowledge proofs and mining.</p><span class="rc-eco-cta">Explore Zcash →</span></button>
+        <button class="rc-eco" data-page="3c8e562f-a5bd-8110-aeab-f504a3216a22" data-title="BNB Chain"><div class="rc-eco-top"><span class="rc-eco-icon">🟡</span><span class="rc-depth">Explore by depth</span></div><h3>BNB Chain</h3><p>EVM applications and multi-network infrastructure. BSC, validators, opBNB and Greenfield.</p><span class="rc-eco-cta">Explore BNB Chain →</span></button>
       </div>
     </section>
 
@@ -79,7 +84,8 @@
     <section class="rc-reader" id="reader" hidden></section>
     <div class="disclosure"><p><strong>Automatically refreshed.</strong> Educational content is maintained by Satstreet and synchronized into the terminal.</p><p><strong>Educational material.</strong> General information only; not investment, legal, tax or custody advice.</p></div>
   </main>
-  <script defer src="./assets/terminal.js?v=10"></script>
-  <script defer src="./assets/resource-app.js?v=10"></script>
+  <script defer src="./assets/terminal.js?v=11"></script>
+  <script defer src="./assets/resource-app.js?v=11"></script>
+  <script defer src="./assets/resource-logos.js?v=11"></script>
 </body>
 </html>
