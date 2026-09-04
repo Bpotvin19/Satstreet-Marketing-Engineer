@@ -20,9 +20,9 @@ export default async function terminalRefresh(_request: Request, context: any) {
 
   html = html.replace('</head>', css + '</head>').replace('</body>', js + '</body>');
 
-  if (/\/resources\.html(?:$|[?#])/.test(new URL(_request.url).pathname)) {
-    html = html.replace('</head>', '<link rel="stylesheet" href="./assets/resource-native.css?v=3"></head>');
-    html = html.replace('</body>', '<script src="./assets/resource-bootstrap.js?v=3"></script></body>');
+  if (new URL(_request.url).pathname.endsWith('/resources.html')) {
+    html = html.replace('</head>', '<link rel="stylesheet" href="./assets/resource-native.css?v=4"></head>');
+    html = html.replace('</body>', '<script src="./assets/resource-bootstrap.js?v=4"></script><script src="./assets/resource-click-fix.js?v=1"></script></body>');
   }
 
   const headers = new Headers(response.headers); headers.delete('content-length'); headers.delete('etag');
