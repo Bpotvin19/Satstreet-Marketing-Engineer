@@ -1,1 +1,81 @@
-SEE_FILE
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Satstreet · Market Structure</title>
+<meta name="description" content="Positioning, network conditions and macro signals behind the price." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="./assets/terminal.css" />
+<style>
+  .panelgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+  .dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 16px; }
+  .dcell .k { font-size: 11px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: var(--muted); }
+  .dcell .v { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; font-family:var(--font-data); }
+  .dcell .s { font-size: 12px; color: var(--muted); }
+  .venue { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-2); font-size: 12.5px; color: var(--muted); }
+  .ctx { font-size: 14px; color: var(--ink-2); margin: 0 0 16px; max-width: 78ch; }
+  .tabs button { display:inline-flex; align-items:center; gap:7px; }
+  .tab-icon { width:21px; height:21px; display:grid; place-items:center; border-radius:50%; color:#4f7189; background:#eaf1f5; }
+  .tabs button[aria-selected="true"] .tab-icon { color:#087fac; background:#e3f3f8; }
+  .tab-icon svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .panelgrid .card { position:relative; overflow:hidden; }
+  .panelgrid .card::after { content:''; position:absolute; width:135px; height:135px; right:-73px; top:-73px; border-radius:50%; background:rgba(0,162,211,.045); pointer-events:none; }
+  .flowbar { display:flex; align-items:flex-end; gap:3px; height:72px; margin:8px 0 4px; }
+  .flowbar i { flex:1; min-width:4px; border-radius:2px 2px 0 0; background:#27d3a5; opacity:.85; }
+  .flowbar i.out { background:#d15a5a; border-radius:0 0 2px 2px; align-self:flex-start; }
+  .etf-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  .etf-table th { text-align:left; padding:8px 7px; color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.65px; border-bottom:1px solid var(--border); }
+  .etf-table td { padding:9px 7px; border-bottom:1px solid var(--border-2); font-variant-numeric:tabular-nums; }
+  .etf-table tr:last-child td { border-bottom:0; }
+  .issuer { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--border-2); }
+  .issuer:last-child { border-bottom:0; }
+</style>
+</head>
+<body>
+<div id="shell-header"></div>
+<main class="shell">
+  <div class="pagehead">
+    <div>
+      <p class="eyebrow">Positioning & network intelligence</p>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 8-1M7 9l4 7m6-8-4 8"/></svg></span><h1>Market Structure</h1></div>
+      <p>Positioning, network conditions and macro signals behind the price.</p>
+    </div>
+    <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Loading…</span></span>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Market structure sections">
+    <button role="tab" id="tab-derivatives" aria-selected="true" aria-controls="p-derivatives" data-t="derivatives"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
+    <button role="tab" id="tab-network" aria-selected="false" aria-controls="p-network" data-t="network" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
+    <button role="tab" id="tab-macro" aria-selected="false" aria-controls="p-macro" data-t="macro" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16"/></svg></span>Macro</button>
+    <button role="tab" id="tab-institutional" aria-selected="false" aria-controls="p-institutional" data-t="institutional" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>Institutional</button>
+  </div>
+  <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0">
+    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a single venue and are not a view on the market.</p>
+    <div class="panelgrid" id="deriv"></div>
+  </section>
+  <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
+    <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
+    <div class="metrics" id="net"></div>
+    <div class="card" id="net-extra"></div>
+  </section>
+  <section id="p-macro" role="tabpanel" aria-labelledby="tab-macro" tabindex="0" hidden>
+    <p class="ctx">These markets influence liquidity, risk appetite and the relative attractiveness of scarce assets.</p>
+    <div class="metrics" id="macro"></div>
+  </section>
+  <section id="p-institutional" role="tabpanel" aria-labelledby="tab-institutional" tabindex="0" hidden>
+    <p class="ctx">US spot Bitcoin ETF creations and redemptions, as compiled by CoinGlass from issuer filings and primary-market activity. Figures are not a Satstreet view on demand.</p>
+    <div class="metrics" id="etf-kpis"></div>
+    <div class="panelgrid" style="margin-top:16px">
+      <div class="card" id="etf-tape"></div>
+      <div class="card" id="etf-issuers"></div>
+    </div>
+    <div class="card" id="etf-days" style="margin-top:16px"></div>
+  </section>
+  <div class="disclosure" id="disclosure"></div>
+</main>
+<script src="./assets/terminal.js"></script>
+<script src="./assets/structure-desk.js"></script>
+</body>
+</html>
