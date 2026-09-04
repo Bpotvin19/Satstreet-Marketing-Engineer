@@ -11,17 +11,12 @@
 <link rel="stylesheet" href="./assets/terminal.css" />
 <style>
   .desk-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
-  .desk-date { font-size:12px; color:var(--muted); }
-  .gate { padding:0; margin-bottom:18px; overflow:hidden; }
-  .gate-head { padding:22px 26px 18px; border-bottom:1px solid var(--border-2); background:linear-gradient(135deg,#fff,#f8fbfd); }
-  .gate-head .eyebrow { margin:0 0 10px; }
-  .gate-head h2 { margin:0; font-size:26px; font-weight:600; letter-spacing:-0.02em; line-height:1.2; }
-  .gate-body { padding:22px 26px 26px; }
-  .gate-body .lede { margin:0 0 20px; color:var(--ink-2); max-width:62ch; line-height:1.55; }
-  .gate-form { display:flex; gap:10px; align-items:flex-end; max-width:460px; }
+  .gate { display:grid; grid-template-columns:minmax(240px,.9fr) minmax(280px,1.1fr); gap:28px; align-items:center; padding:22px 24px; margin-bottom:18px; }
+  .gate-copy { margin:0; color:var(--ink-2); max-width:46ch; line-height:1.55; }
+  .gate-form { display:flex; gap:10px; align-items:flex-end; margin:0; }
   .gate-form .field { flex:1; margin:0; }
-  .gate-form .field label { display:block; margin-bottom:6px; }
-  .gate-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .gate-side { min-width:0; }
+  .gate-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
   .gate-error { color:var(--down); font-size:12.5px; margin-top:10px; }
   .brief-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(300px,.8fr); gap:16px; margin-bottom:16px; }
   .lead-card { position:relative; overflow:hidden; padding:25px; min-height:282px; color:#fff; background:linear-gradient(145deg,#0b2035 0%,#143c59 100%); border-color:#183e5b; }
@@ -79,7 +74,7 @@
   .so-list li { position:relative; margin:0; padding:10px 0 10px 18px; border-top:1px solid var(--border-2); color:var(--ink-2); font-size:13.5px; }
   .so-list li::before { content:''; position:absolute; left:0; top:18px; width:6px; height:6px; border-radius:50%; background:var(--cyan); }
   .source-line { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 0; color:var(--muted); font-size:12px; }
-  @media (max-width:900px) { .brief-grid,.lower-grid { grid-template-columns:1fr; } .sector-grid { grid-template-columns:1fr; } }
+  @media (max-width:900px) { .gate,.brief-grid,.lower-grid { grid-template-columns:1fr; } .sector-grid { grid-template-columns:1fr; } }
   @media (max-width:620px) { .world-list { grid-template-columns:1fr; } .sector-head { flex-direction:column; } .sector-market { text-align:left; } .gate-form { align-items:stretch; flex-direction:column; } }
 </style>
 </head>
@@ -98,12 +93,8 @@
     </div>
   </div>
   <section class="card gate" id="gate">
-    <header class="gate-head">
-      <p class="eyebrow">Private desk material</p>
-      <h2>Unlock today’s Macro Desk</h2>
-    </header>
-    <div class="gate-body">
-      <p class="lede">The Notion feed is protected because these pages are marked internal. The access key stays in this browser session and your Notion token never leaves Netlify.</p>
+    <p class="gate-copy">The Notion feed is protected because these pages are marked internal. The access key stays in this browser session and your Notion token never leaves Netlify.</p>
+    <div class="gate-side">
       <form class="gate-form" id="gate-form">
         <div class="field"><label for="access-key">Terminal access key</label><input id="access-key" type="password" autocomplete="current-password" /></div>
         <button class="btn" type="submit">Unlock</button>
