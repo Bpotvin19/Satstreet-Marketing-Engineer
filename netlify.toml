@@ -1,44 +1,25 @@
 # Netlify build settings for the public site.
-#
-# Everything served lives in public/. Nothing is compiled: the pages are
-# self-contained HTML that fetch their own data in the browser, so there is
-# no build step and the repo's npm scripts — which run the Telegram bot — must
-# never be mistaken for one.
 
 [build]
   publish = "public"
-  # Explicit no-op. This repo has a package.json, and left to guess, Netlify
-  # would look for a build. There is nothing to build, and the scripts in that
-  # file start a long-running bot rather than producing static output.
-  command = "echo 'static site — nothing to build'"
+  # Pre-render the Notion-backed Resource Centre into static JSON before each
+  # deploy. This keeps Notion as the editorial source of truth while making the
+  # client experience load from Netlify's CDN instead of waiting on Notion.
+  command = "node scripts/build-resource-cache.mjs"
 
-# Server-side endpoints. /api/market assembles the Overview strip's quotes:
-# the equity, rate, metal and dollar sources send no CORS header, so a browser
-# cannot reach them and something on Netlify's side has to.
 [functions]
   directory = "netlify/functions"
 
-# The market board is the front page.
-#
-# It is called ticker.html because the other pages link to it by name from the
-# tab bar, but the deployed site has always answered "/" with it. Without this
-# the site root 404s the moment the repo is connected, because public/ has no
-# index.html.
-#
-# status = 200 makes this a rewrite rather than a redirect: the visitor stays
-# on "/" and the address bar does not change, which is exactly what the
-# hand-uploaded deployment did.
 [[redirects]]
   from = "/"
   to = "/ticker.html"
   status = 200
 
-# Modest security headers.
-#
-# Deliberately no X-Frame-Options. These are public pages with no login and
-# nothing to hijack, so framing protection buys nothing — and the widget that
-# runs on satstreet.com already points at this host, so a future version that
-# embeds a page rather than linking to it would break silently.
+[[headers]]
+  for = "/data/resources/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, stale-while-revalidate=3600"
+
 [[headers]]
   for = "/*"
   [headers.values]
