@@ -304,6 +304,7 @@ async function refresh() {
     let anyError = null
     for (const [a, v] of entries) { if (v && v.error) anyError = v.error; else txsByAddress[a] = v }
     result = computePnl({ wallets: wallets.filter((w) => txsByAddress[w.address]), txsByAddress, priceByDate, currentPrice, overrides: loadOv() })
+    cacheSummary()
     lastRefresh = Date.now()
     fillScope(wallets)
     render()
@@ -512,8 +513,27 @@ $('rec-form').addEventListener('submit', (e) => {
   })
   saveOv(ov)
   result = computePnl({ wallets: loadWallets().filter((w) => txsByAddress[w.address]), txsByAddress, priceByDate, currentPrice, overrides: ov })
+  cacheSummary()
   render()
 })
+
+/* The Overview snapshot reads this cached combined estimate rather than
+   recomputing P&L itself — one methodology, one owner, one number. */
+function cacheSummary() {
+  if (!result || !result.combined) return
+  const c = result.combined
+  try {
+    localStorage.setItem('satstreet.portfolio.summary', JSON.stringify({
+      asOf: Date.now(),
+      value: c.value ?? null,
+      cost: c.costBasis ?? null,
+      pnl: c.total ?? null,
+      pct: c.pct ?? null,
+      btc: c.btc ?? null,
+      partial: Boolean(c.partial || (capped && capped.length)),
+    }))
+  } catch (e) { /* storage blocked — the snapshot simply shows its hint */ }
+}
 
 if (priceCovers) $('pxsrc').textContent = 'Coinbase BTC-USD daily close, from ' + priceCovers.from
 refresh()
