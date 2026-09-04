@@ -19,8 +19,8 @@
       '<p><strong>Source.</strong> Equity, rate, metal and dollar levels are indicative reference prices from third-party venues and may be delayed. Foreign exchange is a reference rate.</p>' +
       '<p>Movements shown are since the previous close. Yields are quoted in basis points. Nothing here is a forecast or a statement about how any market will affect another.</p>',
     institutional:
-      '<p><strong>Source.</strong> Spot Bitcoin ETF flow and holdings figures are compiled by <a href="https://www.coinglass.com/etf/bitcoin" target="_blank" rel="noopener noreferrer">CoinGlass</a> from issuer reports and primary-market activity. Satstreet does not originate this series.</p>' +
-      '<p><strong>Method.</strong> Daily net flow is creations minus redemptions in USD. A positive print is a net inflow; a negative print is a net outflow. Totals include the listed US spot Bitcoin ETFs on the CoinGlass tape. Weekend and holiday sessions are omitted because creations settle on US equity-market days.</p>' +
+      '<p><strong>Source.</strong> Spot Bitcoin ETF flow figures come from the public daily tape published by <a href="https://www.tftc.io/bitcoin-etf-flows" target="_blank" rel="noopener noreferrer">TFTC</a>, compiled from SoSoValue and <a href="https://farside.co.uk/btc/" target="_blank" rel="noopener noreferrer">Farside Investors</a>. Satstreet does not originate this series.</p>' +
+      '<p><strong>Method.</strong> Daily net flow is creations minus redemptions in USD. A positive print is a net inflow; a negative print is a net outflow. Weekend and holiday sessions are omitted because creations settle on US equity-market days. The latest session can revise as issuers finalize.</p>' +
       '<p>Indicative reference data only \u2014 not a quote, not an offer, and not a statement about future ETF demand or Bitcoin price.</p>'
   };
 
@@ -74,31 +74,17 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (d) {
         $('deriv').innerHTML = d.assets.map(function (a) {
-          if (a.error) {
-            return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header>' +
-              S.errorState('Unavailable', a.error, '') + '</div>';
-          }
+          if (a.error) return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header>' + S.errorState('Unavailable', a.error, '') + '</div>';
           var f = a.fundingAnnualPct, bs = a.basisPct;
           var cell = function (k, tipText, val, cls, sub) {
-            return '<div class="dcell"><div class="k">' + tip(k, tipText) + '</div>' +
-              '<div class="v ' + (cls || '') + '">' + val + '</div>' +
-              '<div class="s">' + esc(sub || '') + '</div></div>';
+            return '<div class="dcell"><div class="k">' + tip(k, tipText) + '</div><div class="v ' + (cls || '') + '">' + val + '</div><div class="s">' + esc(sub || '') + '</div></div>';
           };
-          return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header>' +
-            '<div class="dgrid">' +
-              cell('Funding', 'The periodic payment between long and short holders of a perpetual contract, shown annualised from the venue\u2019s 8-hour rate. Positive means long holders are paying short holders.',
-                   fmt.pct(f), fmt.dir(f),
-                   f === null ? '' : f > 0 ? 'longs paying shorts' : f < 0 ? 'shorts paying longs' : 'flat') +
-              cell('Basis', 'The perpetual contract\u2019s mark price relative to the venue\u2019s spot index, in percent. A positive basis means the contract trades above spot.',
-                   bs === null ? '\u2014' : (bs > 0 ? '+' : '') + bs.toFixed(3) + '%', fmt.dir(bs), 'perpetual vs spot') +
-              cell('Open interest', 'The total notional value of contracts currently open at this venue. It measures how much is committed, not direction.',
-                   fmt.compact(a.openInterestUsd), '', 'notional') +
-              cell('Implied volatility', 'The venue\u2019s 30-day volatility index, derived from options pricing. It reflects expected magnitude of movement, not direction.',
-                   a.impliedVol === null ? '\u2014' : a.impliedVol.toFixed(1), '', '30-day index') +
-            '</div>' +
-            '<div class="venue"><span>Venue: ' + esc(d.venue) + '</span>' +
-              '<span>24h volume ' + fmt.compact(a.volume24hUsd) + '</span>' +
-              '<span>Updated ' + fmt.time(d.asOf) + '</span></div></div>';
+          return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header><div class="dgrid">' +
+            cell('Funding', 'The periodic payment between long and short holders of a perpetual contract, shown annualised from the venue\u2019s 8-hour rate. Positive means long holders are paying short holders.', fmt.pct(f), fmt.dir(f), f === null ? '' : f > 0 ? 'longs paying shorts' : f < 0 ? 'shorts paying longs' : 'flat') +
+            cell('Basis', 'The perpetual contract\u2019s mark price relative to the venue\u2019s spot index, in percent. A positive basis means the contract trades above spot.', bs === null ? '\u2014' : (bs > 0 ? '+' : '') + bs.toFixed(3) + '%', fmt.dir(bs), 'perpetual vs spot') +
+            cell('Open interest', 'The total notional value of contracts currently open at this venue. It measures how much is committed, not direction.', fmt.compact(a.openInterestUsd), '', 'notional') +
+            cell('Implied volatility', 'The venue\u2019s 30-day volatility index, derived from options pricing. It reflects expected magnitude of movement, not direction.', a.impliedVol === null ? '\u2014' : a.impliedVol.toFixed(1), '', '30-day index') +
+            '</div><div class="venue"><span>Venue: ' + esc(d.venue) + '</span><span>24h volume ' + fmt.compact(a.volume24hUsd) + '</span><span>Updated ' + fmt.time(d.asOf) + '</span></div></div>';
         }).join('');
         updated.derivatives = new Date(d.asOf).getTime();
         stamp('derivatives');
@@ -121,8 +107,7 @@
 
   function loadNetwork() {
     var api = 'https://mempool.space/api/';
-    $('net').innerHTML = '<div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) +
-      '</div><div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div>';
+    $('net').innerHTML = '<div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div>';
     $('net-extra').innerHTML = S.skeleton(2, 14);
     var get = function (p) {
       return fetch(api + p).then(function (r) {
@@ -141,9 +126,7 @@
       var hash = r[0], diff = r[1], fees = r[2], height = r[3], blocks = r[4];
       if (!hash && !diff && !fees && height === null) throw new Error('network data unavailable');
       var hs = hash && hash.hashrates && hash.hashrates.length ? hash.hashrates[hash.hashrates.length - 1].avgHashrate : NaN;
-      var m = function (k, v, s) {
-        return '<div class="metric"><div class="k">' + esc(k) + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
-      };
+      var m = function (k, v, s) { return '<div class="metric"><div class="k">' + esc(k) + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>'; };
       $('net').innerHTML =
         m('Hashrate', isFinite(hs) ? (hs / 1e18).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' EH/s' : '\u2014', 'seven-day average') +
         m('Difficulty', diff && isFinite(diff.difficultyChange) ? (diff.difficultyChange > 0 ? '+' : '') + diff.difficultyChange.toFixed(2) + '%' : '\u2014', diff ? 'estimated change at next retarget' : '') +
@@ -159,10 +142,9 @@
         var mins = Math.max(0, Math.round((Date.now() / 1000 - blocks[0].timestamp) / 60));
         rows.push(['Last block', mins + ' min ago', new Date(blocks[0].timestamp * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })]);
       }
-      $('net-extra').innerHTML = '<header><h2>Detail</h2></header><div class="dgrid">' +
-        rows.map(function (x) {
-          return '<div class="dcell"><div class="k">' + esc(x[0]) + '</div><div class="v" style="font-size:17px">' + esc(x[1]) + '</div><div class="s">' + esc(x[2]) + '</div></div>';
-        }).join('') + '</div><div class="venue"><span>Source: mempool.space</span><span>Updated ' + fmt.time(Date.now()) + '</span></div>';
+      $('net-extra').innerHTML = '<header><h2>Detail</h2></header><div class="dgrid">' + rows.map(function (x) {
+        return '<div class="dcell"><div class="k">' + esc(x[0]) + '</div><div class="v" style="font-size:17px">' + esc(x[1]) + '</div><div class="s">' + esc(x[2]) + '</div></div>';
+      }).join('') + '</div><div class="venue"><span>Source: mempool.space</span><span>Updated ' + fmt.time(Date.now()) + '</span></div>';
       updated.network = Date.now(); stamp('network');
     }).catch(function (e) {
       $('net').innerHTML = '';
@@ -184,8 +166,7 @@
           var val = q.price === null ? '\u2014' : q.kind === 'pct' ? q.price.toFixed(2) + '%' : q.kind === 'fx' ? q.price.toFixed(4) : q.price.toLocaleString('en-US', { maximumFractionDigits: 2 });
           var mv = q.kind === 'pct' ? fmt.bps(q.changeAbs) : fmt.pct(q.changePct);
           var cls = fmt.dir(q.kind === 'pct' ? q.changeAbs : q.changePct);
-          return '<div class="metric"><div class="k">' + esc(q.label) + '</div><div class="v">' + val + '</div><div class="s"><span class="' + cls + '">' + mv + '</span> \u00b7 ' + esc(q.source) + '</div>' +
-            (q.spark && q.spark.length > 2 ? '<div style="margin-top:8px">' + S.spark(q.spark, cls, 100, 26) + '</div>' : '') + '</div>';
+          return '<div class="metric"><div class="k">' + esc(q.label) + '</div><div class="v">' + val + '</div><div class="s"><span class="' + cls + '">' + mv + '</span> \u00b7 ' + esc(q.source) + '</div>' + (q.spark && q.spark.length > 2 ? '<div style="margin-top:8px">' + S.spark(q.spark, cls, 100, 26) + '</div>' : '') + '</div>';
         }).join('');
         updated.macro = new Date(d.asOf).getTime(); stamp('macro');
       })
@@ -225,7 +206,7 @@
     fetch('/api/etf', { cache: 'no-store' })
       .then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j; }); })
       .then(function(d){
-        if (!d.days || !d.days.length) throw new Error(d.error || 'CoinGlass returned no sessions');
+        if (!d.days || !d.days.length) throw new Error(d.error || 'ETF tape returned no sessions');
         var last = d.days[d.days.length-1];
         var five = d.days.slice(-5).reduce(function(s,x){ return s+(x.flowUsd||0); },0);
         var m = function(k,v,sub,cls){
@@ -234,27 +215,27 @@
         $('etf-kpis').innerHTML =
           m('Latest session', money(last.flowUsd), last.date + (last.flowUsd>=0?' net inflow':' net outflow'), fmt.dir(last.flowUsd)) +
           m('Five sessions', money(five), 'sum of the last five prints', fmt.dir(five)) +
-          m('Cumulative net', money(d.cumulativeUsd), 'since the CoinGlass series begins', fmt.dir(d.cumulativeUsd)) +
+          m('Cumulative net', money(d.cumulativeUsd), 'since the US spot products launched', fmt.dir(d.cumulativeUsd)) +
           m('Reported AUM', moneyAbs(d.aumUsd), d.listCount ? d.listCount+' listed spot products' : 'issuer-reported assets');
         var recent = d.days.slice(-24);
         $('etf-tape').innerHTML = '<header><h2>Daily net flow</h2><span class="eyebrow">USD creations minus redemptions</span></header>' +
           flowBars(recent) +
-          '<div class="venue"><span>Source: CoinGlass</span><span>'+esc(recent[0].date)+' \u2192 '+esc(recent[recent.length-1].date)+'</span></div>';
+          '<div class="venue"><span>Source: '+esc(d.source||'TFTC')+'</span><span>'+esc(recent[0].date)+' \u2192 '+esc(recent[recent.length-1].date)+'</span></div>';
         var issuers = (d.issuers||[]).slice(0,8);
-        $('etf-issuers').innerHTML = '<header><h2>Holdings snapshot</h2><span class="eyebrow">Issuer-reported</span></header>' +
+        $('etf-issuers').innerHTML = '<header><h2>Latest session by fund</h2><span class="eyebrow">Same-day prints</span></header>' +
           (issuers.length? issuers.map(function(x){
+            var print = x.lastFlowUsd != null ? x.lastFlowUsd : x.aumUsd;
             return '<div class="issuer"><div><strong>'+esc(x.ticker)+'</strong><div class="s">'+esc(x.name||'')+'</div></div>' +
-              '<div style="text-align:right"><div class="v" style="font-size:16px">'+moneyAbs(x.aumUsd)+'</div>' +
-              '<div class="s">'+(x.btcHolding!=null? Number(x.btcHolding).toLocaleString('en-US',{maximumFractionDigits:0})+' BTC':'')+'</div></div></div>';
-          }).join('') : '<p class="ctx">Issuer holdings were not included in this refresh.</p>') +
+              '<div style="text-align:right"><div class="v" style="font-size:16px" class="'+fmt.dir(print)+'">'+money(print)+'</div></div></div>';
+          }).join('') : '<p class="ctx">Per-fund prints were not included in this refresh.</p>') +
           '<div class="venue"><span>Updated '+fmt.time(d.asOf)+'</span></div>';
         var rows = d.days.slice(-12).reverse();
-        $('etf-days').innerHTML = '<header><h2>Recent sessions</h2><span class="eyebrow">Largest prints named where CoinGlass breaks them out</span></header>' +
+        $('etf-days').innerHTML = '<header><h2>Recent sessions</h2><span class="eyebrow">Largest named prints on the tape</span></header>' +
           '<div style="overflow-x:auto"><table class="etf-table"><thead><tr><th>Session</th><th>Net flow</th><th>Lead inflow</th><th>Lead outflow</th></tr></thead><tbody>' +
           rows.map(function(day){
             return '<tr><td>'+esc(day.date)+'</td><td class="'+fmt.dir(day.flowUsd)+'">'+money(day.flowUsd)+'</td><td>'+esc(day.leadIn || '\u2014')+'</td><td>'+esc(day.leadOut || '\u2014')+'</td></tr>';
           }).join('') + '</tbody></table></div>' +
-          '<div class="venue"><a href="https://www.coinglass.com/etf/bitcoin" target="_blank" rel="noopener noreferrer">Open CoinGlass ETF tape \u2197</a></div>';
+          '<div class="venue"><a href="'+(d.sourceUrl||'https://www.tftc.io/bitcoin-etf-flows')+'" target="_blank" rel="noopener noreferrer">Open source tape \u2197</a></div>';
         updated.institutional = new Date(d.asOf).getTime();
         stamp('institutional');
       })
