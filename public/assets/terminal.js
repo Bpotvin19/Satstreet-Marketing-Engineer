@@ -17,6 +17,8 @@ window.SATSTREET = (function () {
     ['Markets',   './ticker.html'],
     ['Structure', './structure.html'],
     ['Chart',     './chart.html'],
+    ['News',      './news.html'],
+    ['Treasuries','./treasuries.html'],
     ['Portfolio', './portfolio.html']
   ];
 
@@ -28,18 +30,21 @@ window.SATSTREET = (function () {
      nav label of the page drawing it, so the underline and aria-current are
      always in step with where the visitor actually is. */
   function header(current) {
+    var wide = current === 'Markets' || current === 'Chart' || current === 'Treasuries';
     var links = NAV.map(function (n) {
       var on = n[0] === current;
       return '<a href="' + n[1] + '"' + (on ? ' aria-current="page"' : '') + '>' + esc(n[0]) + '</a>';
     }).join('');
 
-    return '<header class="topbar navy"><div class="topbar-in">' +
+    return '<header class="topbar navy"><div class="topbar-in' + (wide ? ' wide' : '') + '">' +
       '<a class="brand" href="./overview.html" aria-label="Satstreet — Overview">' +
       '<img src="' + LOGO + '" alt="Satstreet" /></a>' +
       '<button class="navtoggle" id="navtoggle" aria-expanded="false" aria-controls="mainnav">Menu</button>' +
       '<nav class="mainnav" id="mainnav" aria-label="Primary">' + links + '</nav>' +
       '<span class="spacer"></span>' +
-      '<a class="btn" href="./overview.html#quote">Request a Quote</a>' +
+      '<button class="top-icon" type="button" aria-label="Notifications">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></button>' +
+      '<span class="avatar" aria-label="Ben Potvin">BP</span>' +
       '</div></header>';
   }
 

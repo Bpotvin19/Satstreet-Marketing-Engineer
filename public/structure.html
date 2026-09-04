@@ -4,343 +4,73 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Satstreet · Market Structure</title>
-<meta name="description" content="Positioning, network conditions and macro signals behind the price." />
-
-<!--
-  Market Structure.
-
-  The optional deeper area. A client who wants a price has Overview; this is
-  for the one who wants to know what sits underneath it. Nothing here is a
-  signal, a score or a call — they are measurements, and the page says where
-  each one came from and when.
-
-  Disclosures follow the active tab. A derivatives caveat under the network
-  metrics would be noise, and worse, it would train people to skip them.
--->
-
+<meta name="description" content="Positioning and network conditions behind the price." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="./assets/terminal.css" />
-
 <style>
   .panelgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
   .dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 16px; }
   .dcell .k { font-size: 11px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: var(--muted); }
-  .dcell .v { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .dcell .v { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; font-family:var(--font-data); }
   .dcell .s { font-size: 12px; color: var(--muted); }
   .venue { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-2); font-size: 12.5px; color: var(--muted); }
   .ctx { font-size: 14px; color: var(--ink-2); margin: 0 0 16px; max-width: 78ch; }
+  .tabs button { display:inline-flex; align-items:center; gap:7px; }
+  .tab-icon { width:21px; height:21px; display:grid; place-items:center; border-radius:50%; color:#4f7189; background:#eaf1f5; }
+  .tabs button[aria-selected="true"] .tab-icon { color:#087fac; background:#e3f3f8; }
+  .tab-icon svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .panelgrid .card { position:relative; overflow:hidden; }
+  .panelgrid .card::after { content:''; position:absolute; width:135px; height:135px; right:-73px; top:-73px; border-radius:50%; background:rgba(0,162,211,.045); pointer-events:none; }
+  .flowbar { display:flex; align-items:flex-end; gap:3px; height:72px; margin:8px 0 4px; }
+  .flowbar i { flex:1; min-width:4px; border-radius:2px 2px 0 0; background:#27d3a5; opacity:.85; }
+  .flowbar i.out { background:#d15a5a; border-radius:0 0 2px 2px; align-self:flex-start; }
+  .etf-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  .etf-table th { text-align:left; padding:8px 7px; color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.65px; border-bottom:1px solid var(--border); }
+  .etf-table td { padding:9px 7px; border-bottom:1px solid var(--border-2); font-variant-numeric:tabular-nums; }
+  .etf-table tr:last-child td { border-bottom:0; }
+  .issuer { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--border-2); }
+  .issuer:last-child { border-bottom:0; }
 </style>
 </head>
 <body>
-
 <div id="shell-header"></div>
-
 <main class="shell">
-
   <div class="pagehead">
     <div>
-      <h1>Market Structure</h1>
-      <p>Positioning, network conditions and macro signals behind the price.</p>
+      <p class="eyebrow">Positioning & network intelligence</p>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 8-1M7 9l4 7m6-8-4 8"/></svg></span><h1>Market Structure</h1></div>
+      <p>Positioning and network conditions behind the price.</p>
     </div>
     <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Loading…</span></span>
   </div>
-
   <div class="tabs" role="tablist" aria-label="Market structure sections">
-    <button role="tab" id="tab-derivatives"   aria-selected="true"  aria-controls="p-derivatives"   data-t="derivatives">Derivatives</button>
-    <button role="tab" id="tab-network"       aria-selected="false" aria-controls="p-network"       data-t="network" tabindex="-1">Network</button>
-    <button role="tab" id="tab-macro"         aria-selected="false" aria-controls="p-macro"         data-t="macro" tabindex="-1">Macro</button>
-    <button role="tab" id="tab-institutional" aria-selected="false" aria-controls="p-institutional" data-t="institutional" tabindex="-1">Institutional</button>
+    <button role="tab" id="tab-institutional" aria-selected="true" aria-controls="p-institutional" data-t="institutional"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>ETF Inflows + Outflows</button>
+    <button role="tab" id="tab-derivatives" aria-selected="false" aria-controls="p-derivatives" data-t="derivatives" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
+    <button role="tab" id="tab-network" aria-selected="false" aria-controls="p-network" data-t="network" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
   </div>
-
-  <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0">
-    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a
-      single venue and are not a view on the market.</p>
+  <section id="p-institutional" role="tabpanel" aria-labelledby="tab-institutional" tabindex="0">
+    <p class="ctx">US spot Bitcoin ETF creations and redemptions. Daily tape compiled by TFTC from SoSoValue and Farside Investors. Figures are not a Satstreet view on demand.</p>
+    <div class="metrics" id="etf-kpis"></div>
+    <div class="panelgrid" style="margin-top:16px">
+      <div class="card" id="etf-tape"></div>
+      <div class="card" id="etf-issuers"></div>
+    </div>
+    <div class="card" id="etf-days" style="margin-top:16px"></div>
+  </section>
+  <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0" hidden>
+    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a single venue and are not a view on the market.</p>
     <div class="panelgrid" id="deriv"></div>
   </section>
-
   <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
     <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
     <div class="metrics" id="net"></div>
     <div class="card" id="net-extra"></div>
   </section>
-
-  <section id="p-macro" role="tabpanel" aria-labelledby="tab-macro" tabindex="0" hidden>
-    <p class="ctx">These markets influence liquidity, risk appetite and the relative attractiveness
-      of scarce assets.</p>
-    <div class="metrics" id="macro"></div>
-  </section>
-
-  <section id="p-institutional" role="tabpanel" aria-labelledby="tab-institutional" tabindex="0" hidden>
-    <div class="card">
-      <div class="emptystate">
-        <h3>Institutional flow data is not currently available.</h3>
-        <p>Satstreet will display this section once a verified institutional data source has been
-           integrated.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="quote">
-    <h2>Pricing on size</h2>
-    <p>Speak directly with the Satstreet desk for competitive two-way pricing and white-glove
-       execution.</p>
-    <a class="btn" href="./overview.html#quote">Request a quote</a>
-    <p class="notlive"><strong>Not yet live.</strong> No approved destination for quote requests has
-      been configured, so nothing is collected or sent from this page. Please contact your Satstreet
-      representative directly in the meantime.</p>
-  </section>
-
   <div class="disclosure" id="disclosure"></div>
-
 </main>
-
 <script src="./assets/terminal.js"></script>
-<script>
-(function () {
-  'use strict';
-  var S = window.SATSTREET, $ = function (id) { return document.getElementById(id); };
-  var esc = S.esc, fmt = S.fmt;
-  S.mountHeader('Structure');
-
-  var TABS = ['derivatives', 'network', 'macro', 'institutional'];
-  var loaded = {}, updated = {};
-
-  /* Each tab names its own source and limits. A derivatives caveat shown under
-     the network metrics is noise, and noise is how disclosures stop being read. */
-  var DISCLOSURE = {
-    derivatives:
-      '<p><strong>Source.</strong> Derivatives figures are drawn from a single third-party ' +
-      'venue and describe positioning at that venue only. They are not a view on the wider ' +
-      'market and not a recommendation.</p>' +
-      '<p><strong>Method.</strong> Funding is annualised from the venue’s 8-hour rate. Basis ' +
-      'is the perpetual mark against the venue’s spot index. Open interest is USD notional as ' +
-      'reported. Implied volatility is the venue’s own 30-day index.</p>' +
-      '<p>Indicative reference data only — not a quote, not an offer, and not the price at ' +
-      'which Satstreet will execute.</p>',
-    network:
-      '<p><strong>Source.</strong> Bitcoin network figures come from mempool.space and describe ' +
-      'the public blockchain. Hashrate is an estimate derived from observed block times and is ' +
-      'not directly measurable.</p>' +
-      '<p>Fee estimates change continuously and are indicative of conditions at the time shown.</p>',
-    macro:
-      '<p><strong>Source.</strong> Equity, rate, metal and dollar levels are indicative reference ' +
-      'prices from third-party venues and may be delayed. Foreign exchange is a reference rate.</p>' +
-      '<p>Movements shown are since the previous close. Yields are quoted in basis points. ' +
-      'Nothing here is a forecast or a statement about how any market will affect another.</p>',
-    institutional:
-      '<p>This section will identify its source and limitations once a data integration is in ' +
-      'place.</p>'
-  };
-
-  function show(name) {
-    TABS.forEach(function (t) {
-      var sel = t === name;
-      var btn = $('tab-' + t);
-      btn.setAttribute('aria-selected', String(sel));
-      btn.tabIndex = sel ? 0 : -1;
-      $('p-' + t).hidden = !sel;
-    });
-    $('disclosure').innerHTML = DISCLOSURE[name];
-    stamp(name);
-    if (!loaded[name]) { loaded[name] = true; (LOAD[name] || function () {})(); }
-  }
-
-  var tablist = document.querySelector('.tabs');
-  tablist.addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-t]');
-    if (b) show(b.getAttribute('data-t'));
-  });
-  // Arrow-key movement is what makes a tablist a tablist for keyboard users.
-  tablist.addEventListener('keydown', function (e) {
-    var i = TABS.indexOf(document.activeElement.getAttribute('data-t'));
-    if (i < 0) return;
-    var n = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1
-          : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1;
-    if (n === -1) return;
-    e.preventDefault();
-    n = (n + TABS.length) % TABS.length;
-    show(TABS[n]); $('tab-' + TABS[n]).focus();
-  });
-
-  function stamp(name) {
-    var at = updated[name];
-    if (name === 'institutional') { $('pip').className = 'pip'; $('feedstate').textContent = 'No data source'; return; }
-    if (!at) { $('pip').className = 'pip'; $('feedstate').textContent = 'Loading…'; return; }
-    if (at === 'error') { $('pip').className = 'pip bad'; $('feedstate').textContent = 'Unavailable'; return; }
-    var st = S.staleness(at);
-    $('pip').className = 'pip ' + (st.stale ? 'warn' : 'ok');
-    $('feedstate').innerHTML = st.stale
-      ? '<span class="stale">Data ' + st.minutes + ' min old</span>'
-      : 'Updated ' + fmt.time(at);
-  }
-
-  var tip = function (label, text) {
-    return '<abbr class="tip" title="' + esc(text) + '">' + esc(label) + '</abbr>';
-  };
-
-  /* ── derivatives ─────────────────────────────────────────── */
-  function loadDerivatives() {
-    $('deriv').innerHTML = '<div class="card">' + S.skeleton(4, 18) + '</div><div class="card">' + S.skeleton(4, 18) + '</div>';
-    fetch('/api/structure', { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (d) {
-        $('deriv').innerHTML = d.assets.map(function (a) {
-          if (a.error) {
-            return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header>' +
-              S.errorState('Unavailable', a.error, '') + '</div>';
-          }
-          var f = a.fundingAnnualPct, bs = a.basisPct;
-          var cell = function (k, tipText, val, cls, sub) {
-            return '<div class="dcell"><div class="k">' + tip(k, tipText) + '</div>' +
-              '<div class="v ' + (cls || '') + '">' + val + '</div>' +
-              '<div class="s">' + esc(sub || '') + '</div></div>';
-          };
-          return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header>' +
-            '<div class="dgrid">' +
-              cell('Funding', 'The periodic payment between long and short holders of a perpetual contract, shown annualised from the venue’s 8-hour rate. Positive means long holders are paying short holders.',
-                   fmt.pct(f), fmt.dir(f),
-                   f === null ? '' : f > 0 ? 'longs paying shorts' : f < 0 ? 'shorts paying longs' : 'flat') +
-              cell('Basis', 'The perpetual contract’s mark price relative to the venue’s spot index, in percent. A positive basis means the contract trades above spot.',
-                   bs === null ? '—' : (bs > 0 ? '+' : '') + bs.toFixed(3) + '%', fmt.dir(bs), 'perpetual vs spot') +
-              cell('Open interest', 'The total notional value of contracts currently open at this venue. It measures how much is committed, not direction.',
-                   fmt.compact(a.openInterestUsd), '', 'notional') +
-              cell('Implied volatility', 'The venue’s 30-day volatility index, derived from options pricing. It reflects expected magnitude of movement, not direction.',
-                   a.impliedVol === null ? '—' : a.impliedVol.toFixed(1), '', '30-day index') +
-            '</div>' +
-            '<div class="venue"><span>Venue: ' + esc(d.venue) + '</span>' +
-              '<span>24h volume ' + fmt.compact(a.volume24hUsd) + '</span>' +
-              '<span>Updated ' + fmt.time(d.asOf) + '</span></div>' +
-            '</div>';
-        }).join('');
-        updated.derivatives = new Date(d.asOf).getTime();
-        stamp('derivatives');
-      })
-      .catch(function (e) {
-        $('deriv').innerHTML = '<div class="card">' + S.errorState('Derivatives data unavailable', e.message, 'retry-d') + '</div>';
-        updated.derivatives = 'error'; stamp('derivatives');
-        var r = $('retry-d'); if (r) r.addEventListener('click', function () { loaded.derivatives = false; show('derivatives'); });
-      });
-  }
-
-  /* ── network ─────────────────────────────────────────────── */
-  function feeWords(n) {
-    // Deterministic bands, not a judgement. Described, never coloured.
-    if (!isFinite(n)) return '';
-    if (n <= 2) return 'minimal congestion';
-    if (n <= 10) return 'light congestion';
-    if (n <= 40) return 'moderate congestion';
-    if (n <= 100) return 'elevated congestion';
-    return 'heavy congestion';
-  }
-
-  function loadNetwork() {
-    var api = 'https://mempool.space/api/';
-    $('net').innerHTML = '<div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) +
-      '</div><div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div>';
-    $('net-extra').innerHTML = S.skeleton(2, 14);
-
-    var get = function (p) {
-      return fetch(api + p).then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        var ct = r.headers.get('content-type') || '';
-        return ct.indexOf('json') > -1 ? r.json() : r.text();
-      });
-    };
-
-    Promise.all([
-      get('v1/mining/hashrate/3d').catch(function () { return null; }),
-      get('v1/difficulty-adjustment').catch(function () { return null; }),
-      get('v1/fees/recommended').catch(function () { return null; }),
-      get('blocks/tip/height').catch(function () { return null; }),
-      get('v1/blocks').catch(function () { return null; })
-    ]).then(function (r) {
-      var hash = r[0], diff = r[1], fees = r[2], height = r[3], blocks = r[4];
-      if (!hash && !diff && !fees && height === null) throw new Error('network data unavailable');
-
-      var hs = hash && hash.hashrates && hash.hashrates.length
-        ? hash.hashrates[hash.hashrates.length - 1].avgHashrate : NaN;
-
-      var m = function (k, v, s) {
-        return '<div class="metric"><div class="k">' + esc(k) + '</div><div class="v">' + v +
-               '</div><div class="s">' + s + '</div></div>';
-      };
-      $('net').innerHTML =
-        m('Hashrate', isFinite(hs) ? (hs / 1e18).toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' EH/s' : '—', 'seven-day average') +
-        m('Difficulty', diff && isFinite(diff.difficultyChange) ? (diff.difficultyChange > 0 ? '+' : '') + diff.difficultyChange.toFixed(2) + '%' : '—',
-          diff ? 'estimated change at next retarget' : '') +
-        m('Fee estimate', fees ? fees.fastestFee + ' sat/vB' : '—',
-          fees ? esc(feeWords(fees.fastestFee)) : '') +
-        m('Block height', height !== null ? Number(height).toLocaleString('en-US') : '—', 'chain tip');
-
-      var rows = [];
-      if (diff) {
-        rows.push(['Difficulty period', Math.round(diff.progressPercent || 0) + '% complete',
-                   (diff.remainingBlocks != null ? Number(diff.remainingBlocks).toLocaleString('en-US') + ' blocks remaining' : '')]);
-        if (diff.estimatedRetargetDate) {
-          rows.push(['Next adjustment', new Date(diff.estimatedRetargetDate).toLocaleDateString('en-US',
-            { month: 'short', day: 'numeric' }), 'estimated']);
-        }
-      }
-      if (fees) rows.push(['Fee range', fees.hourFee + '–' + fees.fastestFee + ' sat/vB', 'within the hour to next block']);
-      if (blocks && blocks.length && blocks[0].timestamp) {
-        var mins = Math.max(0, Math.round((Date.now() / 1000 - blocks[0].timestamp) / 60));
-        rows.push(['Last block', mins + ' min ago', new Date(blocks[0].timestamp * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })]);
-      }
-
-      $('net-extra').innerHTML = '<header><h2>Detail</h2></header><div class="dgrid">' +
-        rows.map(function (x) {
-          return '<div class="dcell"><div class="k">' + esc(x[0]) + '</div><div class="v" style="font-size:17px">' +
-            esc(x[1]) + '</div><div class="s">' + esc(x[2]) + '</div></div>';
-        }).join('') + '</div>' +
-        '<div class="venue"><span>Source: mempool.space</span><span>Updated ' + fmt.time(Date.now()) + '</span></div>';
-
-      updated.network = Date.now(); stamp('network');
-    }).catch(function (e) {
-      $('net').innerHTML = '';
-      $('net-extra').innerHTML = S.errorState('Network data unavailable', e.message, 'retry-n');
-      updated.network = 'error'; stamp('network');
-      var r = $('retry-n'); if (r) r.addEventListener('click', function () { loaded.network = false; show('network'); });
-    });
-  }
-
-  /* ── macro ───────────────────────────────────────────────── */
-  function loadMacro() {
-    $('macro').innerHTML = Array(6).join('x').split('x').map(function () {
-      return '<div class="metric">' + S.skeleton(2, 16) + '</div>';
-    }).join('');
-    fetch('/api/market', { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (d) {
-        var want = ['CAD/USD', 'S&P 500', 'Nasdaq', 'Gold', 'DXY', 'US 10Y'];
-        var by = {}; d.quotes.forEach(function (q) { by[q.label] = q; });
-        $('macro').innerHTML = want.filter(function (l) { return by[l]; }).map(function (l) {
-          var q = by[l];
-          var val = q.price === null ? '—'
-            : q.kind === 'pct' ? q.price.toFixed(2) + '%'
-            : q.kind === 'fx' ? q.price.toFixed(4)
-            : q.price.toLocaleString('en-US', { maximumFractionDigits: 2 });
-          var mv = q.kind === 'pct' ? fmt.bps(q.changeAbs) : fmt.pct(q.changePct);
-          var cls = fmt.dir(q.kind === 'pct' ? q.changeAbs : q.changePct);
-          return '<div class="metric"><div class="k">' + esc(q.label) + '</div>' +
-            '<div class="v">' + val + '</div>' +
-            '<div class="s"><span class="' + cls + '">' + mv + '</span> · ' + esc(q.source) + '</div>' +
-            (q.spark && q.spark.length > 2 ? '<div style="margin-top:8px">' + S.spark(q.spark, cls, 100, 26) + '</div>' : '') +
-            '</div>';
-        }).join('');
-        updated.macro = new Date(d.asOf).getTime(); stamp('macro');
-      })
-      .catch(function (e) {
-        $('macro').innerHTML = '<div class="card">' + S.errorState('Macro data unavailable', e.message, 'retry-m') + '</div>';
-        updated.macro = 'error'; stamp('macro');
-        var r = $('retry-m'); if (r) r.addEventListener('click', function () { loaded.macro = false; show('macro'); });
-      });
-  }
-
-  var LOAD = { derivatives: loadDerivatives, network: loadNetwork, macro: loadMacro };
-  show('derivatives');
-})();
-</script>
+<script src="./assets/structure-desk.js"></script>
 </body>
 </html>

@@ -40,6 +40,12 @@ interface Quote {
   high24h?: number | null
   low24h?: number | null
   volume24h?: number | null
+  /** Session fields used by the cross-asset focus chart. */
+  open?: number | null
+  sessionHigh?: number | null
+  sessionLow?: number | null
+  marketState?: string | null
+  asOf?: string | null
   /** How to render it: a currency, a percentage yield, or an index level. */
   kind: 'usd' | 'cad' | 'pct' | 'level' | 'fx'
   source: string
@@ -47,18 +53,19 @@ interface Quote {
 }
 
 /* Yahoo's chart endpoint is undocumented and unversioned. It is the only free
-   source found that carries all four macro instruments, so it is used with
+   source found that carries the requested macro instruments, so it is used with
    that understood: every failure is caught per-symbol, and the strip renders
    without whatever is missing rather than failing whole. If it ever goes away
    the replacement is a paid feed, not a workaround. */
 const YAHOO = 'https://query1.finance.yahoo.com/v8/finance/chart/'
 
 const MACRO: { symbol: string; label: string; kind: Quote['kind'] }[] = [
-  { symbol: '^GSPC', label: 'S&P 500', kind: 'level' },
-  { symbol: '^IXIC', label: 'Nasdaq', kind: 'level' },
   { symbol: 'GC=F', label: 'Gold', kind: 'usd' },
-  { symbol: 'DX-Y.NYB', label: 'DXY', kind: 'level' },
+  { symbol: 'CL=F', label: 'WTI Oil', kind: 'usd' },
+  { symbol: 'CAD=X', label: 'USD/CAD', kind: 'fx' },
   { symbol: '^TNX', label: 'US 10Y', kind: 'pct' },
+  { symbol: '^IXIC', label: 'Nasdaq', kind: 'level' },
+  { symbol: '^GSPC', label: 'S&P 500', kind: 'level' },
 ]
 
 async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promise<Quote> {
@@ -72,10 +79,21 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
 
     const result = (await r.json())?.chart?.result?.[0]
     const meta = result?.meta
-    const closes: number[] = (result?.indicators?.quote?.[0]?.close ?? [])
+    const quote = result?.indicators?.quote?.[0] ?? {}
+    const closes: number[] = (quote.close ?? [])
       .filter((n: unknown): n is number => typeof n === 'number' && isFinite(n))
     const price = Number(meta?.regularMarketPrice)
-    const prev = Number(meta?.chartPreviousClose ?? meta?.previousClose)
+    const previousFromMeta = Number(meta?.regularMarketPreviousClose ?? meta?.previousClose)
+    const prev = isFinite(previousFromMeta)
+      ? previousFromMeta
+      : closes.length > 1 ? closes[closes.length - 2] : Number(meta?.chartPreviousClose)
+    const lastFinite = (values: unknown[]): number | null => {
+      for (let i = values.length - 1; i >= 0; i--) {
+        const value = Number(values[i])
+        if (isFinite(value)) return value
+      }
+      return null
+    }
     if (!isFinite(price)) return { ...base, error: 'no price in response' }
 
     return {
@@ -84,19 +102,23 @@ async function yahoo(symbol: string, label: string, kind: Quote['kind']): Promis
       changePct: isFinite(prev) && prev !== 0 ? ((price - prev) / prev) * 100 : null,
       changeAbs: isFinite(prev) ? price - prev : null,
       spark: closes.slice(-22),
+      open: isFinite(Number(meta?.regularMarketOpen)) ? Number(meta.regularMarketOpen) : lastFinite(quote.open ?? []),
+      sessionHigh: isFinite(Number(meta?.regularMarketDayHigh)) ? Number(meta.regularMarketDayHigh) : lastFinite(quote.high ?? []),
+      sessionLow: isFinite(Number(meta?.regularMarketDayLow)) ? Number(meta.regularMarketDayLow) : lastFinite(quote.low ?? []),
+      marketState: typeof meta?.marketState === 'string' ? meta.marketState : null,
+      asOf: isFinite(Number(meta?.regularMarketTime)) ? new Date(Number(meta.regularMarketTime) * 1000).toISOString() : null,
     }
   } catch (e) {
     return { ...base, error: e instanceof Error ? e.message : 'failed' }
   }
 }
 
-/* Crypto and the CAD rate come from Coinbase, which the rest of the site
-   already quotes. Using the same venue here keeps the strip and the market
-   board from disagreeing with each other in front of a client. */
+/* Crypto comes from Coinbase, which the rest of the site already quotes.
+   Using the same venue keeps the strip and the focus chart aligned. */
 async function coinbase(): Promise<Quote[]> {
   const out: Quote[] = []
   const spot = async (pair: string, label: string, kind: Quote['kind']): Promise<Quote> => {
-    const base: Quote = { symbol: pair, label, price: null, changePct: null, changeAbs: null, spark: [], kind, source: 'Coinbase' }
+    const base: Quote = { symbol: pair, label, price: null, changePct: null, changeAbs: null, spark: [], kind, source: 'Digital asset venue' }
     try {
       const [t, s, c] = await Promise.all([
         fetch(`https://api.exchange.coinbase.com/products/${pair}/ticker`, { signal: AbortSignal.timeout(6000) }),
@@ -106,7 +128,8 @@ async function coinbase(): Promise<Quote[]> {
         }),
       ])
       if (!t.ok) return { ...base, error: `http ${t.status}` }
-      const price = parseFloat((await t.json()).price)
+      const ticker = await t.json()
+      const price = parseFloat(ticker.price)
       const stats = s.ok ? await s.json() : {}
       const open = parseFloat(stats.open)
 
@@ -126,6 +149,11 @@ async function coinbase(): Promise<Quote[]> {
         high24h: isFinite(parseFloat(stats.high)) ? parseFloat(stats.high) : null,
         low24h: isFinite(parseFloat(stats.low)) ? parseFloat(stats.low) : null,
         volume24h: isFinite(parseFloat(stats.volume)) ? parseFloat(stats.volume) : null,
+        open: isFinite(open) ? open : null,
+        sessionHigh: isFinite(parseFloat(stats.high)) ? parseFloat(stats.high) : null,
+        sessionLow: isFinite(parseFloat(stats.low)) ? parseFloat(stats.low) : null,
+        marketState: 'REGULAR',
+        asOf: typeof ticker.time === 'string' ? ticker.time : new Date().toISOString(),
       }
     } catch (e) {
       return { ...base, error: e instanceof Error ? e.message : 'failed' }
@@ -137,32 +165,13 @@ async function coinbase(): Promise<Quote[]> {
   return out
 }
 
-/** CAD per USD, from the same keyless endpoint the portfolio page uses. */
-async function cadUsd(): Promise<Quote> {
-  const base: Quote = {
-    symbol: 'USD-CAD', label: 'CAD/USD', price: null, changePct: null, changeAbs: null,
-    spark: [], kind: 'fx', source: 'Coinbase',
-  }
-  try {
-    const r = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=USD', {
-      signal: AbortSignal.timeout(6000),
-    })
-    if (!r.ok) return { ...base, error: `http ${r.status}` }
-    const cad = parseFloat((await r.json())?.data?.rates?.CAD)
-    return isFinite(cad) ? { ...base, price: cad } : { ...base, error: 'no CAD rate' }
-  } catch (e) {
-    return { ...base, error: e instanceof Error ? e.message : 'failed' }
-  }
-}
-
 export default async function handler(): Promise<Response> {
-  const [crypto, fx, ...macro] = await Promise.all([
+  const [crypto, ...macro] = await Promise.all([
     coinbase(),
-    cadUsd(),
     ...MACRO.map((m) => yahoo(m.symbol, m.label, m.kind)),
   ])
 
-  const quotes = [...crypto, fx, ...macro]
+  const quotes = [...crypto, ...macro]
   const failed = quotes.filter((q) => q.error).map((q) => q.label)
 
   return new Response(
