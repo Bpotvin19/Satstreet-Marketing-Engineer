@@ -1,32 +1,66 @@
-/* US spot Bitcoin ETF flows.
+/* US spot Bitcoin ETF flows — no vendor key.
 
-   Preferred source is CoinGlass official API when COINGLASS_API_KEY is set.
-   Without a key the function tries CoinGlass's public capi used by
-   coinglass.com/etf/bitcoin. Nothing is invented: if both paths fail the
-   page keeps the empty state.
+   Primary: TFTC open JSON (CC BY 4.0), compiled from SoSoValue daily
+   prints and Farside's issuer table.
+   Fallback: public CSV mirror of the Farside tape on GitHub.
 */
 
-const OFFICIAL = 'https://open-api-v4.coinglass.com'
-const PUBLIC = 'https://capi.coinglass.com'
+const TFTC = 'https://www.tftc.io/bitcoin-etf-flows/data.json'
+const FARSIDE_CSV = 'https://raw.githubusercontent.com/haturatu/crypto-etf-flow/main/etf_btc.csv'
+
+const NAMES: Record<string, string> = {
+  IBIT: 'iShares Bitcoin Trust (BlackRock)',
+  FBTC: 'Wise Origin Bitcoin Fund (Fidelity)',
+  BITB: 'Bitwise Bitcoin ETF',
+  ARKB: 'ARK 21Shares Bitcoin ETF',
+  BTCO: 'Invesco Galaxy Bitcoin ETF',
+  EZBC: 'Franklin Bitcoin ETF',
+  BRRR: 'CoinShares Valkyrie Bitcoin Fund',
+  HODL: 'VanEck Bitcoin Trust',
+  BTCW: 'WisdomTree Bitcoin Fund',
+  MSBT: 'Morgan Stanley Bitcoin Trust',
+  GBTC: 'Grayscale Bitcoin Trust',
+  BTC: 'Grayscale Bitcoin Mini Trust',
+}
 
 function jsonResponse(body: unknown, status = 200, maxAge = 300): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': `public, max-age=${maxAge}, stale-while-revalidate=600`,
+      'cache-control': `public, max-age=${maxAge}, stale-while-revalidate=900`,
       'access-control-allow-origin': '*',
     },
   })
 }
 
 function num(value: unknown): number | null {
-  const n = typeof value === 'string' ? Number(value) : typeof value === 'number' ? value : NaN
+  if (value == null || value === '') return null
+  const n = typeof value === 'number' ? value : Number(String(value).replace(/[$,]/g, ''))
   return Number.isFinite(n) ? n : null
 }
 
-function sessionDate(ts: number): string {
+function sessionDate(iso: string): string {
+  const ts = Date.parse(iso.includes('T') ? iso : iso + 'T00:00:00Z')
+  if (!Number.isFinite(ts)) return iso
   return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+}
+
+function compactUsd(n: number): string {
+  const sign = n < 0 ? '-' : '+'
+  const abs = Math.abs(n)
+  const body = abs >= 1e9 ? (abs / 1e9).toFixed(2) + 'B' : abs >= 1e6 ? (abs / 1e6).toFixed(1) + 'M' : abs >= 1e3 ? Math.round(abs / 1e3) + 'K' : abs.toFixed(0)
+  return sign + '$' + body
+}
+
+function leads(per: Record<string, number>): { leadIn: string; leadOut: string } {
+  const entries = Object.entries(per).filter(([, v]) => Number.isFinite(v) && v !== 0)
+  const inflow = entries.filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1])[0]
+  const outflow = entries.filter(([, v]) => v < 0).sort((a, b) => a[1] - b[1])[0]
+  return {
+    leadIn: inflow ? `${inflow[0]} ${compactUsd(inflow[1])}` : '',
+    leadOut: outflow ? `${outflow[0]} ${compactUsd(outflow[1])}` : '',
+  }
 }
 
 interface FlowDay {
@@ -36,183 +70,158 @@ interface FlowDay {
   priceUsd: number | null
   leadIn: string
   leadOut: string
+  perEtfUsd?: Record<string, number>
 }
 
 interface Issuer {
   ticker: string
   name: string
   aumUsd: number | null
+  lastFlowUsd: number | null
   btcHolding: number | null
 }
 
-async function officialGet(path: string, key: string): Promise<unknown> {
-  const response = await fetch(OFFICIAL + path, {
-    headers: { 'CG-API-KEY': key, accept: 'application/json' },
+async function readTftc(): Promise<{ days: FlowDay[]; aumUsd: number | null }> {
+  const response = await fetch(TFTC, {
+    headers: { accept: 'application/json', 'user-agent': 'SatstreetTerminal/1.0' },
     signal: AbortSignal.timeout(8000),
   })
-  if (!response.ok) throw new Error(`CoinGlass official HTTP ${response.status}`)
-  const body = (await response.json()) as { code?: string | number; msg?: string; data?: unknown }
-  if (String(body.code) !== '0' || body.data == null) throw new Error(body.msg || 'CoinGlass official returned no data')
-  return body.data
-}
-
-function fromOfficialFlows(rows: unknown[]): FlowDay[] {
-  return rows
-    .map((row) => {
-      const r = row as { timestamp?: number; flow_usd?: number; price_usd?: number; etf_flows?: { etf_ticker?: string; flow_usd?: number }[] }
-      const ts = Number(r.timestamp)
-      const flow = num(r.flow_usd)
-      if (!Number.isFinite(ts) || flow == null) return null
-      const parts = Array.isArray(r.etf_flows) ? r.etf_flows : []
-      const inflows = parts.filter((p) => (p.flow_usd || 0) > 0).sort((a, b) => (b.flow_usd || 0) - (a.flow_usd || 0))
-      const outflows = parts.filter((p) => (p.flow_usd || 0) < 0).sort((a, b) => (a.flow_usd || 0) - (b.flow_usd || 0))
-      const fmtLead = (p?: { etf_ticker?: string; flow_usd?: number }) =>
-        p?.etf_ticker ? `${p.etf_ticker} ${p.flow_usd && p.flow_usd < 0 ? '-' : '+'}$${Math.abs(p.flow_usd || 0) >= 1e6 ? (Math.abs(p.flow_usd || 0) / 1e6).toFixed(1) + 'M' : Math.round(Math.abs(p.flow_usd || 0) / 1e3) + 'K'}` : ''
-      return {
-        date: sessionDate(ts),
-        ts,
-        flowUsd: flow,
-        priceUsd: num(r.price_usd),
-        leadIn: fmtLead(inflows[0]),
-        leadOut: fmtLead(outflows[0]),
-      } as FlowDay
+  if (!response.ok) throw new Error(`TFTC HTTP ${response.status}`)
+  const body = (await response.json()) as {
+    days?: { date?: string; netFlowUsd?: number; totalNetAssetsUsd?: number | null; btcCloseUsd?: number | null; perEtfUsd?: Record<string, number> }[]
+  }
+  const days: FlowDay[] = []
+  let aumUsd: number | null = null
+  for (const row of body.days || []) {
+    const flow = num(row.netFlowUsd)
+    const ts = Date.parse((row.date || '') + 'T00:00:00Z')
+    if (flow == null || !Number.isFinite(ts)) continue
+    const per = row.perEtfUsd || {}
+    const lead = leads(per)
+    days.push({
+      date: sessionDate(row.date || ''),
+      ts,
+      flowUsd: flow,
+      priceUsd: num(row.btcCloseUsd),
+      leadIn: lead.leadIn,
+      leadOut: lead.leadOut,
+      perEtfUsd: per,
     })
-    .filter((row): row is FlowDay => row !== null)
-    .sort((a, b) => a.ts - b.ts)
+    if (row.totalNetAssetsUsd != null) aumUsd = num(row.totalNetAssetsUsd)
+  }
+  if (!days.length) throw new Error('TFTC returned no sessions')
+  return { days: days.sort((a, b) => a.ts - b.ts), aumUsd }
 }
 
-function fromOfficialList(rows: unknown[]): Issuer[] {
-  return rows
-    .map((row) => {
-      const r = row as { ticker?: string; fund_name?: string; aum_usd?: string | number; asset_details?: { btc_holding?: number } }
-      if (!r.ticker) return null
-      return {
-        ticker: r.ticker,
-        name: r.fund_name || r.ticker,
-        aumUsd: num(r.aum_usd),
-        btcHolding: num(r.asset_details?.btc_holding),
-      } as Issuer
-    })
-    .filter((row): row is Issuer => row !== null)
-    .sort((a, b) => (b.aumUsd || 0) - (a.aumUsd || 0))
+function parseCsvMoney(cell: string): number | null {
+  const raw = cell.trim()
+  if (!raw || raw === '-') return null
+  const n = Number(raw.replace(/[(),]/g, (ch) => (ch === '(' ? '-' : '')))
+  return Number.isFinite(n) ? n * 1_000_000 : null
 }
 
-async function publicGet(path: string): Promise<unknown> {
-  const response = await fetch(PUBLIC + path, {
-    headers: {
-      accept: 'application/json',
-      origin: 'https://www.coinglass.com',
-      referer: 'https://www.coinglass.com/etf/bitcoin',
-      'user-agent': 'Mozilla/5.0',
-    },
+function parseCsvDate(cell: string): number | null {
+  const ts = Date.parse(cell + ' UTC')
+  return Number.isFinite(ts) ? ts : null
+}
+
+async function readFarsideCsv(): Promise<{ days: FlowDay[]; aumUsd: number | null }> {
+  const response = await fetch(FARSIDE_CSV, {
+    headers: { accept: 'text/csv,text/plain', 'user-agent': 'SatstreetTerminal/1.0' },
     signal: AbortSignal.timeout(8000),
   })
-  if (!response.ok) throw new Error(`CoinGlass public HTTP ${response.status}`)
-  const body = (await response.json()) as { code?: string | number; message?: string; data?: unknown; success?: boolean }
-  if (body.data == null) throw new Error(body.message || 'CoinGlass public returned no data')
-  return body.data
+  if (!response.ok) throw new Error(`Farside CSV HTTP ${response.status}`)
+  const text = await response.text()
+  const lines = text.split(/\r?\n/).filter(Boolean)
+  const header = lines.shift()?.split(',') || []
+  const tickers = header.slice(1, -1)
+  const days: FlowDay[] = []
+  for (const line of lines) {
+    const cols = line.split(',')
+    const ts = parseCsvDate(cols[0] || '')
+    const total = parseCsvMoney(cols[cols.length - 1] || '')
+    if (ts == null || total == null) continue
+    const per: Record<string, number> = {}
+    tickers.forEach((ticker, i) => {
+      const value = parseCsvMoney(cols[i + 1] || '')
+      if (value != null) per[ticker] = value
+    })
+    const lead = leads(per)
+    days.push({
+      date: sessionDate(new Date(ts).toISOString().slice(0, 10)),
+      ts,
+      flowUsd: total,
+      priceUsd: null,
+      leadIn: lead.leadIn,
+      leadOut: lead.leadOut,
+      perEtfUsd: per,
+    })
+  }
+  if (!days.length) throw new Error('Farside CSV returned no sessions')
+  return { days: days.sort((a, b) => a.ts - b.ts), aumUsd: null }
 }
 
-function coerceDays(data: unknown): FlowDay[] {
-  const rows = Array.isArray(data) ? data : Array.isArray((data as { list?: unknown[] })?.list) ? (data as { list: unknown[] }).list : []
-  return rows
-    .map((row) => {
-      const r = row as Record<string, unknown>
-      const ts = num(r.timestamp) ?? num(r.date) ?? num(r.time) ?? num(r.ts)
-      const flow = num(r.flow_usd) ?? num(r.flowUsd) ?? num(r.netInflow) ?? num(r.change) ?? num(r.change_usd) ?? num(r.netFlow)
-      if (ts == null || flow == null) return null
-      const stamp = ts < 10_000_000_000 ? ts * 1000 : ts
-      return { date: sessionDate(stamp), ts: stamp, flowUsd: flow, priceUsd: num(r.price_usd) ?? num(r.price), leadIn: '', leadOut: '' }
-    })
-    .filter((row): row is FlowDay => row !== null)
-    .sort((a, b) => a.ts - b.ts)
-}
-
-function coerceIssuers(data: unknown): Issuer[] {
-  const rows = Array.isArray(data) ? data : Array.isArray((data as { list?: unknown[] })?.list) ? (data as { list: unknown[] }).list : []
-  return rows
-    .map((row) => {
-      const r = row as Record<string, unknown>
-      const ticker = String(r.ticker || r.symbol || r.etf_ticker || '')
-      if (!ticker) return null
-      const details = (r.asset_details || r.assetDetails || {}) as Record<string, unknown>
-      return {
-        ticker,
-        name: String(r.fund_name || r.name || r.fundName || ticker),
-        aumUsd: num(r.aum_usd) ?? num(r.aum) ?? num(r.netAssets) ?? num(r.net_assets),
-        btcHolding: num(details.btc_holding) ?? num(r.btc_holding) ?? num(r.btcHolding),
-      } as Issuer
-    })
-    .filter((row): row is Issuer => row !== null)
-    .sort((a, b) => (b.aumUsd || 0) - (a.aumUsd || 0))
+function issuersFrom(days: FlowDay[]): Issuer[] {
+  const last = [...days].reverse().find((d) => d.perEtfUsd && Object.keys(d.perEtfUsd).length) || days[days.length - 1]
+  const per = last?.perEtfUsd || {}
+  return Object.keys(NAMES)
+    .map((ticker) => ({
+      ticker,
+      name: NAMES[ticker],
+      aumUsd: null,
+      lastFlowUsd: per[ticker] ?? null,
+      btcHolding: null,
+    }))
+    .filter((row) => row.lastFlowUsd != null)
+    .sort((a, b) => Math.abs(b.lastFlowUsd || 0) - Math.abs(a.lastFlowUsd || 0))
 }
 
 export default async function handler(): Promise<Response> {
-  const key = process.env.COINGLASS_API_KEY?.trim() || ''
   let days: FlowDay[] = []
-  let issuers: Issuer[] = []
-  let source = 'CoinGlass'
+  let aumUsd: number | null = null
+  let source = 'TFTC'
+  let sourceUrl = 'https://www.tftc.io/bitcoin-etf-flows'
 
   try {
-    if (key) {
-      const [flow, list] = await Promise.all([
-        officialGet('/api/etf/bitcoin/flow-history', key),
-        officialGet('/api/etf/bitcoin/list', key).catch(() => []),
-      ])
-      days = fromOfficialFlows(Array.isArray(flow) ? flow : [])
-      issuers = fromOfficialList(Array.isArray(list) ? list : [])
-      source = 'CoinGlass official API'
-    } else {
-      const [flow, list] = await Promise.all([
-        publicGet('/api/etf/flow'),
-        publicGet('/api/stock/list').catch(() => []),
-      ])
-      days = coerceDays(flow)
-      issuers = coerceIssuers(list)
-      source = 'CoinGlass public tape'
+    const primary = await readTftc()
+    days = primary.days
+    aumUsd = primary.aumUsd
+  } catch {
+    try {
+      const fallback = await readFarsideCsv()
+      days = fallback.days
+      aumUsd = fallback.aumUsd
+      source = 'Farside Investors (public tape)'
+      sourceUrl = 'https://farside.co.uk/btc/'
+    } catch (error) {
+      return jsonResponse(
+        {
+          error: error instanceof Error ? error.message : 'ETF tape unavailable',
+          sourceUrl: 'https://www.tftc.io/bitcoin-etf-flows',
+          days: [],
+          issuers: [],
+        },
+        503,
+        30,
+      )
     }
-  } catch (error) {
-    return jsonResponse(
-      {
-        error: error instanceof Error ? error.message : 'CoinGlass unavailable',
-        hint: key ? 'CoinGlass rejected the configured API key.' : 'Add COINGLASS_API_KEY in Netlify env for a stable official feed.',
-        sourceUrl: 'https://www.coinglass.com/etf/bitcoin',
-        days: [],
-        issuers: [],
-      },
-      503,
-      30,
-    )
   }
 
-  if (!days.length) {
-    return jsonResponse(
-      {
-        error: 'CoinGlass returned no ETF sessions.',
-        hint: key ? '' : 'Add COINGLASS_API_KEY in Netlify env.',
-        sourceUrl: 'https://www.coinglass.com/etf/bitcoin',
-        days: [],
-        issuers,
-      },
-      503,
-      30,
-    )
-  }
-
-  const recent = days.slice(-400)
-  const aumUsd = issuers.reduce((sum, row) => sum + (row.aumUsd || 0), 0) || null
-  const cumulativeUsd = recent.reduce((sum, row) => sum + row.flowUsd, 0)
+  const recent = days.filter((d) => d.flowUsd !== 0 || d.leadIn || d.leadOut).slice(-400)
+  const usable = recent.length ? recent : days.slice(-400)
+  const issuers = issuersFrom(usable)
+  const cumulativeUsd = usable.reduce((sum, row) => sum + row.flowUsd, 0)
 
   return jsonResponse({
     asOf: new Date().toISOString(),
     source,
-    sourceUrl: 'https://www.coinglass.com/etf/bitcoin',
-    days: recent,
+    sourceUrl,
+    days: usable,
     issuers,
     listCount: issuers.length,
     aumUsd,
     cumulativeUsd,
-    note: 'US spot Bitcoin ETF creations and redemptions compiled by CoinGlass. Not a Satstreet series.',
+    note: 'US spot Bitcoin ETF net creations and redemptions. Compiled by TFTC from SoSoValue and Farside. Not a Satstreet series.',
   })
 }
 
