@@ -30,12 +30,13 @@
   .world-list li { position:relative; z-index:1; padding:10px 0 10px 27px; border-top:1px solid rgba(255,255,255,.11); color:#d3e0e9; font-size:13.5px; line-height:1.48; counter-increment:brief; }
   .world-list li::before { content:counter(brief,decimal-leading-zero); position:absolute; left:0; top:11px; color:#5ac7eb; font-size:10px; font-weight:700; letter-spacing:.4px; }
   .reads-card h2, .calendar-card h2, .so-what h2 { margin:0; font-size:18px; font-weight:600; }
-  .read { display:grid; grid-template-columns:31px 1fr; gap:10px; align-items:start; padding:12px 0; border-bottom:1px solid var(--border-2); }
-  .read-icon { width:29px; height:29px; display:grid; place-items:center; border-radius:50%; color:#147da8; background:#e9f4f8; }
-  .read-icon svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .read { display:grid; grid-template-columns:88px 1fr; gap:12px; align-items:start; padding:12px 0; border-bottom:1px solid var(--border-2); }
+  .read-thumb { width:88px; height:62px; display:block; flex:none; border-radius:7px; overflow:hidden; background:#e8eef3; color:#147da8; text-decoration:none; }
+  .read-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .read-thumb .mark { width:100%; height:100%; display:grid; place-items:center; font-size:10px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:#147da8; background:linear-gradient(160deg,#e9f4f8,#d7e7ef); }
   .read:last-child { border-bottom:0; padding-bottom:0; }
-  .read a { display:block; color:var(--ink); text-decoration:none; font-size:13.5px; font-weight:600; line-height:1.4; }
-  .read a:hover { color:var(--blue); }
+  .read a.headline { display:block; color:var(--ink); text-decoration:none; font-size:13.5px; font-weight:600; line-height:1.4; }
+  .read a.headline:hover { color:var(--blue); }
   .read small { display:block; margin-top:3px; color:var(--muted); font-size:11.5px; }
   .filterbar { display:flex; gap:7px; overflow-x:auto; padding:2px 0 12px; margin-bottom:3px; scrollbar-width:none; }
   .filterbar::-webkit-scrollbar { display:none; }
@@ -167,9 +168,9 @@
       {type:'numbered_list_item',text:'Bond yields and the dollar are setting the tone for cross-asset positioning.'},
       {type:'numbered_list_item',text:'Equity leadership is narrow, keeping index-level strength and breadth in focus.'},
       {type:'heading_2',text:'B. Must-read'},
-      {type:'numbered_list_item',text:'Rates reprice ahead of the next major data release'},
-      {type:'numbered_list_item',text:'Commodity desks assess the latest supply signals'},
-      {type:'numbered_list_item',text:'Digital assets trade with broader risk appetite'},
+      {type:'numbered_list_item',text:'Rates reprice ahead of the next major data release',links:[{text:'BLS',href:'https://www.bls.gov/news.release/empsit.nr0.htm'}]},
+      {type:'numbered_list_item',text:'Commodity desks assess the latest supply signals',links:[{text:'AP',href:'https://wtop.com/national/2026/09/us-diesel-prices-hit-a-record-high-of-5-85-on-average-as-the-iran-war-disrupts-the-flow-of-fuel/'}],image:'https://wtop.com/wp-content/uploads/2026/09/AP26247309335683.jpg'},
+      {type:'numbered_list_item',text:'Digital assets trade with broader risk appetite',links:[{text:'CoinDesk',href:'https://www.coindesk.com/'}]},
       {type:'heading_2',text:'C. Industry tiles'},
       {type:'heading_3',text:'1. Rates and dollar'}, {type:'paragraph',text:'What: Sovereign yields and the dollar remain the key cross-asset inputs.'}, {type:'paragraph',text:'Why: Policy expectations are moving with each macro release.'}, {type:'paragraph',text:'Watch 72h: Central-bank speakers, labour data and the next inflation print.'},
       {type:'heading_3',text:'2. Equities US + Canada'}, {type:'paragraph',text:'What: Major indices are consolidating while sector leadership rotates.'}, {type:'paragraph',text:'Why: Rates and earnings expectations are pulling in opposite directions.'}, {type:'paragraph',text:'Watch 72h: Breadth, technology leadership and Canadian resource shares.'},
@@ -193,7 +194,7 @@
       if (b.type === 'heading_2') { section = /^A\./.test(text)?'world':/^B\./.test(text)?'reads':/^C\./.test(text)?'sectors':/^D\./.test(text)?'calendar':/^E\./.test(text)?'so':''; sector=null; return; }
       if (section === 'sectors' && b.type === 'heading_3') { sector = text.replace(/^\d+\.\s*/, ''); out.sectors[sector] = []; return; }
       if (section === 'world' && b.type === 'numbered_list_item') out.world.push(text);
-      if (section === 'reads' && b.type === 'numbered_list_item') out.reads.push({text:text,links:b.links||[]});
+      if (section === 'reads' && (b.type === 'numbered_list_item' || b.type === 'bulleted_list_item')) out.reads.push({text:text,links:b.links||[],image:b.image||''});
       if (section === 'sectors' && sector && text) out.sectors[sector].push(text);
       if (section === 'so' && b.type === 'bulleted_list_item') out.so.push(text);
       if (section === 'calendar' && b.type === 'table' && b.children) {
@@ -221,21 +222,35 @@
     var d=parse(payload);
     $('world-list').innerHTML=(d.world.length?d.world:['No world brief was included in this edition.']).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');
     $('read-count').textContent=d.reads.length+' items';
-    $('reads').innerHTML=(d.reads.length?d.reads:[{text:'No must-read list was included.',links:[]}]).slice(0,7).map(function(r){var href=(r.links[0]||{}).href; return '<div class="read"><span class="read-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><div>'+(href?'<a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(r.text)+'</a>':'<a>'+esc(r.text)+'</a>')+'<small>'+(href?new URL(href).hostname.replace(/^www\./,''):'Desk briefing')+'</small></div></div>';}).join('');
+    $('reads').innerHTML=(d.reads.length?d.reads:[{text:'No must-read list was included.',links:[],image:''}]).slice(0,7).map(function(r){
+      var href=(r.links[0]||{}).href||'';
+      if(!href){ var m=(r.text||'').match(/https?:\/\/[^\s)>\]]+/); href=m?m[0]:''; }
+      var host='Desk briefing';
+      try { if(href) host=new URL(href).hostname.replace(/^www\./,''); } catch (e) {}
+      var mark=(host.split('.')[0]||'Desk').slice(0,8);
+      var thumb = r.image
+        ? '<img src="'+esc(r.image)+'" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.hidden=false;">'+'<span class="mark" hidden>'+esc(mark)+'</span>'
+        : '<span class="mark">'+esc(mark)+'</span>';
+      var open = href ? ' href="'+esc(href)+'" target="_blank" rel="noopener noreferrer"' : '';
+      var title = href
+        ? '<a class="headline" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(r.text)+'</a>'
+        : '<a class="headline">'+esc(r.text)+'</a>';
+      return '<div class="read"><a class="read-thumb"'+open+' aria-hidden="true">'+thumb+'</a><div>'+title+'<small>'+esc(host)+'</small></div></div>';
+    }).join('');
     var sectors=Object.keys(d.sectors).map(function(name){ var meta=sectorKey(name), lines=d.sectors[name], q=market[meta[3]], parts={what:'',why:'',watch:''}; lines.forEach(function(line){var m=line.match(/^(What|Why|Watch 72h):\s*(.*)$/i); if(m) parts[m[1].toLowerCase().split(' ')[0]]=m[2];}); return {key:meta[0],label:meta[2],name:name,q:q,parts:parts}; });
     $('filters').innerHTML=[['all','All sectors']].concat(categoryMeta.map(function(m){return [m[0],m[2]];})).map(function(f,i){return '<button class="filter" type="button" data-filter="'+f[0]+'" aria-pressed="'+(i===0)+'">'+(f[0]==='all'?'':sectorIcon(f[0]))+esc(f[1])+'</button>';}).join('');
     $('sectors').innerHTML=sectors.map(function(s){var cls=s.q&&s.q.changePct<0?'down':'up'; return '<article class="card sector visual-card" data-sector="'+esc(s.key)+'"><div class="sector-head"><div class="sector-title">'+sectorIcon(s.key)+'<div><p class="sector-kicker">'+esc(s.label)+'</p><h2>'+esc(s.name)+'</h2></div></div><div class="sector-market"><span class="value data-face">'+esc(price(s.q))+'</span>'+(s.q?Terminal.spark(s.q.spark,cls,150,42):'')+'</div></div><div class="sector-body"><div class="intel"><b>What</b><span>'+esc(s.parts.what||'No tape summary in this edition.')+'</span></div><div class="intel"><b>Why</b><span>'+esc(s.parts.why||'No driver note in this edition.')+'</span></div><div class="intel"><b>Watch</b><span>'+esc(s.parts.watch||'No 72-hour watch item in this edition.')+'</span></div></div></article>';}).join('');
-    $('calendar').innerHTML=(d.calendar.length?d.calendar:[['—','No calendar included','—']]).map(function(r){return '<tr><td>'+esc(r[0]||'')+'</td><td>'+esc(r[1]||'')+'</td><td>'+esc(r[2]||'')+'</td></tr>';}).join('');
+    $('calendar').innerHTML=(d.calendar.length?d.calendar:[['\u2014','No calendar included','\u2014']]).map(function(r){return '<tr><td>'+esc(r[0]||'')+'</td><td>'+esc(r[1]||'')+'</td><td>'+esc(r[2]||'')+'</td></tr>';}).join('');
     $('so-list').innerHTML=(d.so.length?d.so:['No Satstreet lens was included in this edition.']).map(function(x){return '<li>'+esc(x)+'</li>';}).join('');
-    $('source-meta').textContent=(preview?'Illustrative preview':'Notion · '+(payload.status||'Status not set'))+' · '+(payload.window||payload.date||'');
+    $('source-meta').textContent=(preview?'Illustrative preview':'Notion \u00b7 '+(payload.status||'Status not set'))+' \u00b7 '+(payload.window||payload.date||'');
     $('source-link').hidden=!payload.sourceUrl; $('source-link').href=payload.sourceUrl||'#';
     $('desk').hidden=false; $('gate').hidden=true; $('lock').hidden=preview;
-    $('news-pip').className='pip '+(preview?'warn':'ok'); $('news-state').textContent=preview?'Illustrative layout':'Updated from Notion · '+new Date(payload.lastEdited).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    $('news-pip').className='pip '+(preview?'warn':'ok'); $('news-state').textContent=preview?'Illustrative layout':'Updated from Notion \u00b7 '+new Date(payload.lastEdited).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
     document.querySelectorAll('.filter').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.filter').forEach(function(b){b.setAttribute('aria-pressed',String(b===btn));}); document.querySelectorAll('.sector').forEach(function(card){card.hidden=btn.dataset.filter!=='all'&&card.dataset.sector!==btn.dataset.filter;});});});
   }
   function loadMarket() { return fetch('/api/market').then(function(r){return r.ok?r.json():{quotes:[]};}).then(function(d){(d.quotes||[]).forEach(function(q){market[q.symbol]=q;});}).catch(function(){}); }
   function unlock(key) {
-    $('gate-error').textContent=''; $('news-state').textContent='Loading Macro Desk…';
+    $('gate-error').textContent=''; $('news-state').textContent='Loading Macro Desk\u2026';
     return fetch('/api/news',{headers:{'x-terminal-key':key},cache:'no-store'}).then(function(r){return r.json().then(function(j){if(!r.ok) throw new Error(j.error||'Unable to load the feed.'); return j;});}).then(function(d){sessionStorage.setItem('satstreet.news.key',key); render(d,false);}).catch(function(e){$('news-pip').className='pip bad'; $('news-state').textContent='Protected Notion feed'; $('gate-error').textContent=e.message;});
   }
   $('gate-form').addEventListener('submit',function(e){e.preventDefault(); var key=$('access-key').value.trim(); if(key) unlock(key);});
