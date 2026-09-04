@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Satstreet · Market Structure</title>
-<meta name="description" content="Positioning, network conditions and macro signals behind the price." />
+<meta name="description" content="Positioning and network conditions behind the price." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -41,30 +41,16 @@
     <div>
       <p class="eyebrow">Positioning & network intelligence</p>
       <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 8-1M7 9l4 7m6-8-4 8"/></svg></span><h1>Market Structure</h1></div>
-      <p>Positioning, network conditions and macro signals behind the price.</p>
+      <p>Positioning and network conditions behind the price.</p>
     </div>
     <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Loading…</span></span>
   </div>
   <div class="tabs" role="tablist" aria-label="Market structure sections">
-    <button role="tab" id="tab-derivatives" aria-selected="true" aria-controls="p-derivatives" data-t="derivatives"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
-    <button role="tab" id="tab-network" aria-selected="false" aria-controls="p-network" data-t="network" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
-    <button role="tab" id="tab-macro" aria-selected="false" aria-controls="p-macro" data-t="macro" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c3 3 3 13 0 16"/></svg></span>Macro</button>
-    <button role="tab" id="tab-institutional" aria-selected="false" aria-controls="p-institutional" data-t="institutional" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>Institutional</button>
+    <button role="tab" id="tab-institutional" aria-selected="true" aria-controls="p-institutional" data-t="institutional"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>ETF Inflows + Outflows</button>
+    <button role="tab" id="tab-derivatives" aria-selected="false" aria-controls="p-derivatives" data-t="derivatives" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
+    <button role="tab" id="tab-network" aria-selected="false" aria-controls="p-network" data-t="network" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
   </div>
-  <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0">
-    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a single venue and are not a view on the market.</p>
-    <div class="panelgrid" id="deriv"></div>
-  </section>
-  <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
-    <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
-    <div class="metrics" id="net"></div>
-    <div class="card" id="net-extra"></div>
-  </section>
-  <section id="p-macro" role="tabpanel" aria-labelledby="tab-macro" tabindex="0" hidden>
-    <p class="ctx">These markets influence liquidity, risk appetite and the relative attractiveness of scarce assets.</p>
-    <div class="metrics" id="macro"></div>
-  </section>
-  <section id="p-institutional" role="tabpanel" aria-labelledby="tab-institutional" tabindex="0" hidden>
+  <section id="p-institutional" role="tabpanel" aria-labelledby="tab-institutional" tabindex="0">
     <p class="ctx">US spot Bitcoin ETF creations and redemptions. Daily tape compiled by TFTC from SoSoValue and Farside Investors. Figures are not a Satstreet view on demand.</p>
     <div class="metrics" id="etf-kpis"></div>
     <div class="panelgrid" style="margin-top:16px">
@@ -72,6 +58,15 @@
       <div class="card" id="etf-issuers"></div>
     </div>
     <div class="card" id="etf-days" style="margin-top:16px"></div>
+  </section>
+  <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0" hidden>
+    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a single venue and are not a view on the market.</p>
+    <div class="panelgrid" id="deriv"></div>
+  </section>
+  <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
+    <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
+    <div class="metrics" id="net"></div>
+    <div class="card" id="net-extra"></div>
   </section>
   <div class="disclosure" id="disclosure"></div>
 </main>
