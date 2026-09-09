@@ -1,731 +1,171 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Satstreet · Private Market</title>
-<meta name="robots" content="noindex" />
-
-<!--
-  Private Market — prototype.
-
-  A desk-assisted network for high-value physical assets: real estate, marine,
-  aviation, motor vehicles, precious metals, watches and art, with a $50,000
-  floor to match the desk's minimum trade size. Qualified clients review
-  indicative interests, register their own, and ask the desk to take it from
-  there.
-
-  Deliberately not a marketplace in the transactional sense: nothing on this
-  page executes, matches, escrows, appraises, or transmits anything. Satstreet
-  does not take custody of or hold title to any asset shown — where a
-  transaction has a digital-asset leg, that leg is the desk's usual OTC
-  business and everything else belongs to the parties and their advisers.
-
-  Chrome and components come from assets/terminal.css + terminal.js so the
-  page is one more terminal tab, not a separate product. All listings are
-  fictional (public/private-market-data.js); client submissions persist to
-  localStorage only. The internal mock workflow lives in
-  private-market-internal.html and shares the same local state, which is how
-  a status change there shows up here.
--->
-
-<link rel="stylesheet" href="./assets/terminal.css" />
-
-<style>
-  /* ── opportunity board ── */
-  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
-  .opp {
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-    box-shadow: var(--shadow); padding: 18px 20px;
-    display: flex; flex-direction: column; gap: 11px;
-    transition: border-color .15s;
-    overflow: hidden; /* clips the bleed image to the card's rounded corners */
-  }
-  .opp:hover { border-color: var(--faint); }
-
-  /* ── card media ──
-     Pulled out to the card edges with negative margins so the image reads as
-     part of the card rather than an inset thumbnail. */
-  .opp-media {
-    position: relative; margin: -18px -20px 1px;
-    background: var(--border-2); border-bottom: 1px solid var(--border);
-  }
-  .plate { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
-  .media-tag {
-    position: absolute; left: 10px; top: 10px;
-    font-size: 9.5px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase;
-    color: var(--ink-2); background: rgba(255,255,255,0.86); backdrop-filter: blur(3px);
-    padding: 3px 8px; border-radius: 20px;
-  }
-  .media-count {
-    position: absolute; right: 10px; bottom: 10px;
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 11px; font-weight: 600; color: var(--ink-2);
-    background: rgba(255,255,255,0.86); backdrop-filter: blur(3px);
-    padding: 3px 9px; border-radius: 20px;
-  }
-  .media-count svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-  .opp-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-  .chip {
-    font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 20px; white-space: nowrap;
-  }
-  .chip-offered { color: var(--up); background: var(--up-soft); }
-  .chip-sought  { color: var(--brass); background: var(--brass-soft); }
-  .chip-cat     { color: var(--ink-2); background: var(--border-2); }
-  .chip-open    { color: var(--blue); background: rgba(0,104,255,0.08); }
-  .chip-disc    { color: var(--warn); background: var(--warn-soft); }
-  .opp .ref { font-family: var(--font-data); font-size: 11.5px; color: var(--faint); }
-  .opp h3 { font-size: 15.5px; font-weight: 600; line-height: 1.35; margin: 0; letter-spacing: -0.1px; }
-  .opp .val {
-    font-family: var(--font-data); font-size: 20px; font-weight: 600;
-    letter-spacing: -0.4px; font-variant-numeric: tabular-nums;
-  }
-  .opp .val small { font-family: var(--font); font-size: 12.5px; font-weight: 600; color: var(--muted); margin-left: 7px; letter-spacing: 0; }
-  .opp .desc { font-size: 13.5px; color: var(--ink-2); margin: 0; flex: 1; line-height: 1.55; }
-  .opp dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 12.5px; }
-  .opp dt { color: var(--muted); }
-  .opp dd { margin: 0; color: var(--ink); font-weight: 600; }
-  /* Reference sits with the action rather than in the chip row: the chips
-     wrap on a narrow card and a lone ID left hanging above them reads like a
-     rendering fault. */
-  .opp .act { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-
-  /* ── filters ── */
-  .filterbar { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
-  .filterbar .grp { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
-  .filterbar select {
-    font: inherit; font-size: 13px; color: var(--ink); padding: 7px 10px;
-    border: 1px solid var(--border); border-radius: 7px; background: var(--card);
-  }
-  .filterbar select:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(0,104,255,0.12); }
-  .filterbar .count { margin-left: auto; font-size: 12.5px; color: var(--muted); }
-
-  /* ── dialog ── */
-  dialog {
-    border: 1px solid var(--border); border-radius: var(--radius); padding: 0;
-    width: min(600px, calc(100vw - 32px)); box-shadow: 0 24px 64px rgba(13,27,46,0.28);
-    color: var(--ink);
-  }
-  dialog::backdrop { background: rgba(13,27,46,0.45); }
-  .dlg-head {
-    display: flex; align-items: flex-start; gap: 10px; padding: 16px 22px;
-    border-bottom: 1px solid var(--border); background: var(--border-2);
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-  .dlg-head h2 { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin: 0; line-height: 1.25; }
-  .dlg-head .rf { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); display: block; margin-top: 3px; }
-  .dlg-head .x { margin-left: auto; border: 0; background: none; cursor: pointer; font-size: 21px; line-height: 1; color: var(--muted); padding: 2px 6px; }
-  .dlg-body { padding: 20px 22px 22px; }
-
-  /* ── detail gallery ── */
-  .gal-main {
-    position: relative; border: 1px solid var(--border); border-radius: 10px;
-    overflow: hidden; background: var(--border-2);
-  }
-  .gal-cap {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin-top: 8px; font-size: 12.5px; color: var(--muted);
-  }
-  .gal-cap b { color: var(--ink); font-weight: 600; }
-  .gal-cap .idx { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-  .gal-thumbs { display: flex; gap: 8px; margin-top: 8px; }
-  .gal-thumbs button {
-    flex: 1 1 0; min-width: 0; padding: 0; cursor: pointer; background: none;
-    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
-    line-height: 0; transition: border-color .15s, box-shadow .15s;
-  }
-  .gal-thumbs button:hover { border-color: var(--faint); }
-  .gal-thumbs button[aria-pressed="true"] {
-    border-color: var(--blue); box-shadow: 0 0 0 2px rgba(0,104,255,0.16);
-  }
-  .gal-note { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.5; }
-  .dlg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin: 16px 0; }
-  .dlg-grid .k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: var(--muted); }
-  .dlg-grid .v { font-size: 14px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
-  @media (max-width: 480px) { .dlg-grid { grid-template-columns: 1fr; } }
-
-  /* ── express interest form ── */
-  .formgrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px 20px; }
-  @media (max-width: 640px) { .formgrid { grid-template-columns: 1fr; } }
-  .formgrid .full { grid-column: 1 / -1; }
-  .confirm {
-    display: none; margin-top: 8px; font-size: 13.5px; color: var(--ink-2);
-    background: var(--up-soft); border: 1px solid rgba(15,138,99,0.25);
-    border-radius: 8px; padding: 12px 14px; line-height: 1.55;
-  }
-  .confirm.show { display: block; }
-
-  /* ── my interests ── */
-  .tblwrap { overflow-x: auto; }
-  table.mine { width: 100%; border-collapse: collapse; min-width: 780px; font-variant-numeric: tabular-nums; }
-  table.mine th {
-    text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
-    text-transform: uppercase; color: var(--muted); padding: 9px 12px;
-    border-bottom: 1px solid var(--border); white-space: nowrap;
-  }
-  table.mine td { padding: 11px 12px; border-bottom: 1px solid var(--border-2); font-size: 13.5px; white-space: nowrap; }
-  table.mine td.asset { white-space: normal; min-width: 200px; }
-  table.mine tr:last-child td { border-bottom: 0; }
-  .st { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: var(--border-2); color: var(--muted); }
-  .st-UnderReview { color: var(--warn); background: var(--warn-soft); }
-  .st-Approved { color: var(--up); background: var(--up-soft); }
-  .st-Matched { color: var(--blue); background: rgba(0,104,255,0.08); }
-
-  /* ── how it works ── */
-  .steps { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
-  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
-  .steps .n { font-family: var(--font-data); font-size: 12px; font-weight: 600; color: var(--blue); letter-spacing: 1px; }
-  .steps h3 { font-size: 15.5px; font-weight: 600; margin: 8px 0 6px; }
-  .steps p { font-size: 13.5px; color: var(--muted); margin: 0; line-height: 1.6; }
-
-  section { margin-top: 30px; }
-  .sechead { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
-  .sechead h2 { font-family: var(--font-display); font-size: 22px; font-weight: 600; letter-spacing: -0.2px; margin: 0 0 4px; }
-  .sechead p { font-size: 13px; color: var(--muted); margin: 0; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Satstreet · Private Market</title>
+  <meta name="description" content="A prototype for discovering indicative, desk-assisted digital-asset opportunities." />
+  <link rel="stylesheet" href="./assets/terminal.css" />
+  <link rel="stylesheet" href="./assets/private-market.css" />
 </head>
 <body>
-<div id="shell-header"></div>
+  <div id="shell-header"></div>
 
-<main class="shell">
-  <div class="pagehead">
-    <div>
-      <p class="eyebrow">Satstreet Desk · Prototype</p>
-      <div class="page-title-row">
-        <span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M10 21v-6h4v6"/></svg></span>
+  <main class="shell wide pm-shell">
+    <header class="pm-hero">
+      <div>
+        <span class="pm-prototype">Illustrative prototype</span>
+        <p class="pm-kicker">Satstreet Private Market</p>
         <h1>Private Market</h1>
+        <p class="pm-tagline">Private liquidity. Professional execution.</p>
+        <p class="pm-intro">A curated network for meaningful digital-asset transactions, supported by the Satstreet desk.</p>
       </div>
-      <p><strong style="color:var(--ink)">Private liquidity. Professional execution.</strong><br />
-         A curated network for meaningful transactions in assets of value, supported by the
-         Satstreet desk. Minimum indicative value <strong style="color:var(--ink)">$50,000</strong>,
-         in line with the desk's minimum trade size.</p>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-      <a class="btn" href="#express">Express interest</a>
-      <span class="feedstate"><span class="pip warn"></span>Prototype · illustrative listings</span>
-    </div>
-  </div>
-
-  <div class="srcnote">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-    <span><strong style="color:var(--ink)">Indicative opportunities only. No order is placed or
-    transaction executed through this prototype.</strong> Every listing shown is fictional, and
-    anything you enter stays in this browser — nothing is submitted to Satstreet. Satstreet does
-    not take custody of, inspect, appraise, authenticate or hold title to any asset.</span>
-  </div>
-
-  <!-- ── market overview: derived from the prototype data ── -->
-  <div class="metrics" style="margin-top:18px" aria-label="Market overview">
-    <div class="metric"><div class="k">Available opportunities</div><div class="v" id="m-total">—</div><div class="s">published to the network</div></div>
-    <div class="metric"><div class="k">Assets offered</div><div class="v" id="m-offered">—</div><div class="s">available to qualified buyers</div></div>
-    <div class="metric"><div class="k">Acquisition mandates</div><div class="v" id="m-sought">—</div><div class="s">buyers seeking an asset</div></div>
-    <div class="metric"><div class="k">My active interests</div><div class="v" id="m-mine">—</div><div class="s">saved on this device</div></div>
-  </div>
-
-  <!-- ── opportunity board ── -->
-  <section aria-labelledby="board-title">
-    <div class="sechead">
-      <div>
-        <h2 id="board-title">Opportunity board</h2>
-        <p>Indicative interests published with client consent. Owners, locations and references are anonymised.</p>
+      <div class="pm-hero-actions">
+        <button class="pm-btn" type="button" data-open-interest>Express Interest</button>
       </div>
-    </div>
-    <div class="filterbar">
-      <div class="grp">Interest
-        <div class="segmented" role="group" aria-label="Filter by side" id="f-dir">
-          <button type="button" data-v="" aria-pressed="true">All</button>
-          <button type="button" data-v="Offered" aria-pressed="false">Offered</button>
-          <button type="button" data-v="Sought" aria-pressed="false">Sought</button>
+    </header>
+
+    <section class="pm-overview" aria-labelledby="overview-title">
+      <h2 class="sr" id="overview-title">Market overview</h2>
+      <div class="pm-metrics" id="market-metrics"></div>
+    </section>
+
+    <section class="pm-section" aria-labelledby="board-title">
+      <div class="pm-section-head">
+        <div>
+          <p class="pm-section-kicker">Illustrative opportunity network</p>
+          <h2 id="board-title">Opportunity board</h2>
+          <p class="pm-section-copy">Fictional, non-binding indications designed to demonstrate a discreet desk-assisted experience.</p>
         </div>
       </div>
-      <div class="grp"><label for="f-cat">Category</label>
-        <select id="f-cat"><option value="">All categories</option></select>
-      </div>
-      <div class="grp"><label for="f-set">Settlement</label>
-        <select id="f-set">
-          <option value="">Any</option>
-          <option value="CAD">CAD</option>
-          <option value="USD">USD</option>
-          <option value="BTC">BTC</option>
-          <option value="Open">Open to discussion</option>
-        </select>
-      </div>
-      <span class="count" id="f-count" aria-live="polite"></span>
-    </div>
-    <div class="board" id="board"></div>
-    <div class="card emptystate" id="board-empty" hidden>
-      <h3>No matching opportunities</h3>
-      <p>Nothing on the board matches the current filters. Clear them, or register your own
-         interest and the desk will look for the other side.</p>
-      <button class="btn ghost" type="button" id="f-clear">Clear filters</button>
-    </div>
-  </section>
 
-  <!-- ── express interest ── -->
-  <section id="express" aria-labelledby="express-title" style="scroll-margin-top:20px">
-    <div class="sechead">
-      <div>
-        <h2 id="express-title">Express interest</h2>
-        <p>Saved locally in this browser only. Nothing is transmitted to Satstreet.</p>
-      </div>
-    </div>
-    <form class="card" id="form" novalidate style="max-width:780px">
-      <div class="formgrid">
-        <div class="field">
-          <label for="i-dir">Are you offering or seeking?</label>
-          <select id="i-dir" required>
-            <option value="">Select…</option>
-            <option value="Offered">Offering an asset</option>
-            <option value="Sought">Seeking an asset</option>
+      <div class="pm-filters" aria-label="Opportunity filters">
+        <label class="pm-field-inline">
+          <span>Asset</span>
+          <select class="pm-select" id="filter-asset">
+            <option value="all">All assets</option>
+            <option value="BTC">BTC</option>
+            <option value="ETH">ETH</option>
           </select>
-          <span class="bad" data-err hidden>Choose whether you are offering or seeking.</span>
-        </div>
-        <div class="field">
-          <label for="i-cat">Category</label>
-          <select id="i-cat" required><option value="">Select…</option></select>
-          <span class="bad" data-err hidden>Choose a category.</span>
-        </div>
-        <div class="field full">
-          <label for="i-title">Asset</label>
-          <input id="i-title" type="text" maxlength="120" placeholder="e.g. 24m motor yacht, 2018, twin diesel" required />
-          <span class="help">A short description. Do not include registrations, hull or serial numbers.</span>
-          <span class="bad" data-err hidden>Describe the asset in a few words.</span>
-        </div>
-        <div class="field">
-          <label for="i-value">Indicative value</label>
-          <input id="i-value" type="number" inputmode="numeric" min="50000" step="1000" placeholder="e.g. 750000" required />
-          <span class="help">Minimum $50,000, the desk's minimum trade size.</span>
-          <span class="bad" data-err hidden>Enter an indicative value of $50,000 or more.</span>
-        </div>
-        <div class="field">
-          <label for="i-ccy">Value currency</label>
-          <select id="i-ccy" required>
-            <option value="">Select…</option><option>CAD</option><option>USD</option>
+        </label>
+        <label class="pm-field-inline">
+          <span>Direction</span>
+          <select class="pm-select" id="filter-direction">
+            <option value="all">Buy and sell</option>
+            <option value="Buy">Buy interests</option>
+            <option value="Sell">Sell interests</option>
           </select>
-          <span class="bad" data-err hidden>Choose a currency.</span>
-        </div>
-        <div class="field">
-          <label for="i-set">Settlement preference</label>
-          <select id="i-set" required>
-            <option value="">Select…</option>
+        </label>
+        <label class="pm-field-inline">
+          <span>Currency</span>
+          <select class="pm-select" id="filter-currency">
+            <option value="all">All currencies</option>
             <option value="CAD">CAD</option>
             <option value="USD">USD</option>
-            <option value="BTC">BTC</option>
-            <option value="Open">Open to discussion</option>
           </select>
-          <span class="bad" data-err hidden>Choose a settlement preference.</span>
+        </label>
+        <p class="pm-result-count" id="result-count" aria-live="polite"></p>
+      </div>
+
+      <div class="pm-grid" id="opportunity-grid"></div>
+      <div class="pm-empty" id="opportunity-empty" hidden>
+        <strong>No opportunities match these filters.</strong>
+        Adjust a filter to review the illustrative opportunity book.
+      </div>
+    </section>
+
+    <section class="pm-section" id="my-interests" aria-labelledby="interests-title">
+      <div class="pm-section-head">
+        <div>
+          <p class="pm-section-kicker">Stored only on this device</p>
+          <h2 id="interests-title">My interests</h2>
+          <p class="pm-section-copy">Prototype entries remain in this browser. No Satstreet employee has received or reviewed them.</p>
         </div>
-        <div class="field">
-          <label for="i-timing">Preferred timing</label>
-          <select id="i-timing" required>
-            <option value="">Select…</option>
-            <option>Immediate</option><option>Within 2 weeks</option><option>Within 30 days</option>
-            <option>Within 60 days</option><option>This quarter</option><option>Flexible</option>
-          </select>
-          <span class="bad" data-err hidden>Choose a timing.</span>
+        <button class="pm-btn secondary" type="button" data-open-interest>Add interest</button>
+      </div>
+      <div class="pm-interest-list" id="interest-list"></div>
+      <div class="pm-empty" id="interest-empty">
+        <strong>No prototype interests yet.</strong>
+        Express an interest to see how it would appear here.
+      </div>
+    </section>
+
+    <section class="pm-section" aria-labelledby="how-title">
+      <div class="pm-section-head">
+        <div>
+          <p class="pm-section-kicker">Desk-assisted from start to finish</p>
+          <h2 id="how-title">How it works</h2>
         </div>
-        <div class="field full">
-          <label for="i-notes">Notes (optional)</label>
-          <input id="i-notes" type="text" maxlength="200" placeholder="Anything the desk should know" />
+      </div>
+      <div class="pm-steps">
+        <article class="pm-step"><h3>Share your interest.</h3><p>Tell us the asset, direction, approximate size and timing you have in mind.</p></article>
+        <article class="pm-step"><h3>The desk reviews the opportunity.</h3><p>Eligibility, compliance requirements and available liquidity would be considered by the Satstreet team.</p></article>
+        <article class="pm-step"><h3>Discuss execution with Satstreet.</h3><p>If there is a potential fit, the desk would contact you through an established channel to discuss terms.</p></article>
+      </div>
+    </section>
+
+    <p class="pm-disclaimer"><strong>Indicative opportunities only.</strong> No order is placed or transaction executed through this prototype. Any potential transaction would be non-binding and subject to eligibility, compliance review, available liquidity and agreed execution terms.</p>
+    <p class="pm-footer-link"><a href="./private-market-internal.html">Open internal workflow prototype</a></p>
+  </main>
+
+  <dialog class="pm-dialog" id="detail-dialog" aria-labelledby="detail-title">
+    <div class="pm-dialog-head">
+      <div><p class="pm-section-kicker">Illustrative opportunity</p><h2 id="detail-title">Opportunity detail</h2></div>
+      <button class="pm-icon-btn" type="button" data-close-dialog aria-label="Close opportunity detail">×</button>
+    </div>
+    <div class="pm-dialog-body" id="detail-content"></div>
+  </dialog>
+
+  <dialog class="pm-dialog" id="interest-dialog" aria-labelledby="form-title">
+    <div class="pm-dialog-head">
+      <div><p class="pm-section-kicker">Local prototype entry</p><h2 id="form-title">Express interest</h2></div>
+      <button class="pm-icon-btn" type="button" data-close-dialog aria-label="Close interest form">×</button>
+    </div>
+    <div class="pm-dialog-body">
+      <form class="pm-form" id="interest-form" novalidate>
+        <input type="hidden" id="form-opportunity" />
+        <label>Direction
+          <select class="pm-select" id="form-direction" required><option value="">Select</option><option>Buy</option><option>Sell</option></select>
+        </label>
+        <label>Asset
+          <select class="pm-select" id="form-asset" required><option value="">Select</option><option>BTC</option><option>ETH</option></select>
+        </label>
+        <label>Approximate size
+          <input class="pm-input" id="form-size" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="e.g. 25" required />
+          <span class="pm-form-help">Enter the approximate number of asset units.</span>
+        </label>
+        <label>Currency
+          <select class="pm-select" id="form-currency" required><option value="">Select</option><option>CAD</option><option>USD</option></select>
+        </label>
+        <label class="full">Preferred timing
+          <select class="pm-select" id="form-timing" required><option value="">Select</option><option>Within 48 hours</option><option>This week</option><option>This month</option><option>Flexible</option></select>
+        </label>
+        <label class="full">Optional notes
+          <textarea class="pm-textarea" id="form-notes" maxlength="500" placeholder="Share broad execution preferences only. Do not include wallet addresses, account details or other sensitive information."></textarea>
+        </label>
+        <p class="pm-form-error full" id="form-error" role="alert"></p>
+        <div class="pm-dialog-actions full">
+          <button class="pm-btn" type="submit">Save prototype interest</button>
+          <button class="pm-btn secondary" type="button" data-close-dialog>Cancel</button>
         </div>
-        <div class="full rowbtns">
-          <button class="btn" type="submit">Save interest locally</button>
-          <span style="font-size:12.5px;color:var(--muted)">This is a prototype: your entry stays on this device.</span>
-        </div>
-        <div class="full confirm" id="confirm" role="status" aria-live="polite"></div>
-      </div>
-    </form>
-  </section>
-
-  <!-- ── my interests ── -->
-  <section aria-labelledby="mine-title">
-    <div class="sechead">
-      <div>
-        <h2 id="mine-title">My interests</h2>
-        <p>Local prototype entries. Statuses are simulated — no one has reviewed anything.</p>
-      </div>
+      </form>
+      <div id="form-confirmation" hidden></div>
     </div>
-    <div class="card">
-      <div class="tblwrap" id="mine-wrap" hidden>
-        <table class="mine">
-          <thead>
-            <tr>
-              <th scope="col">Ref</th><th scope="col">Side</th><th scope="col">Category</th>
-              <th scope="col">Asset</th><th scope="col">Indicative value</th>
-              <th scope="col">Settlement</th><th scope="col">Timing</th>
-              <th scope="col">Saved</th><th scope="col">Status</th>
-              <th scope="col"><span class="sr">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody id="mine"></tbody>
-        </table>
-      </div>
-      <div class="emptystate" id="mine-empty">
-        <h3>No saved interests yet</h3>
-        <p>Use the form above — entries appear here with a simulated status you can follow.</p>
-      </div>
+  </dialog>
+
+  <dialog class="pm-dialog" id="desk-dialog" aria-labelledby="desk-title">
+    <div class="pm-dialog-head">
+      <div><p class="pm-section-kicker">Desk assistance</p><h2 id="desk-title">Contact the desk</h2></div>
+      <button class="pm-icon-btn" type="button" data-close-dialog aria-label="Close desk information">×</button>
     </div>
-  </section>
-
-  <!-- ── how it works ── -->
-  <section aria-labelledby="how-title">
-    <div class="sechead"><h2 id="how-title">How it works</h2></div>
-    <div class="steps">
-      <div class="card">
-        <span class="n">01</span>
-        <h3>Share your interest</h3>
-        <p>Tell us the asset, the indicative value and the timing. Ranges are fine — nothing you share is binding.</p>
-      </div>
-      <div class="card">
-        <span class="n">02</span>
-        <h3>The desk reviews</h3>
-        <p>Your relationship manager confirms eligibility and looks across the network for credible matching interest.</p>
-      </div>
-      <div class="card">
-        <span class="n">03</span>
-        <h3>Discuss execution with Satstreet</h3>
-        <p>If there is a fit, the desk introduces the parties and handles any digital-asset leg. Inspection, title and transfer stay with you and your advisers.</p>
-      </div>
+    <div class="pm-dialog-body">
+      <p class="pm-detail-copy">This prototype does not send messages or create requests. To discuss an opportunity, contact your Satstreet relationship manager or the desk through your established communication channel.</p>
+      <p class="pm-disclaimer"><strong>No information has been transmitted.</strong> This screen is for demonstration only.</p>
+      <div class="pm-dialog-actions"><button class="pm-btn secondary" type="button" data-close-dialog>Close</button></div>
     </div>
-  </section>
+  </dialog>
 
-  <footer class="legal">
-    <p><strong style="color:var(--ink)">Indicative opportunities only. No order is placed or
-       transaction executed through this prototype.</strong></p>
-    <p>This page is a design prototype for internal review. All listings, references, values and
-       locations are fictional, and all imagery is an illustrative placeholder that does not
-       depict any asset. It is not an offer, solicitation, valuation or advice; it does not
-       operate a marketplace, auction, listing service, trading facility, or securities or real
-       estate brokerage; and it does not represent any regulatory approval or authorisation.
-       Satstreet is not a real estate brokerage or agent and does not represent any party in a
-       property transaction. Satstreet does not take custody of, inspect, appraise, authenticate,
-       insure, escrow or hold title to any asset, and provides no payment processing or settlement
-       for physical goods or real property.</p>
-    <p>Any transaction would remain subject to eligibility, compliance review, independent
-       appraisal and inspection, provenance and title verification, applicable taxes, duties and
-       import or export requirements, and agreed terms between the parties. Real property would
-       additionally require licensed local representation, title insurance, survey, zoning and
-       conveyancing in the relevant jurisdiction.</p>
-    <p>© Satstreet Inc. · Toronto, Canada · <a href="./private-market-internal.html">Internal opportunity book (prototype)</a></p>
-  </footer>
-</main>
-
-<!-- ── opportunity detail ── -->
-<dialog id="detail" aria-labelledby="d-title">
-  <div class="dlg-head">
-    <div>
-      <h2 id="d-title">Opportunity</h2>
-      <span class="rf" id="d-ref"></span>
-    </div>
-    <button class="x" type="button" data-close aria-label="Close">×</button>
-  </div>
-  <div class="dlg-body">
-    <div class="gal" aria-labelledby="d-gal-cap">
-      <div class="gal-main" id="d-gal-main"></div>
-      <div class="gal-cap" id="d-gal-cap">
-        <b id="d-gal-label"></b>
-        <span class="idx" id="d-gal-idx"></span>
-      </div>
-      <div class="gal-thumbs" id="d-gal-thumbs" role="group" aria-label="Select a view"></div>
-      <p class="gal-note" id="d-gal-note"></p>
-    </div>
-    <p id="d-summary" style="font-size:14px;color:var(--ink-2);margin:16px 0 0;line-height:1.6"></p>
-    <div class="dlg-grid" id="d-grid"></div>
-    <div class="srcnote" style="margin-bottom:10px">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
-      <span><strong style="color:var(--ink)">Desk-assisted execution.</strong> Nothing trades on this
-      platform. If you express matching interest, the Satstreet desk contacts each party
-      separately, confirms eligibility, and — only if both sides agree — introduces them and
-      arranges any digital-asset or fiat leg through Satstreet's usual OTC process. Inspection,
-      appraisal, title transfer, insurance and delivery of the asset itself remain with the
-      parties and their own advisers — and for real property, with licensed local
-      representation.</span>
-    </div>
-    <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.6">
-      This opportunity is indicative and non-binding, and any transaction remains subject to
-      eligibility, compliance review, independent appraisal and inspection, provenance and title
-      verification, available liquidity and agreed execution terms.</p>
-    <div class="rowbtns">
-      <button class="btn small" type="button" id="d-match">Express matching interest</button>
-      <button class="btn ghost small" type="button" id="d-contact">Contact the desk</button>
-    </div>
-    <p id="d-contact-note" hidden style="margin:12px 0 0;font-size:12.5px;color:var(--muted);line-height:1.55" aria-live="polite">
-      This prototype does not contact anyone. In the live service, this would notify your
-      relationship manager and reference this opportunity.</p>
-  </div>
-</dialog>
-
-<script src="./assets/terminal.js"></script>
-<script src="./private-market-data.js"></script>
-<script>
-(function () {
-  'use strict';
-  SATSTREET.mountHeader('Private Market');
-
-  var $ = function (id) { return document.getElementById(id); };
-  var esc = SATSTREET.esc;
-  var filters = { dir: '', cat: '', set: '' };
-  var current = null; /* opportunity open in the detail dialog */
-
-  /* Categories are defined once in the data layer and populate both selects. */
-  SSPM.CATEGORIES.forEach(function (c) {
-    $('f-cat').insertAdjacentHTML('beforeend', '<option>' + c + '</option>');
-    $('i-cat').insertAdjacentHTML('beforeend', '<option>' + c + '</option>');
-  });
-
-  /* ── market overview ── */
-  function renderStats() {
-    var pub = SSPM.getPublished();
-    var mine = SSPM.getInterests().filter(function (i) { return i.status !== 'Closed'; });
-    $('m-total').textContent = pub.length;
-    $('m-offered').textContent = pub.filter(function (o) { return o.direction === 'Offered'; }).length;
-    $('m-sought').textContent = pub.filter(function (o) { return o.direction === 'Sought'; }).length;
-    $('m-mine').textContent = mine.length;
-  }
-
-  /* ── board ── */
-  function statusChip(s) {
-    return s === 'Open'
-      ? '<span class="chip chip-open">Indicative · Open</span>'
-      : '<span class="chip chip-disc">Indicative · ' + esc(s) + '</span>';
-  }
-  function settlementLabel(s) { return s === 'Open' ? 'Open to discussion' : s; }
-
-  function renderBoard() {
-    var all = SSPM.getPublished();
-    var pub = all.filter(function (o) {
-      return (!filters.dir || o.direction === filters.dir) &&
-             (!filters.cat || o.category === filters.cat) &&
-             (!filters.set || o.settlement === filters.set);
-    });
-    $('f-count').textContent = pub.length + ' of ' + all.length + ' opportunities';
-    $('board-empty').hidden = pub.length > 0;
-    $('board').innerHTML = pub.map(function (o) {
-      var imgs = SSPM.getImages(o);
-      return '<article class="opp">' +
-        '<div class="opp-media">' +
-          imgs[0].svg +
-          (imgs[0].real ? '' : '<span class="media-tag">Illustrative</span>') +
-          '<span class="media-count">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/></svg>' +
-            imgs.length +
-          '</span>' +
-        '</div>' +
-        '<div class="opp-top">' +
-          '<span class="chip chip-' + o.direction.toLowerCase() + '">' + o.direction + '</span>' +
-          '<span class="chip chip-cat">' + esc(o.category) + '</span>' +
-          statusChip(o.status) +
-        '</div>' +
-        '<h3>' + esc(o.title) + '</h3>' +
-        '<div class="val">' + SSPM.fmtValue(o) + '<small>indicative range</small></div>' +
-        '<p class="desc">' + esc(o.summary) + '</p>' +
-        '<dl>' +
-          '<dt>Location</dt><dd>' + esc(o.location) + '</dd>' +
-          '<dt>Timing</dt><dd>' + esc(o.timing) + '</dd>' +
-          '<dt>Settlement</dt><dd>' + esc(settlementLabel(o.settlement)) + '</dd>' +
-        '</dl>' +
-        '<div class="act">' +
-          '<span class="ref">' + o.id + '</span>' +
-          '<button class="btn ghost small" type="button" data-view="' + o.id + '">View opportunity</button>' +
-        '</div>' +
-      '</article>';
-    }).join('');
-  }
-
-  $('board').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-view]');
-    if (!btn) return;
-    var opp = SSPM.getPublished().find(function (o) { return o.id === btn.dataset.view; });
-    if (opp) openDetail(opp);
-  });
-
-  $('f-dir').addEventListener('click', function (e) {
-    var btn = e.target.closest('button[data-v]');
-    if (!btn) return;
-    filters.dir = btn.dataset.v;
-    Array.prototype.forEach.call($('f-dir').querySelectorAll('button'), function (b) {
-      b.setAttribute('aria-pressed', String(b === btn));
-    });
-    renderBoard();
-  });
-  $('f-cat').addEventListener('change', function () { filters.cat = this.value; renderBoard(); });
-  $('f-set').addEventListener('change', function () { filters.set = this.value; renderBoard(); });
-
-  $('f-clear').addEventListener('click', function () {
-    filters = { dir: '', cat: '', set: '' };
-    $('f-cat').value = ''; $('f-set').value = '';
-    Array.prototype.forEach.call($('f-dir').querySelectorAll('button'), function (b) {
-      b.setAttribute('aria-pressed', String(b.dataset.v === ''));
-    });
-    renderBoard();
-  });
-
-  /* ── detail gallery ── */
-  var gallery = { images: [], at: 0 };
-
-  function showImage(n) {
-    var imgs = gallery.images;
-    if (!imgs.length) return;
-    gallery.at = (n + imgs.length) % imgs.length; /* wraps both ways */
-    $('d-gal-main').innerHTML = imgs[gallery.at].svg;
-    $('d-gal-label').textContent = imgs[gallery.at].label;
-    $('d-gal-idx').textContent = (gallery.at + 1) + ' / ' + imgs.length;
-    Array.prototype.forEach.call($('d-gal-thumbs').children, function (b, i) {
-      b.setAttribute('aria-pressed', String(i === gallery.at));
-    });
-  }
-
-  function buildGallery(o) {
-    gallery.images = SSPM.getImages(o);
-    $('d-gal-thumbs').innerHTML = gallery.images.map(function (img, i) {
-      return '<button type="button" data-i="' + i + '" aria-pressed="false" ' +
-        'aria-label="View ' + (i + 1) + ': ' + esc(img.label) + '">' + img.svg + '</button>';
-    }).join('');
-    $('d-gal-note').textContent = gallery.images[0] && gallery.images[0].real
-      ? 'Images supplied by the counterparty and shown with consent.'
-      : 'Illustrative placeholders. Photography is not included in this prototype, and these ' +
-        'images do not depict the asset.';
-    showImage(0);
-  }
-
-  $('d-gal-thumbs').addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-i]');
-    if (b) showImage(Number(b.dataset.i));
-  });
-
-  /* Arrow keys page the gallery, except while the caller is typing. */
-  $('detail').addEventListener('keydown', function (e) {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-    var t = e.target.tagName;
-    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
-    e.preventDefault();
-    showImage(gallery.at + (e.key === 'ArrowRight' ? 1 : -1));
-  });
-
-  /* ── detail dialog ── */
-  function openDetail(o) {
-    current = o;
-    buildGallery(o);
-    $('d-title').textContent = o.title;
-    $('d-ref').textContent = o.id + ' · ' + o.category + ' · ' + o.direction;
-    $('d-summary').textContent = o.summary;
-    var rows = [
-      ['Interest', o.direction === 'Offered'
-        ? 'Offered — counterparty holds the asset'
-        : 'Sought — counterparty is seeking to acquire'],
-      ['Category', o.category],
-      ['Indicative value', SSPM.fmtValue(o) + ' ' + o.currency],
-      ['Settlement preference', settlementLabel(o.settlement)],
-      ['Location', o.location],
-      ['Timing', o.timing],
-      ['Status', 'Indicative · ' + o.status]
-    ];
-    $('d-grid').innerHTML = rows.map(function (r) {
-      return '<div><div class="k">' + r[0] + '</div><div class="v">' + esc(r[1]) + '</div></div>';
-    }).join('');
-    $('d-contact-note').hidden = true;
-    $('detail').showModal();
-  }
-
-  $('detail').querySelector('[data-close]').addEventListener('click', function () { $('detail').close(); });
-  $('detail').addEventListener('click', function (e) {
-    if (e.target === $('detail')) $('detail').close(); /* backdrop click */
-  });
-  $('d-contact').addEventListener('click', function () { $('d-contact-note').hidden = false; });
-
-  /* "Express matching interest" prefills the opposite side of the trade. */
-  $('d-match').addEventListener('click', function () {
-    if (!current) return;
-    $('i-dir').value = current.direction === 'Offered' ? 'Sought' : 'Offered';
-    $('i-cat').value = current.category;
-    $('i-title').value = current.title;
-    $('i-ccy').value = current.currency;
-    $('i-set').value = current.settlement;
-    $('i-notes').value = 'Matching interest in ' + current.id;
-    $('detail').close();
-    $('express').scrollIntoView({ behavior: 'smooth' });
-    $('i-value').focus({ preventScroll: true });
-  });
-
-  /* ── form ── */
-  function validate() {
-    var ok = true;
-    ['i-dir', 'i-cat', 'i-title', 'i-value', 'i-ccy', 'i-set', 'i-timing'].forEach(function (id) {
-      var el = $(id), valid;
-      if (id === 'i-value') valid = el.value !== '' && Number(el.value) >= SSPM.MIN_VALUE;
-      else if (id === 'i-title') valid = el.value.trim().length >= 3;
-      else valid = el.value !== '';
-      var err = el.closest('.field').querySelector('[data-err]');
-      if (err) err.hidden = valid;
-      el.setAttribute('aria-invalid', String(!valid));
-      if (!valid) ok = false;
-    });
-    return ok;
-  }
-
-  $('form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!validate()) return;
-    var saved = SSPM.addInterest({
-      direction: $('i-dir').value,
-      category: $('i-cat').value,
-      title: $('i-title').value.trim(),
-      value: Number($('i-value').value),
-      currency: $('i-ccy').value,
-      settlement: $('i-set').value,
-      timing: $('i-timing').value,
-      notes: $('i-notes').value.trim()
-    });
-    var c = $('confirm');
-    if (saved) {
-      c.textContent = 'Saved locally as ' + saved.id + ' with status Draft. Nothing has been ' +
-        'submitted to Satstreet — in this prototype, interests live only in your browser.';
-      $('form').reset();
-      renderMine(); renderStats();
-    } else {
-      c.textContent = 'Could not save: this browser is blocking local storage. Nothing was submitted anywhere.';
-    }
-    c.classList.add('show');
-  });
-
-  /* ── my interests ── */
-  function renderMine() {
-    var list = SSPM.getInterests();
-    $('mine-wrap').hidden = list.length === 0;
-    $('mine-empty').hidden = list.length > 0;
-    $('mine').innerHTML = list.map(function (i) {
-      return '<tr>' +
-        '<td class="data-face">' + i.id + '</td>' +
-        '<td><span class="chip chip-' + i.direction.toLowerCase() + '">' + i.direction + '</span></td>' +
-        '<td>' + esc(i.category) + '</td>' +
-        '<td class="asset">' + esc(i.title) + '</td>' +
-        '<td class="data-face">' + SSPM.fmtOne(i.value, i.currency) + '</td>' +
-        '<td>' + esc(settlementLabel(i.settlement)) + '</td>' +
-        '<td>' + esc(i.timing) + '</td>' +
-        '<td class="data-face">' + i.created + '</td>' +
-        '<td><span class="st st-' + i.status.replace(/\s/g, '') + '">' + i.status + '</span></td>' +
-        '<td><button class="retry" type="button" data-del="' + i.id + '">Remove</button></td>' +
-      '</tr>';
-    }).join('');
-  }
-
-  $('mine').addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-del]');
-    if (!btn) return;
-    SSPM.removeInterest(btn.dataset.del);
-    renderMine(); renderStats();
-  });
-
-  /* Follow edits made in the internal book from another tab. */
-  window.addEventListener('storage', function (e) {
-    if (e.key === 'ss-pm-overrides' || e.key === 'ss-pm-interests') {
-      renderStats(); renderBoard(); renderMine();
-    }
-  });
-
-  renderStats(); renderBoard(); renderMine();
-})();
-</script>
+  <script src="./assets/terminal.js"></script>
+  <script src="./assets/private-market.js"></script>
 </body>
 </html>
