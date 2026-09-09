@@ -9,11 +9,12 @@
 <!--
   Internal opportunity book — mock workflow only.
 
-  Shows how the desk could manage indicative opportunities and client
-  interests. Edits persist to localStorage and flow straight through to the
-  client page (same origin), which is the point of the demo: change a status
-  here, watch private-market.html update. Nothing connects to HubSpot, a CRM
-  or any backend, and every client reference is fictional.
+  Shows how the desk could manage indicative interests in high-value physical
+  assets and the client interests raised against them. Edits persist to
+  localStorage and flow straight through to the client page (same origin),
+  which is the point of the demo: change a status or withdraw consent here,
+  watch private-market.html update. Nothing connects to HubSpot, a CRM or any
+  backend, and every client reference is fictional.
 -->
 
 <link rel="stylesheet" href="./assets/terminal.css" />
@@ -29,9 +30,10 @@
   td { padding: 9px 12px; border-bottom: 1px solid var(--border-2); font-size: 13px; vertical-align: middle; white-space: nowrap; }
   tr:last-child td { border-bottom: 0; }
   tbody tr:hover td { background: var(--border-2); }
+  td.asset { white-space: normal; min-width: 230px; font-weight: 600; }
   td.notes { white-space: normal; min-width: 230px; }
-  table.book { min-width: 1120px; }
-  table.ints { min-width: 860px; }
+  table.book { min-width: 1420px; }
+  table.ints { min-width: 1060px; }
 
   select.status, input.notes-in {
     font: inherit; font-size: 12.5px; color: var(--ink);
@@ -44,8 +46,8 @@
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
     padding: 3px 9px; border-radius: 20px; white-space: nowrap;
   }
-  .chip-buy  { color: var(--up); background: var(--up-soft); }
-  .chip-sell { color: var(--down); background: var(--down-soft); }
+  .chip-offered { color: var(--up); background: var(--up-soft); }
+  .chip-sought  { color: var(--brass); background: var(--brass-soft); }
   .pub-yes { color: var(--up); font-weight: 600; font-size: 12.5px; }
   .pub-no  { color: var(--muted); font-size: 12.5px; }
 
@@ -71,8 +73,8 @@
         <span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></span>
         <h1>Opportunity book</h1>
       </div>
-      <p>A mock desk workflow with fictional clients. Edits here update the client view on this
-         device instantly. Not connected to HubSpot, a CRM or any live system.</p>
+      <p>A mock desk workflow with fictional clients and assets. Edits here update the client
+         view on this device instantly. Not connected to HubSpot, a CRM or any live system.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
       <div class="rowbtns">
@@ -95,9 +97,10 @@
           <thead>
             <tr>
               <th scope="col">ID</th><th scope="col">Client ref</th><th scope="col">Owner</th>
-              <th scope="col">Asset</th><th scope="col">Direction</th><th scope="col">Size range</th>
-              <th scope="col">Ccy</th><th scope="col">Timing</th><th scope="col">Status</th>
-              <th scope="col">Consent</th><th scope="col">Internal notes</th>
+              <th scope="col">Category</th><th scope="col">Asset</th><th scope="col">Interest</th>
+              <th scope="col">Indicative value</th><th scope="col">Ccy</th>
+              <th scope="col">Settlement</th><th scope="col">Location</th><th scope="col">Timing</th>
+              <th scope="col">Status</th><th scope="col">Consent</th><th scope="col">Internal notes</th>
             </tr>
           </thead>
           <tbody id="book"></tbody>
@@ -117,9 +120,10 @@
         <table class="ints">
           <thead>
             <tr>
-              <th scope="col">Ref</th><th scope="col">Direction</th><th scope="col">Asset</th>
-              <th scope="col">Size</th><th scope="col">Ccy</th><th scope="col">Timing</th>
-              <th scope="col">Saved</th><th scope="col">Notes</th><th scope="col">Status</th>
+              <th scope="col">Ref</th><th scope="col">Interest</th><th scope="col">Category</th>
+              <th scope="col">Asset</th><th scope="col">Indicative value</th>
+              <th scope="col">Settlement</th><th scope="col">Timing</th><th scope="col">Saved</th>
+              <th scope="col">Notes</th><th scope="col">Status</th>
             </tr>
           </thead>
           <tbody id="ints"></tbody>
@@ -134,9 +138,10 @@
   </section>
 
   <footer class="legal">
-    <p>Mock internal view for design review. Client references are fictional; no personal, CRM
-       or wallet information exists anywhere in this prototype. Indicative opportunities only —
-       no order is placed or transaction executed through this prototype.</p>
+    <p>Mock internal view for design review. Clients, assets, values and locations are fictional;
+       no personal, CRM, wallet or title information exists anywhere in this prototype.
+       Indicative opportunities only — no order is placed or transaction executed, and Satstreet
+       takes no custody of and holds no title to any asset.</p>
   </footer>
 </main>
 
@@ -151,6 +156,7 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var esc = SATSTREET.esc;
+  var settlementLabel = function (s) { return s === 'Open' ? 'Open to discussion' : s; };
 
   var savedTimer = null;
   function flashSaved(ok) {
@@ -175,10 +181,13 @@
         '<td class="data-face">' + o.id + '</td>' +
         '<td class="data-face">' + o.clientRef + '</td>' +
         '<td>' + esc(o.owner) + '</td>' +
-        '<td>' + o.asset + '</td>' +
+        '<td>' + esc(o.category) + '</td>' +
+        '<td class="asset">' + esc(o.title) + '</td>' +
         '<td><span class="chip chip-' + o.direction.toLowerCase() + '">' + o.direction + '</span></td>' +
-        '<td class="data-face">' + SSPM.fmtSize(o) + '</td>' +
+        '<td class="data-face">' + SSPM.fmtValue(o) + '</td>' +
         '<td>' + o.currency + '</td>' +
+        '<td>' + esc(settlementLabel(o.settlement)) + '</td>' +
+        '<td>' + esc(o.location) + '</td>' +
         '<td>' + esc(o.timing) + '</td>' +
         '<td>' + statusSelect(o) + '</td>' +
         '<td><label style="display:flex;align-items:center;gap:6px;cursor:pointer">' +
@@ -211,9 +220,10 @@
       return '<tr>' +
         '<td class="data-face">' + i.id + '</td>' +
         '<td><span class="chip chip-' + i.direction.toLowerCase() + '">' + i.direction + '</span></td>' +
-        '<td>' + i.asset + '</td>' +
-        '<td class="data-face">' + i.size.toLocaleString('en-CA') + '</td>' +
-        '<td>' + i.currency + '</td>' +
+        '<td>' + esc(i.category) + '</td>' +
+        '<td class="asset">' + esc(i.title) + '</td>' +
+        '<td class="data-face">' + SSPM.fmtOne(i.value, i.currency) + '</td>' +
+        '<td>' + esc(settlementLabel(i.settlement)) + '</td>' +
         '<td>' + esc(i.timing) + '</td>' +
         '<td class="data-face">' + i.created + '</td>' +
         '<td class="notes">' + esc(i.notes || '—') + '</td>' +
