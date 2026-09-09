@@ -91,6 +91,58 @@
      rendering fault. */
   .opp .act { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
+  /* ── channel switch ──
+     The two books are different activities, so the switch is a prominent
+     control with its own explainer rather than one filter among several. */
+  .channels { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 0; }
+  .channels button {
+    font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;
+    padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--ink-2);
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .channels button:hover { border-color: var(--faint); }
+  .channels button[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .channel-note {
+    display: flex; gap: 9px; align-items: flex-start;
+    margin-top: 12px; padding: 11px 13px; border-radius: 8px;
+    background: var(--border-2); font-size: 12.5px; color: var(--muted); line-height: 1.55;
+  }
+  .channel-note b { color: var(--ink); }
+  .channel-note svg { flex: none; margin-top: 2px; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+  /* ── merchant ── */
+  .merch-line { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+  .merch-line .nm { font-weight: 600; color: var(--ink); }
+  .verified { display: inline-flex; align-items: center; gap: 4px; color: var(--blue); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .verified svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.2; }
+
+  .merch-panel {
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+    margin: 16px 0; background: var(--card);
+  }
+  .merch-panel header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .merch-panel h4 { font-size: 15px; font-weight: 600; margin: 0; }
+  .merch-panel .sub { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  .merch-facts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px 14px; margin: 12px 0; }
+  @media (max-width: 480px) { .merch-facts { grid-template-columns: 1fr 1fr; } }
+  .merch-facts .k { font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); }
+  .merch-facts .v { font-size: 13.5px; font-weight: 600; margin-top: 1px; }
+  table.hist { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  table.hist th {
+    text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted); padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.hist td { padding: 7px 8px; border-bottom: 1px solid var(--border-2); }
+  table.hist tr:last-child td { border-bottom: 0; }
+  table.hist td.r, table.hist th.r { text-align: right; }
+  .merch-caveat { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: 10px 0 0; }
+
+  /* ── price ── */
+  .price-btc { font-family: var(--font-data); font-size: 21px; font-weight: 600; letter-spacing: -0.4px; }
+  .price-fiat { font-size: 13px; color: var(--muted); margin-top: 1px; }
+
   /* ── filters ── */
   .filterbar { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
   .filterbar .grp { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
@@ -218,8 +270,8 @@
   <!-- ── market overview: derived from the prototype data ── -->
   <div class="metrics" style="margin-top:18px" aria-label="Market overview">
     <div class="metric"><div class="k">Available opportunities</div><div class="v" id="m-total">—</div><div class="s">published to the network</div></div>
-    <div class="metric"><div class="k">Assets offered</div><div class="v" id="m-offered">—</div><div class="s">available to qualified buyers</div></div>
-    <div class="metric"><div class="k">Acquisition mandates</div><div class="v" id="m-sought">—</div><div class="s">buyers seeking an asset</div></div>
+    <div class="metric"><div class="k">Corporate listings</div><div class="v" id="m-corp">—</div><div class="s" id="m-corp-sub">from onboarded businesses</div></div>
+    <div class="metric"><div class="k">Peer-to-peer interests</div><div class="v" id="m-p2p">—</div><div class="s">private parties, desk introduced</div></div>
     <div class="metric"><div class="k">My active interests</div><div class="v" id="m-mine">—</div><div class="s">saved on this device</div></div>
   </div>
 
@@ -228,10 +280,21 @@
     <div class="sechead">
       <div>
         <h2 id="board-title">Opportunity board</h2>
-        <p>Indicative interests published with client consent. Owners, locations and references are anonymised.</p>
+        <p>Two books, kept separate. Choose a channel to see how each one works.</p>
       </div>
     </div>
-    <div class="filterbar">
+
+    <div class="channels" role="group" aria-label="Channel" id="f-chan">
+      <button type="button" data-v="" aria-pressed="true">All opportunities</button>
+      <button type="button" data-v="Corporate" aria-pressed="false">Satstreet corporate clients</button>
+      <button type="button" data-v="P2P" aria-pressed="false">Peer-to-peer</button>
+    </div>
+    <p class="channel-note" id="chan-note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <span id="chan-note-text"></span>
+    </p>
+
+    <div class="filterbar" style="margin-top:16px">
       <div class="grp">Interest
         <div class="segmented" role="group" aria-label="Filter by side" id="f-dir">
           <button type="button" data-v="" aria-pressed="true">All</button>
@@ -267,7 +330,8 @@
     <div class="sechead">
       <div>
         <h2 id="express-title">Express interest</h2>
-        <p>Saved locally in this browser only. Nothing is transmitted to Satstreet.</p>
+        <p>Creates a peer-to-peer interest. Businesses wanting to list inventory are onboarded
+           separately by the desk. Saved locally in this browser only.</p>
       </div>
     </div>
     <form class="card" id="form" novalidate style="max-width:780px">
@@ -402,6 +466,14 @@
        property transaction. Satstreet does not take custody of, inspect, appraise, authenticate,
        insure, escrow or hold title to any asset, and provides no payment processing or settlement
        for physical goods or real property.</p>
+    <p>Where a seller is identified as a Satstreet corporate client, Satstreet has completed
+       business onboarding and sanctions screening on that counterparty. Those are checks, not an
+       endorsement, guarantee or warranty of the seller, the asset, its title or its condition,
+       and a record of past settled transactions does not assure any future one. Corporate sellers
+       set their own prices and terms and contract directly with the buyer; Satstreet is not a
+       party to the sale. Bitcoin equivalents shown alongside an asking price are indicative,
+       calculated at a reference rate of CA$107,600 / US$78,500 per BTC as of 9 September 2026,
+       and any rate would be fixed only at execution.</p>
     <p>Any transaction would remain subject to eligibility, compliance review, independent
        appraisal and inspection, provenance and title verification, applicable taxes, duties and
        import or export requirements, and agreed terms between the parties. Real property would
@@ -432,15 +504,10 @@
     </div>
     <p id="d-summary" style="font-size:14px;color:var(--ink-2);margin:16px 0 0;line-height:1.6"></p>
     <div class="dlg-grid" id="d-grid"></div>
+    <div id="d-merchant" hidden></div>
     <div class="srcnote" style="margin-bottom:10px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
-      <span><strong style="color:var(--ink)">Desk-assisted execution.</strong> Nothing trades on this
-      platform. If you express matching interest, the Satstreet desk contacts each party
-      separately, confirms eligibility, and — only if both sides agree — introduces them and
-      arranges any digital-asset or fiat leg through Satstreet's usual OTC process. Inspection,
-      appraisal, title transfer, insurance and delivery of the asset itself remain with the
-      parties and their own advisers — and for real property, with licensed local
-      representation.</span>
+      <span id="d-desk-note"></span>
     </div>
     <p style="font-size:12.5px;color:var(--muted);margin:0 0 16px;line-height:1.6">
       This opportunity is indicative and non-binding, and any transaction remains subject to
@@ -465,7 +532,7 @@
 
   var $ = function (id) { return document.getElementById(id); };
   var esc = SATSTREET.esc;
-  var filters = { dir: '', cat: '', set: '' };
+  var filters = { chan: '', dir: '', cat: '', set: '' };
   var current = null; /* opportunity open in the detail dialog */
 
   /* Categories are defined once in the data layer and populate both selects. */
@@ -478,24 +545,66 @@
   function renderStats() {
     var pub = SSPM.getPublished();
     var mine = SSPM.getInterests().filter(function (i) { return i.status !== 'Closed'; });
+    var corp = pub.filter(function (o) { return o.channel === 'Corporate'; });
+    var sellers = {};
+    corp.forEach(function (o) { sellers[o.merchant] = 1; });
     $('m-total').textContent = pub.length;
-    $('m-offered').textContent = pub.filter(function (o) { return o.direction === 'Offered'; }).length;
-    $('m-sought').textContent = pub.filter(function (o) { return o.direction === 'Sought'; }).length;
+    $('m-corp').textContent = corp.length;
+    $('m-corp-sub').textContent = 'from ' + Object.keys(sellers).length + ' onboarded businesses';
+    $('m-p2p').textContent = pub.length - corp.length;
     $('m-mine').textContent = mine.length;
   }
 
   /* ── board ── */
-  function statusChip(s) {
-    return s === 'Open'
-      ? '<span class="chip chip-open">Indicative · Open</span>'
-      : '<span class="chip chip-disc">Indicative · ' + esc(s) + '</span>';
+
+  /* A corporate listing is a firm asking price from a named seller; a P2P
+     line is an indicative range. The status wording follows that split so
+     the board never describes a dealer's price as "indicative". */
+  function statusChip(o) {
+    var word = o.channel === 'Corporate' ? 'Asking' : 'Indicative';
+    return o.status === 'Open'
+      ? '<span class="chip chip-open">' + word + ' · Open</span>'
+      : '<span class="chip chip-disc">' + word + ' · ' + esc(o.status) + '</span>';
   }
+
+  var TICK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+
+  function channelChip(o) {
+    return o.channel === 'Corporate'
+      ? '<span class="chip" style="color:var(--blue);background:rgba(0,104,255,.08)">Corporate</span>'
+      : '<span class="chip" style="color:var(--brass);background:var(--brass-soft)">Peer-to-peer</span>';
+  }
+
+  function priceBlock(o) {
+    if (o.channel !== 'Corporate') {
+      return '<div class="val">' + SSPM.fmtValue(o) + '<small>indicative range</small></div>';
+    }
+    return '<div><div class="price-btc">' + SSPM.fmtBTC(SSPM.btcOf(o.price, o.currency)) + '</div>' +
+      '<div class="price-fiat">' + SSPM.fmtValue(o) + ' asking · BTC indicative</div></div>';
+  }
+
   function settlementLabel(s) { return s === 'Open' ? 'Open to discussion' : s; }
+
+  var CHANNEL_NOTES = {
+    '': 'Two separate books. <b>Satstreet corporate clients</b> are onboarded businesses ' +
+        'listing their own inventory at a firm asking price, shown with their name and their ' +
+        'settlement record. <b>Peer-to-peer</b> lines are private parties, anonymised, with ' +
+        'indicative ranges only until the desk has qualified both sides.',
+    'Corporate': '<b>Satstreet corporate clients.</b> Onboarded businesses selling their own ' +
+        'inventory. Business verification and sanctions screening are completed before a seller ' +
+        'may list, and their settlement history through the desk is shown on each opportunity. ' +
+        'Satstreet is not a party to the sale and does not warrant the asset, its title or its ' +
+        'condition.',
+    'P2P': '<b>Peer-to-peer.</b> Private parties introduced by the desk. Counterparties stay ' +
+        'anonymous and values stay indicative until the desk has qualified both sides. Nothing ' +
+        'here is a firm offer, and no counterparty identity is disclosed on the board.'
+  };
 
   function renderBoard() {
     var all = SSPM.getPublished();
     var pub = all.filter(function (o) {
-      return (!filters.dir || o.direction === filters.dir) &&
+      return (!filters.chan || o.channel === filters.chan) &&
+             (!filters.dir || o.direction === filters.dir) &&
              (!filters.cat || o.category === filters.cat) &&
              (!filters.set || o.settlement === filters.set);
     });
@@ -513,14 +622,16 @@
           '</span>' +
         '</div>' +
         '<div class="opp-top">' +
-          '<span class="chip chip-' + o.direction.toLowerCase() + '">' + o.direction + '</span>' +
+          channelChip(o) +
           '<span class="chip chip-cat">' + esc(o.category) + '</span>' +
-          statusChip(o.status) +
+          (o.channel === 'Corporate' ? '' : '<span class="chip chip-' + o.direction.toLowerCase() + '">' + o.direction + '</span>') +
+          statusChip(o) +
         '</div>' +
         '<h3>' + esc(o.title) + '</h3>' +
-        '<div class="val">' + SSPM.fmtValue(o) + '<small>indicative range</small></div>' +
+        priceBlock(o) +
         '<p class="desc">' + esc(o.summary) + '</p>' +
         '<dl>' +
+          (o.channel === 'Corporate' ? '<dt>Seller</dt><dd>' + esc(SSPM.getMerchant(o.merchant).name) + '</dd>' : '') +
           '<dt>Location</dt><dd>' + esc(o.location) + '</dd>' +
           '<dt>Timing</dt><dd>' + esc(o.timing) + '</dd>' +
           '<dt>Settlement</dt><dd>' + esc(settlementLabel(o.settlement)) + '</dd>' +
@@ -538,6 +649,17 @@
     if (!btn) return;
     var opp = SSPM.getPublished().find(function (o) { return o.id === btn.dataset.view; });
     if (opp) openDetail(opp);
+  });
+
+  $('f-chan').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-v]');
+    if (!btn) return;
+    filters.chan = btn.dataset.v;
+    Array.prototype.forEach.call($('f-chan').querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+    $('chan-note-text').innerHTML = CHANNEL_NOTES[filters.chan];
+    renderBoard();
   });
 
   $('f-dir').addEventListener('click', function (e) {
@@ -603,6 +725,55 @@
     showImage(gallery.at + (e.key === 'ArrowRight' ? 1 : -1));
   });
 
+  /* The desk's role differs by channel, so the explanation does too. */
+  var DESK_NOTE_CORP =
+    '<b>Desk-assisted execution.</b> The seller is an onboarded Satstreet corporate client and ' +
+    'sets its own price and terms. Registering interest asks the desk to introduce you and, ' +
+    'where the consideration includes digital assets, to handle that leg through Satstreet\'s ' +
+    'usual OTC process. The sale contract, inspection, title and delivery are between you and ' +
+    'the seller. Satstreet is not a party to the sale.';
+
+  var DESK_NOTE_P2P =
+    '<b>Desk-assisted execution.</b> Nothing trades on this platform. If you express matching ' +
+    'interest, the Satstreet desk contacts each party separately, confirms eligibility, and — ' +
+    'only if both sides agree — introduces them and arranges any digital-asset or fiat leg ' +
+    'through Satstreet\'s usual OTC process. Inspection, appraisal, title transfer, insurance ' +
+    'and delivery of the asset itself remain with the parties and their own advisers — and for ' +
+    'real property, with licensed local representation.';
+
+  /* Merchant panel: what was actually checked and what actually settled,
+     stated as facts with dates. Deliberately not a rating or a "trusted"
+     badge — a score is an opinion Satstreet would be standing behind. */
+  function merchantPanel(m) {
+    if (!m) return '';
+    var rows = m.history.map(function (h) {
+      return '<tr><td>' + h.date + '</td><td>' + esc(h.summary) + '</td>' +
+        '<td class="r">' + SSPM.fmtExact(h.value, h.currency) + '</td>' +
+        '<td class="r">' + h.settlement + '</td></tr>';
+    }).join('');
+
+    return '<div class="merch-panel">' +
+      '<header><div>' +
+        '<h4>' + esc(m.name) + ' <span class="verified">' + TICK + 'Onboarded</span></h4>' +
+        '<div class="sub">' + esc(m.type) + ' · ' + esc(m.location) + '</div>' +
+      '</div></header>' +
+      '<div class="merch-facts">' +
+        '<div><div class="k">Onboarded</div><div class="v">' + esc(m.onboarded) + '</div></div>' +
+        '<div><div class="k">Sanctions screening</div><div class="v">' + esc(m.screening) + '</div></div>' +
+        '<div><div class="k">Settled via Satstreet</div><div class="v">' + m.completed + '</div></div>' +
+        '<div><div class="k">Accepts</div><div class="v">' + m.accepts.join(' · ') + '</div></div>' +
+      '</div>' +
+      '<table class="hist"><caption class="sr">Most recent transactions settled through Satstreet</caption>' +
+        '<thead><tr><th>Date</th><th>Asset</th><th class="r">Value</th><th class="r">Settled in</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>' +
+      '<p class="merch-caveat">Showing the most recent of ' + m.completed + ' transactions settled ' +
+        'through Satstreet. Business verification and sanctions screening are checks Satstreet has ' +
+        'carried out on the counterparty; they are not an endorsement, guarantee or warranty of the ' +
+        'seller, the asset, its title or its condition, and past transactions do not assure any ' +
+        'future one.</p>' +
+    '</div>';
+  }
+
   /* ── detail dialog ── */
   function openDetail(o) {
     current = o;
@@ -610,7 +781,18 @@
     $('d-title').textContent = o.title;
     $('d-ref').textContent = o.id + ' · ' + o.category + ' · ' + o.direction;
     $('d-summary').textContent = o.summary;
-    var rows = [
+    var corp = o.channel === 'Corporate';
+    var rows = corp ? [
+      ['Channel', 'Satstreet corporate client'],
+      ['Category', o.category],
+      ['Asking price', SSPM.fmtValue(o) + ' ' + o.currency],
+      ['In bitcoin', SSPM.fmtBTC(SSPM.btcOf(o.price, o.currency)) + ' (indicative)'],
+      ['Settlement accepted', settlementLabel(o.settlement)],
+      ['Location', o.location],
+      ['Availability', o.timing],
+      ['Status', 'Asking · ' + o.status]
+    ] : [
+      ['Channel', 'Peer-to-peer'],
       ['Interest', o.direction === 'Offered'
         ? 'Offered — counterparty holds the asset'
         : 'Sought — counterparty is seeking to acquire'],
@@ -624,6 +806,12 @@
     $('d-grid').innerHTML = rows.map(function (r) {
       return '<div><div class="k">' + r[0] + '</div><div class="v">' + esc(r[1]) + '</div></div>';
     }).join('');
+
+    $('d-merchant').innerHTML = corp ? merchantPanel(SSPM.getMerchant(o.merchant)) : '';
+    $('d-merchant').hidden = !corp;
+    $('d-desk-note').innerHTML = corp ? DESK_NOTE_CORP : DESK_NOTE_P2P;
+    $('d-match').textContent = corp ? 'Register purchase interest' : 'Express matching interest';
+
     $('d-contact-note').hidden = true;
     $('detail').showModal();
   }
@@ -642,7 +830,9 @@
     $('i-title').value = current.title;
     $('i-ccy').value = current.currency;
     $('i-set').value = current.settlement;
-    $('i-notes').value = 'Matching interest in ' + current.id;
+    /* A corporate listing has a firm price, so carry it into the form. */
+    if (current.channel === 'Corporate') $('i-value').value = current.price;
+    $('i-notes').value = (current.channel === 'Corporate' ? 'Purchase interest in ' : 'Matching interest in ') + current.id;
     $('detail').close();
     $('express').scrollIntoView({ behavior: 'smooth' });
     $('i-value').focus({ preventScroll: true });
@@ -724,6 +914,7 @@
     }
   });
 
+  $('chan-note-text').innerHTML = CHANNEL_NOTES[''];
   renderStats(); renderBoard(); renderMine();
 })();
 </script>

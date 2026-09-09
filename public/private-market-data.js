@@ -44,8 +44,178 @@
 
   var SETTLEMENTS = ['CAD', 'USD', 'BTC', 'Open'];
 
+  /* ── channels ───────────────────────────────────────────────────────────
+     Two books, kept apart because they are different activities:
+
+     Corporate  an onboarded business selling its own inventory at a firm
+                asking price. The business is named, its onboarding is on
+                the record, and its settlement history through the desk is
+                shown. Satstreet is not party to the sale.
+     P2P        two private parties introduced by the desk. Anonymised,
+                indicative ranges only, no price and no counterparty
+                identity until the desk has qualified both sides.
+
+     The distinction drives disclosure, diligence and what may be shown, so
+     it is a first-class field rather than a tag. */
+  var CHANNELS = ['Corporate', 'P2P'];
+
+  var CHANNEL_LABEL = {
+    Corporate: 'Satstreet corporate client',
+    P2P: 'Peer-to-peer'
+  };
+
+  /* BTC equivalents are computed from one reference rate so no two figures
+     on the board can disagree. Indicative only: a real quote fixes at
+     execution, which the pages say wherever a BTC figure appears. */
+  var BTC_REF = { CAD: 107600, USD: 78500 };
+  var BTC_REF_ASOF = '9 September 2026';
+
+  function btcOf(value, ccy) { return value / (BTC_REF[ccy] || BTC_REF.USD); }
+
+  function fmtBTC(n) {
+    return (n >= 10 ? n.toFixed(1) : n.toFixed(2)) + ' BTC';
+  }
+
+  /* Fictional onboarded businesses. Names are invented; any resemblance to a
+     real dealer is unintended. `completed` is the count settled through the
+     desk, of which `history` shows only the most recent — a real merchant
+     panel would work the same way. */
+  var MERCHANTS = {
+    lakeshore: {
+      id: 'lakeshore',
+      name: 'Lakeshore Motor Group',
+      type: 'Licensed vehicle dealership',
+      location: 'Toronto, Ontario',
+      onboarded: 'March 2024',
+      screening: 'Current',
+      completed: 23,
+      accepts: ['BTC', 'CAD'],
+      history: [
+        { date: '2026-07', summary: 'Collector coupé', value: 310000, currency: 'CAD', settlement: 'BTC' },
+        { date: '2026-05', summary: 'Performance sedan', value: 96000, currency: 'CAD', settlement: 'BTC' },
+        { date: '2026-02', summary: 'Certified pre-owned SUV', value: 128000, currency: 'CAD', settlement: 'CAD' }
+      ]
+    },
+    northpoint: {
+      id: 'northpoint',
+      name: 'Northpoint Marine Brokerage',
+      type: 'Yacht and vessel brokerage',
+      location: 'Vancouver, British Columbia',
+      onboarded: 'September 2024',
+      screening: 'Current',
+      completed: 11,
+      accepts: ['BTC', 'CAD', 'USD'],
+      history: [
+        { date: '2026-06', summary: '42 ft sport cruiser', value: 980000, currency: 'CAD', settlement: 'BTC' },
+        { date: '2025-11', summary: '55 ft motor yacht', value: 2400000, currency: 'CAD', settlement: 'CAD' }
+      ]
+    },
+    meridian: {
+      id: 'meridian',
+      name: 'Meridian Bullion',
+      type: 'Precious metals dealer',
+      location: 'Toronto, Ontario',
+      onboarded: 'November 2023',
+      screening: 'Current',
+      completed: 47,
+      accepts: ['BTC', 'CAD'],
+      history: [
+        { date: '2026-08', summary: '5 kg gold, good delivery', value: 620000, currency: 'CAD', settlement: 'BTC' },
+        { date: '2026-07', summary: 'Silver, 1,000 oz', value: 118000, currency: 'CAD', settlement: 'BTC' },
+        { date: '2026-04', summary: '2 kg gold bars', value: 248000, currency: 'CAD', settlement: 'CAD' }
+      ]
+    },
+    aldergrove: {
+      id: 'aldergrove',
+      name: 'Aldergrove Aviation',
+      type: 'Aircraft sales and management',
+      location: 'Calgary, Alberta',
+      onboarded: 'January 2025',
+      screening: 'Current',
+      completed: 6,
+      accepts: ['USD', 'BTC'],
+      history: [
+        { date: '2026-03', summary: 'Twin turboprop, 2012', value: 1900000, currency: 'USD', settlement: 'USD' }
+      ]
+    }
+  };
+
+  function getMerchant(id) { return MERCHANTS[id] || null; }
+
   /* Fictional book. Locations are region-level only: never an address, a
      berth, a hangar or a vault account. */
+  /* Corporate book: onboarded businesses listing their own inventory at a
+     firm asking price. `price` is a single figure, not a range — a dealer
+     quotes, a private seller indicates. */
+  var CORPORATE = [
+    {
+      id: 'SC-2026-018', channel: 'Corporate', merchant: 'lakeshore',
+      category: 'Motor Vehicles', direction: 'Offered',
+      title: '2024 performance SUV, 8,400 km',
+      price: 142000, currency: 'CAD', settlement: 'BTC',
+      location: 'Toronto, Ontario', timing: 'Available now',
+      status: 'Open', consent: true,
+      summary: 'Single owner from new, balance of manufacturer warranty, full service record held by the dealership.',
+      clientRef: 'MERCH-01', owner: 'M. Tremblay',
+      notes: 'Dealer will hold for 48 hours against a signed indication.'
+    },
+    {
+      id: 'SC-2026-016', channel: 'Corporate', merchant: 'lakeshore',
+      category: 'Motor Vehicles', direction: 'Offered',
+      title: 'Certified pre-owned grand tourer, 2022',
+      price: 268000, currency: 'CAD', settlement: 'BTC',
+      location: 'Toronto, Ontario', timing: 'Available now',
+      status: 'Open', consent: true,
+      summary: 'Manufacturer-certified with inspection report on file. Dealership handles registration and transfer.',
+      clientRef: 'MERCH-01', owner: 'M. Tremblay',
+      notes: 'Trade-in considered against the asking price.'
+    },
+    {
+      id: 'SC-2026-014', channel: 'Corporate', merchant: 'northpoint',
+      category: 'Marine', direction: 'Offered',
+      title: '2021 sport cruiser, 48 ft, twin inboard',
+      price: 1850000, currency: 'CAD', settlement: 'BTC',
+      location: 'Vancouver, British Columbia', timing: 'Available now',
+      status: 'Open', consent: true,
+      summary: 'Brokerage-held listing with current survey and clear title confirmed by the broker.',
+      clientRef: 'MERCH-02', owner: 'J. Chen',
+      notes: 'Sea trial available on 72 hours notice.'
+    },
+    {
+      id: 'SC-2026-011', channel: 'Corporate', merchant: 'meridian',
+      category: 'Precious Metals', direction: 'Offered',
+      title: '10 kg gold, LBMA good-delivery bars',
+      price: 1240000, currency: 'CAD', settlement: 'BTC',
+      location: 'Toronto, Ontario', timing: 'Immediate',
+      status: 'Open', consent: true,
+      summary: 'Dealer stock with assay documentation. Allocated storage or physical delivery both available.',
+      clientRef: 'MERCH-03', owner: 'A. Fortin',
+      notes: 'Price moves with spot; dealer re-quotes daily.'
+    },
+    {
+      id: 'SC-2026-009', channel: 'Corporate', merchant: 'aldergrove',
+      category: 'Aviation', direction: 'Offered',
+      title: '2016 light jet, 2,100 airframe hours',
+      price: 4300000, currency: 'USD', settlement: 'BTC',
+      location: 'Calgary, Alberta', timing: 'Subject to pre-buy',
+      status: 'In discussion', consent: true,
+      summary: 'Programme-maintained and available for demonstration. Sale subject to a buyer pre-purchase inspection.',
+      clientRef: 'MERCH-04', owner: 'J. Chen',
+      notes: 'Two parties already reviewing; dealer will not hold without a deposit.'
+    },
+    {
+      id: 'SC-2026-005', channel: 'Corporate', merchant: 'meridian',
+      category: 'Precious Metals', direction: 'Offered',
+      title: 'Silver bullion, 500 oz sealed',
+      price: 62000, currency: 'CAD', settlement: 'BTC',
+      location: 'Toronto, Ontario', timing: 'Immediate',
+      status: 'Open', consent: true,
+      summary: 'Sealed dealer stock in original mint packaging. Smallest lot the dealer will break.',
+      clientRef: 'MERCH-03', owner: 'A. Fortin',
+      notes: 'Clears the $50,000 minimum; dealer will not split further.'
+    }
+  ];
+
   var SEED = [
     {
       id: 'PM-2026-041', category: 'Marine', direction: 'Offered',
@@ -217,12 +387,12 @@
 
   function getOverrides() { return readJSON('ss-pm-overrides', {}); }
 
-  /** The book as the internal view sees it: seed + any local edits. */
+  /** The book as the internal view sees it: both channels + any local edits. */
   function getBook() {
     var over = getOverrides();
-    return SEED.map(function (o) {
+    return CORPORATE.concat(SEED).map(function (o) {
       var edit = over[o.id] || {};
-      return Object.assign({}, o, {
+      return Object.assign({ channel: 'P2P' }, o, {
         status: OPP_STATUSES.indexOf(edit.status) >= 0 ? edit.status : o.status,
         consent: typeof edit.consent === 'boolean' ? edit.consent : o.consent,
         notes: typeof edit.notes === 'string' ? edit.notes : o.notes
@@ -291,9 +461,16 @@
 
   function prefix(ccy) { return ccy === 'CAD' ? 'CA$' : 'US$'; }
 
-  /** "US$8.5M – 9.2M" */
+  /** "US$8.5M – 9.2M" for a P2P range, "CA$142,000" for a firm corporate price. */
   function fmtValue(o) {
+    if (o.channel === 'Corporate') return fmtExact(o.price, o.currency);
     return prefix(o.currency) + amount(o.valueMin) + ' – ' + amount(o.valueMax);
+  }
+
+  /* A dealer's asking price is quoted to the dollar; rounding it to "CA$142K"
+     would misstate a firm number. Ranges stay rounded. */
+  function fmtExact(v, ccy) {
+    return prefix(ccy) + Math.round(v).toLocaleString('en-CA');
   }
 
   /** A single figure, for client interests. "CA$120K" */
@@ -430,6 +607,15 @@
     resetAll: resetAll,
     fmtValue: fmtValue,
     fmtOne: fmtOne,
+    fmtExact: fmtExact,
+    fmtBTC: fmtBTC,
+    btcOf: btcOf,
+    BTC_REF: BTC_REF,
+    BTC_REF_ASOF: BTC_REF_ASOF,
+    CHANNELS: CHANNELS,
+    CHANNEL_LABEL: CHANNEL_LABEL,
+    MERCHANTS: MERCHANTS,
+    getMerchant: getMerchant,
     VIEWS: VIEWS,
     plate: plate,
     getImages: getImages

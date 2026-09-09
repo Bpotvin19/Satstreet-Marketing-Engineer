@@ -96,7 +96,8 @@
         <table class="book">
           <thead>
             <tr>
-              <th scope="col">ID</th><th scope="col">Client ref</th><th scope="col">Owner</th>
+              <th scope="col">ID</th><th scope="col">Channel</th><th scope="col">Client / seller</th>
+              <th scope="col">Owner</th>
               <th scope="col">Category</th><th scope="col">Asset</th><th scope="col">Interest</th>
               <th scope="col">Indicative value</th><th scope="col">Ccy</th>
               <th scope="col">Settlement</th><th scope="col">Location</th><th scope="col">Timing</th>
@@ -179,7 +180,12 @@
     $('book').innerHTML = SSPM.getBook().map(function (o) {
       return '<tr>' +
         '<td class="data-face">' + o.id + '</td>' +
-        '<td class="data-face">' + o.clientRef + '</td>' +
+        '<td>' + (o.channel === 'Corporate'
+          ? '<span class="chip" style="color:var(--blue);background:rgba(0,104,255,.08)">Corporate</span>'
+          : '<span class="chip" style="color:var(--brass);background:var(--brass-soft)">P2P</span>') + '</td>' +
+        '<td>' + (o.channel === 'Corporate'
+          ? esc(SSPM.getMerchant(o.merchant).name)
+          : '<span class="data-face">' + o.clientRef + '</span>') + '</td>' +
         '<td>' + esc(o.owner) + '</td>' +
         '<td>' + esc(o.category) + '</td>' +
         '<td class="asset">' + esc(o.title) + '</td>' +
