@@ -29,6 +29,7 @@
   var MIN_VALUE = 50000;
 
   var CATEGORIES = [
+    'Real Estate',
     'Marine',
     'Aviation',
     'Motor Vehicles',
@@ -55,6 +56,16 @@
       summary: 'Owner rotating out of a long-held vessel following a full refit. Survey and class records available to qualified parties.',
       clientRef: 'CR-1042', owner: 'M. Tremblay',
       notes: 'Owner will not entertain viewings before proof of funds. Broker of record already appointed.'
+    },
+    {
+      id: 'PM-2026-039', category: 'Real Estate', direction: 'Offered',
+      title: 'Waterfront estate, 4 acres, private dock and boathouse',
+      valueMin: 12000000, valueMax: 14000000, currency: 'CAD', settlement: 'Open',
+      location: 'Muskoka, Ontario', timing: 'Flexible',
+      status: 'Open', consent: true,
+      summary: 'Held by the same family for two decades and being released quietly rather than listed. Shown by appointment to qualified parties only.',
+      clientRef: 'CR-1058', owner: 'M. Tremblay',
+      notes: 'Vendor will not go to open market. Buyer must have local counsel engaged before a viewing.'
     },
     {
       id: 'PM-2026-038', category: 'Aviation', direction: 'Sought',
@@ -87,6 +98,16 @@
       notes: 'Price-sensitive; will hold rather than discount. Open to a digital-asset settlement leg.'
     },
     {
+      id: 'PM-2026-031', category: 'Real Estate', direction: 'Sought',
+      title: 'Ski-in chalet, five or more bedrooms, alpine resort',
+      valueMin: 6000000, valueMax: 9000000, currency: 'CAD', settlement: 'CAD',
+      location: 'Rocky Mountains, Canada', timing: 'This quarter',
+      status: 'In discussion', consent: true,
+      summary: 'Family office acquiring a seasonal property. Ski-in access and rental-management history both required.',
+      clientRef: 'CR-1112', owner: 'J. Chen',
+      notes: 'Financing not required; will close on cash terms. Local counsel already retained.'
+    },
+    {
       id: 'PM-2026-029', category: 'Watches & Jewellery', direction: 'Sought',
       title: 'Independent-maker perpetual calendar, full set',
       valueMin: 180000, valueMax: 320000, currency: 'CAD', settlement: 'CAD',
@@ -115,6 +136,16 @@
       summary: 'Single-owner work being released quietly ahead of an estate reorganisation. Catalogue history available on request.',
       clientRef: 'CR-1093', owner: 'M. Tremblay',
       notes: 'Discretion is the client’s priority. Not to be shown to auction houses.'
+    },
+    {
+      id: 'PM-2026-023', category: 'Real Estate', direction: 'Offered',
+      title: 'Two-level penthouse, approx. 6,000 sq ft, ocean frontage',
+      valueMin: 8500000, valueMax: 9500000, currency: 'USD', settlement: 'BTC',
+      location: 'South Florida', timing: 'Within 60 days',
+      status: 'Open', consent: true,
+      summary: 'Owner relocating and open to a digital-asset component in the consideration. Building approval process applies to any purchaser.',
+      clientRef: 'CR-0902', owner: 'A. Fortin',
+      notes: 'Client specifically asked whether a BTC leg is workable. Fiat conversion would route through the desk; the conveyance itself does not.'
     },
     {
       id: 'PM-2026-021', category: 'Motor Vehicles', direction: 'Sought',
