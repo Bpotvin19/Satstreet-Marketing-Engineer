@@ -20,8 +20,7 @@ window.SATSTREET = (function () {
     ['Chart',     './chart.html'],
     ['News',      './news.html'],
     ['Treasuries','./treasuries.html'],
-    ['Portfolio', './portfolio.html'],
-    ['Private Market', './private-market.html']
+    ['Portfolio', './portfolio.html']
   ];
 
   var esc = function (s) {
