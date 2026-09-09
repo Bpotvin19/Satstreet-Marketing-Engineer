@@ -299,6 +299,120 @@
   /** A single figure, for client interests. "CA$120K" */
   function fmtOne(v, ccy) { return prefix(ccy) + amount(v); }
 
+  /* ── imagery ────────────────────────────────────────────────────────────
+     Every listing here is fictional, so there are no photographs to show and
+     inventing them would misrepresent the book. Instead each listing gets a
+     set of illustrative plates: line drawings in the terminal palette that
+     establish the layout, the gallery and the aspect ratio a real photograph
+     would occupy, and that can never be mistaken for the asset itself.
+
+     A listing may carry `images: [{ label, src }]`. When it does, those are
+     rendered instead — that is the seam a real photo pipeline drops into,
+     with no change to either page. */
+
+  var VIEWS = {
+    'Real Estate':             ['Exterior', 'Principal rooms', 'Grounds'],
+    'Marine':                  ['Profile', 'Bridge', 'Main saloon'],
+    'Aviation':                ['Exterior', 'Cabin', 'Flight deck'],
+    'Motor Vehicles':          ['Profile', 'Interior', 'Engine bay'],
+    'Precious Metals':         ['Bars', 'Vault storage', 'Assay marks'],
+    'Watches & Jewellery':     ['Dial', 'Movement', 'Full set'],
+    'Fine Art & Collectibles': ['The work', 'Detail', 'Framed']
+  };
+
+  /* Each glyph is drawn in a 100 x 100 box and composed into the plate
+     below, so a category is defined once and the three views are framings
+     of it rather than three separate drawings. */
+  function glyph(cat) {
+    switch (cat) {
+      case 'Real Estate':
+        return '<path d="M12 52 50 20l38 32"/><path d="M22 47v33h56V47"/>' +
+               '<path d="M42 80V62h16v18"/><path d="M30 55h11v11H30z"/><path d="M59 55h11v11H59z"/>';
+      case 'Marine':
+        return '<path d="M12 62h76l-10 18H22z"/><path d="M32 62V47h29l9 15"/>' +
+               '<path d="M45 47V27"/><path d="M39 55h10"/>';
+      case 'Aviation':
+        return '<path d="M50 16c5 0 8 8 8 19v27l26 16v8l-26-8v13l8 8v6l-16-6-16 6v-6l8-8V78l-26 8v-8l26-16V35c0-11 3-19 8-19z"/>';
+      case 'Motor Vehicles':
+        return '<path d="M13 64c1-11 7-16 16-18l11-11h20l13 13c8 2 13 6 14 16"/>' +
+               '<path d="M8 72h84"/><circle cx="31" cy="66" r="8"/><circle cx="70" cy="66" r="8"/>' +
+               '<path d="M43 35v11h22"/>';
+      case 'Precious Metals':
+        return '<path d="M14 78h34l-5-13H19z"/><path d="M52 78h34l-5-13H57z"/>' +
+               '<path d="M33 61h34l-5-13H38z"/>';
+      case 'Watches & Jewellery':
+        return '<circle cx="50" cy="52" r="21"/><path d="M40 32l2-11h16l2 11"/>' +
+               '<path d="M40 72l2 11h16l2-11"/><path d="M50 40v12l9 6"/>';
+      case 'Fine Art & Collectibles':
+        return '<path d="M18 24h64v52H18z"/><path d="M26 68l14-17 10 11 12-17 12 23"/>' +
+               '<circle cx="65" cy="38" r="5"/>';
+      default:
+        return '<circle cx="50" cy="50" r="26"/>';
+    }
+  }
+
+  /* 16:9 plate. Variant 0 frames the glyph, 1 crops in like a detail shot,
+     2 pulls back and sets it on a horizon.
+
+     `seed` varies the ground and the framing very slightly per listing, so
+     two lines in the same category do not render as the same picture twice
+     on the board. It shifts tint and scale only — never the glyph — so the
+     set still reads as one designed system. */
+  var TINTS = ['#e9f0f7', '#eaf2f7', '#edf1f9'];
+
+  function plate(cat, i, seed) {
+    var s = typeof seed === 'number' ? Math.abs(seed) : 0;
+    var g = glyph(cat);
+    var k = 1 + ((s % 3) - 1) * 0.06; /* 0.94, 1.00 or 1.06 */
+    var body, accent;
+
+    if (i === 1) {
+      accent = '<path d="M18 18h16M18 18v16M302 162h-16M302 162v-16" stroke="#0068ff" stroke-width="1.5" opacity=".35"/>';
+      body = '<g transform="translate(160 96) scale(' + (2.0 * k).toFixed(3) + ') translate(-50 -50)">' + g + '</g>';
+    } else if (i === 2) {
+      accent = '<path d="M0 128h320" stroke="#3f6076" stroke-width="1" opacity=".18"/>' +
+               '<path d="M0 141h320" stroke="#3f6076" stroke-width="1" opacity=".1"/>';
+      body = '<g transform="translate(160 84) scale(' + (0.86 * k).toFixed(3) + ') translate(-50 -50)">' + g + '</g>';
+    } else {
+      accent = '';
+      body = '<g transform="translate(160 90) scale(' + (1.18 * k).toFixed(3) + ') translate(-50 -50)">' + g + '</g>';
+    }
+
+    return '<svg class="plate" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" ' +
+      'preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">' +
+      '<rect width="320" height="180" fill="' + TINTS[s % 3] + '"/>' +
+      '<circle cx="' + (272 + (s % 4) * 12) + '" cy="' + (16 + (s % 3) * 10) + '" r="' + (68 + (s % 3) * 10) + '" fill="#00c2ff" opacity=".055"/>' +
+      '<circle cx="' + (18 + (s % 5) * 9) + '" cy="172" r="' + (52 + (s % 4) * 8) + '" fill="#0068ff" opacity=".035"/>' +
+      accent +
+      '<g fill="none" stroke="#3f6076" stroke-width="2" stroke-linecap="round" ' +
+      'stroke-linejoin="round" opacity=".72">' + body + '</g>' +
+      '</svg>';
+  }
+
+  /** Stable small integer from a listing id, so a plate never changes between renders. */
+  function seedOf(id) {
+    var n = 0;
+    for (var i = 0; i < String(id).length; i++) n = (n * 31 + String(id).charCodeAt(i)) % 9973;
+    return n;
+  }
+
+  /** [{ label, svg }] for a listing — real photographs when it has them. */
+  function getImages(o) {
+    if (o.images && o.images.length) {
+      return o.images.map(function (img) {
+        return {
+          label: img.label || 'Photograph',
+          svg: '<img class="plate" src="' + img.src + '" alt="' + (img.label || '') + '" />',
+          real: true
+        };
+      });
+    }
+    var s = seedOf(o.id);
+    return (VIEWS[o.category] || ['View']).map(function (label, i) {
+      return { label: label, svg: plate(o.category, i, s), real: false };
+    });
+  }
+
   window.SSPM = {
     MIN_VALUE: MIN_VALUE,
     CATEGORIES: CATEGORIES,
@@ -315,6 +429,9 @@
     removeInterest: removeInterest,
     resetAll: resetAll,
     fmtValue: fmtValue,
-    fmtOne: fmtOne
+    fmtOne: fmtOne,
+    VIEWS: VIEWS,
+    plate: plate,
+    getImages: getImages
   };
 })();

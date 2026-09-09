@@ -39,8 +39,32 @@
     box-shadow: var(--shadow); padding: 18px 20px;
     display: flex; flex-direction: column; gap: 11px;
     transition: border-color .15s;
+    overflow: hidden; /* clips the bleed image to the card's rounded corners */
   }
   .opp:hover { border-color: var(--faint); }
+
+  /* ── card media ──
+     Pulled out to the card edges with negative margins so the image reads as
+     part of the card rather than an inset thumbnail. */
+  .opp-media {
+    position: relative; margin: -18px -20px 1px;
+    background: var(--border-2); border-bottom: 1px solid var(--border);
+  }
+  .plate { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+  .media-tag {
+    position: absolute; left: 10px; top: 10px;
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase;
+    color: var(--ink-2); background: rgba(255,255,255,0.86); backdrop-filter: blur(3px);
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .media-count {
+    position: absolute; right: 10px; bottom: 10px;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 600; color: var(--ink-2);
+    background: rgba(255,255,255,0.86); backdrop-filter: blur(3px);
+    padding: 3px 9px; border-radius: 20px;
+  }
+  .media-count svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.8; }
   .opp-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
   .chip {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
@@ -93,6 +117,29 @@
   .dlg-head .rf { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); display: block; margin-top: 3px; }
   .dlg-head .x { margin-left: auto; border: 0; background: none; cursor: pointer; font-size: 21px; line-height: 1; color: var(--muted); padding: 2px 6px; }
   .dlg-body { padding: 20px 22px 22px; }
+
+  /* ── detail gallery ── */
+  .gal-main {
+    position: relative; border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; background: var(--border-2);
+  }
+  .gal-cap {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 8px; font-size: 12.5px; color: var(--muted);
+  }
+  .gal-cap b { color: var(--ink); font-weight: 600; }
+  .gal-cap .idx { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+  .gal-thumbs { display: flex; gap: 8px; margin-top: 8px; }
+  .gal-thumbs button {
+    flex: 1 1 0; min-width: 0; padding: 0; cursor: pointer; background: none;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    line-height: 0; transition: border-color .15s, box-shadow .15s;
+  }
+  .gal-thumbs button:hover { border-color: var(--faint); }
+  .gal-thumbs button[aria-pressed="true"] {
+    border-color: var(--blue); box-shadow: 0 0 0 2px rgba(0,104,255,0.16);
+  }
+  .gal-note { margin-top: 10px; font-size: 12px; color: var(--muted); line-height: 1.5; }
   .dlg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; margin: 16px 0; }
   .dlg-grid .k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px; text-transform: uppercase; color: var(--muted); }
   .dlg-grid .v { font-size: 14px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
@@ -347,7 +394,8 @@
     <p><strong style="color:var(--ink)">Indicative opportunities only. No order is placed or
        transaction executed through this prototype.</strong></p>
     <p>This page is a design prototype for internal review. All listings, references, values and
-       locations are fictional. It is not an offer, solicitation, valuation or advice; it does not
+       locations are fictional, and all imagery is an illustrative placeholder that does not
+       depict any asset. It is not an offer, solicitation, valuation or advice; it does not
        operate a marketplace, auction, listing service, trading facility, or securities or real
        estate brokerage; and it does not represent any regulatory approval or authorisation.
        Satstreet is not a real estate brokerage or agent and does not represent any party in a
@@ -373,7 +421,16 @@
     <button class="x" type="button" data-close aria-label="Close">×</button>
   </div>
   <div class="dlg-body">
-    <p id="d-summary" style="font-size:14px;color:var(--ink-2);margin:0;line-height:1.6"></p>
+    <div class="gal" aria-labelledby="d-gal-cap">
+      <div class="gal-main" id="d-gal-main"></div>
+      <div class="gal-cap" id="d-gal-cap">
+        <b id="d-gal-label"></b>
+        <span class="idx" id="d-gal-idx"></span>
+      </div>
+      <div class="gal-thumbs" id="d-gal-thumbs" role="group" aria-label="Select a view"></div>
+      <p class="gal-note" id="d-gal-note"></p>
+    </div>
+    <p id="d-summary" style="font-size:14px;color:var(--ink-2);margin:16px 0 0;line-height:1.6"></p>
     <div class="dlg-grid" id="d-grid"></div>
     <div class="srcnote" style="margin-bottom:10px">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
@@ -445,7 +502,16 @@
     $('f-count').textContent = pub.length + ' of ' + all.length + ' opportunities';
     $('board-empty').hidden = pub.length > 0;
     $('board').innerHTML = pub.map(function (o) {
+      var imgs = SSPM.getImages(o);
       return '<article class="opp">' +
+        '<div class="opp-media">' +
+          imgs[0].svg +
+          (imgs[0].real ? '' : '<span class="media-tag">Illustrative</span>') +
+          '<span class="media-count">' +
+            '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/></svg>' +
+            imgs.length +
+          '</span>' +
+        '</div>' +
         '<div class="opp-top">' +
           '<span class="chip chip-' + o.direction.toLowerCase() + '">' + o.direction + '</span>' +
           '<span class="chip chip-cat">' + esc(o.category) + '</span>' +
@@ -495,9 +561,52 @@
     renderBoard();
   });
 
+  /* ── detail gallery ── */
+  var gallery = { images: [], at: 0 };
+
+  function showImage(n) {
+    var imgs = gallery.images;
+    if (!imgs.length) return;
+    gallery.at = (n + imgs.length) % imgs.length; /* wraps both ways */
+    $('d-gal-main').innerHTML = imgs[gallery.at].svg;
+    $('d-gal-label').textContent = imgs[gallery.at].label;
+    $('d-gal-idx').textContent = (gallery.at + 1) + ' / ' + imgs.length;
+    Array.prototype.forEach.call($('d-gal-thumbs').children, function (b, i) {
+      b.setAttribute('aria-pressed', String(i === gallery.at));
+    });
+  }
+
+  function buildGallery(o) {
+    gallery.images = SSPM.getImages(o);
+    $('d-gal-thumbs').innerHTML = gallery.images.map(function (img, i) {
+      return '<button type="button" data-i="' + i + '" aria-pressed="false" ' +
+        'aria-label="View ' + (i + 1) + ': ' + esc(img.label) + '">' + img.svg + '</button>';
+    }).join('');
+    $('d-gal-note').textContent = gallery.images[0] && gallery.images[0].real
+      ? 'Images supplied by the counterparty and shown with consent.'
+      : 'Illustrative placeholders. Photography is not included in this prototype, and these ' +
+        'images do not depict the asset.';
+    showImage(0);
+  }
+
+  $('d-gal-thumbs').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (b) showImage(Number(b.dataset.i));
+  });
+
+  /* Arrow keys page the gallery, except while the caller is typing. */
+  $('detail').addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    var t = e.target.tagName;
+    if (t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA') return;
+    e.preventDefault();
+    showImage(gallery.at + (e.key === 'ArrowRight' ? 1 : -1));
+  });
+
   /* ── detail dialog ── */
   function openDetail(o) {
     current = o;
+    buildGallery(o);
     $('d-title').textContent = o.title;
     $('d-ref').textContent = o.id + ' · ' + o.category + ' · ' + o.direction;
     $('d-summary').textContent = o.summary;
