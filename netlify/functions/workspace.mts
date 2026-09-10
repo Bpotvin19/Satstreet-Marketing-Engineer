@@ -32,13 +32,41 @@ const LINKEDIN_FILTER = {
 }
 
 /* `voice` matches the Content Queue "Primary Voice" option exactly — that is
-   what ties a person's tab to their drafts. */
+   what ties a person's tab to their drafts. `archive` is an optional page of
+   published work; its child pages become that person's back catalogue. */
 const PEOPLE = [
-  { key: 'ben', name: 'Ben', voice: 'Ben', voiceTitle: "Ben's Brain", page: '3d6e562f-a5bd-8189-857d-e5c974793692' },
-  { key: 'george', name: 'George', voice: 'George', voiceTitle: 'George McBride Voice', page: '3c7e562f-a5bd-8134-a7e9-dac1c0b44cea' },
-  { key: 'dan', name: 'Dan', voice: 'Dan', voiceTitle: 'Dan Wright — LinkedIn Voice', page: '3d7e562f-a5bd-81d9-a986-ce7d8313841c' },
-  { key: 'mike', name: 'Mike', voice: 'Mike', voiceTitle: 'Mike Nasser Voice', page: '3c7e562f-a5bd-8141-b5a4-f587115aa12b' },
+  {
+    key: 'ben', name: 'Ben', voice: 'Ben',
+    voiceTitle: "Ben's Brain", page: '3d6e562f-a5bd-8189-857d-e5c974793692',
+    archive: '', archiveLabel: '',
+  },
+  {
+    key: 'george', name: 'George', voice: 'George',
+    voiceTitle: 'George McBride Voice', page: '3c7e562f-a5bd-8134-a7e9-dac1c0b44cea',
+    archive: '', archiveLabel: '',
+  },
+  {
+    key: 'dan', name: 'Dan', voice: 'Dan',
+    voiceTitle: 'Dan Wright — LinkedIn Voice', page: '3d7e562f-a5bd-81d9-a986-ce7d8313841c',
+    archive: '3d7e562f-a5bd-8191-899e-c8f81df38244', archiveLabel: 'Past posts',
+  },
+  {
+    key: 'mike', name: 'Mike', voice: 'Mike',
+    voiceTitle: 'Mike Nasser Voice', page: '3c7e562f-a5bd-8141-b5a4-f587115aa12b',
+    archive: NEWSLETTER_ARCHIVE, archiveLabel: 'Newsletters',
+  },
 ]
+
+async function childPages(id: string): Promise<any[]> {
+  return (await topBlocks(id, 200))
+    .filter((row) => row.type === 'child_page')
+    .map((row) => ({
+      id: row.id,
+      title: row.child_page?.title ?? 'Untitled',
+      url: pageUrl(row.id),
+      lastEdited: row.last_edited_time ?? '',
+    }))
+}
 
 const pageUrl = (id: string): string => 'https://www.notion.so/' + id.replace(/-/g, '')
 
@@ -240,18 +268,20 @@ export default async function handler(request: Request): Promise<Response> {
         } catch (e) {
           error = e instanceof Error ? e.message : 'Voice reference unavailable.'
         }
-        return { ...person, url: pageUrl(person.page), lines, error }
+        let archive: any[] = []
+        if (person.archive) {
+          try { archive = await childPages(person.archive) } catch { archive = [] }
+        }
+        return {
+          ...person,
+          url: pageUrl(person.page),
+          archiveUrl: person.archive ? pageUrl(person.archive) : '',
+          lines,
+          archive,
+          error,
+        }
       }),
     )
-
-    const newsletters = (await topBlocks(NEWSLETTER_ARCHIVE, 200))
-      .filter((row) => row.type === 'child_page')
-      .map((row) => ({
-        id: row.id,
-        title: row.child_page?.title ?? 'Untitled',
-        url: pageUrl(row.id),
-        lastEdited: row.last_edited_time ?? '',
-      }))
 
     const drafts = (await queryAll(CONTENT_QUEUE, [{ timestamp: 'last_edited_time', direction: 'descending' }]))
       .map(draftFrom)
@@ -271,7 +301,7 @@ export default async function handler(request: Request): Promise<Response> {
     let offshore: any[] = []
     try { offshore = await offshorePacks() } catch { offshore = [] }
 
-    const body = { asOf: new Date().toISOString(), people, newsletters, drafts, prospects, linkedin, offshore }
+    const body = { asOf: new Date().toISOString(), people, drafts, prospects, linkedin, offshore }
     cached = { at: Date.now(), body }
     return json(body, 200)
   } catch (error) {

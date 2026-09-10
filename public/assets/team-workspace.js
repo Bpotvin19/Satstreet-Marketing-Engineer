@@ -138,12 +138,13 @@
     var name = person ? person.name : key;
     var voice = person ? person.voice : name;
     var social = (data.drafts || []).filter(function (d) { return d.voice === voice && isSocial(d); });
-    var isMike = key === 'mike';
+    var archive = (person && person.archive) || [];
+    var archiveLabel = (person && person.archiveLabel) || 'Archive';
     var section = activeSection[key] || 'social';
-    if (section === 'newsletters' && !isMike) section = 'social';
+    if (section === 'archive' && !archive.length) section = 'social';
 
     var sections = [['social', 'Potential social posts', social.length]];
-    if (isMike) sections.push(['newsletters', 'Newsletters', (data.newsletters || []).length]);
+    if (archive.length) sections.push(['archive', archiveLabel, archive.length]);
     sections.push(['voice', 'Voice reference', 0]);
 
     var subnav = '<div class="subnav" role="tablist" aria-label="' + esc(name) + ' sections">' +
@@ -158,14 +159,16 @@
       body = social.length
         ? '<div class="draft-list">' + social.map(function (d) { return draftCard(d, false); }).join('') + '</div>'
         : emptyState('No social drafts are waiting in ' + name + "'s voice right now.");
-    } else if (section === 'newsletters') {
-      var list = data.newsletters || [];
-      body = list.length
-        ? '<ul class="nlist">' + list.map(function (n) {
-            return '<li><a href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' +
-              (n.lastEdited ? '<span>' + esc(day(n.lastEdited)) + '</span>' : '') + '</li>';
-          }).join('') + '</ul>'
-        : emptyState('The newsletter archive is empty.');
+    } else if (section === 'archive') {
+      body = '<p class="wnote">Published work, kept for cadence and structure. ' +
+        'Style reference only — do not lift copy or company claims from it.</p>' +
+        '<ul class="nlist">' + archive.map(function (n) {
+          return '<li><a href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' +
+            (n.lastEdited ? '<span>' + esc(day(n.lastEdited)) + '</span>' : '') + '</li>';
+        }).join('') + '</ul>' +
+        (person && person.archiveUrl
+          ? '<a class="weekly-more" href="' + esc(person.archiveUrl) + '" target="_blank" rel="noopener noreferrer">Open the full archive ↗</a>'
+          : '');
     } else {
       body = '<div class="voice-doc">' + voiceHtml(person) + '</div>';
     }
