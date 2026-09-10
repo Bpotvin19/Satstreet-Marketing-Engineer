@@ -482,10 +482,15 @@
     $('desk').hidden = false;
     $('gate').hidden = true;
     $('lock').hidden = preview;
-    $('news-pip').className = 'pip ' + (preview ? 'warn' : 'ok');
+    var clock = function (iso) {
+      return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    };
+    $('news-pip').className = 'pip ' + (preview || payload.stale ? 'warn' : 'ok');
     $('news-state').textContent = preview
       ? 'Illustrative layout'
-      : 'Updated ' + new Date(payload.lastEdited).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      : payload.stale
+        ? 'Held copy from ' + clock(payload.staleSince) + ' · Notion unreachable'
+        : 'Updated ' + clock(payload.lastEdited);
 
     if (!preview) hydrateThumbs(d.stories);
   }

@@ -41,7 +41,15 @@ function sameSecret(a: string, b: string): boolean {
   return difference === 0
 }
 
-async function notion(path: string, body?: unknown): Promise<any> {
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/* Notion allows roughly three requests a second and answers 429 past that.
+   Reading one brief is several calls, so a burst can trip the limit even
+   when the desk only clicked Unlock once. Back off and retry rather than
+   surfacing a dead end; honour Retry-After when Notion sends one. */
+const RETRYABLE = new Set([429, 502, 503, 504])
+
+async function notion(path: string, body?: unknown, attempt = 0): Promise<any> {
   const token = process.env.NOTION_TOKEN?.trim()
   if (!token) throw new Error('NOTION_TOKEN is not configured')
   const response = await fetch(NOTION + path, {
@@ -54,10 +62,40 @@ async function notion(path: string, body?: unknown): Promise<any> {
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(9000),
   })
+
+  if (RETRYABLE.has(response.status) && attempt < 3) {
+    const header = Number(response.headers.get('retry-after'))
+    const wait = Number.isFinite(header) && header > 0
+      ? Math.min(header * 1000, 5000)
+      : 500 * 2 ** attempt
+    await sleep(wait)
+    return notion(path, body, attempt + 1)
+  }
+
   const result = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(`Notion ${response.status}: ${result?.message ?? 'request failed'}`)
+  if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error('Notion is rate limiting the desk feed. Wait a moment and unlock again.')
+    }
+    throw new Error(`Notion ${response.status}: ${result?.message ?? 'request failed'}`)
+  }
   return result
 }
+
+/* Only these block types can hold brief content worth walking into. Paragraphs
+   and headings are read at the level they sit on, so recursing into them spends
+   requests on nothing. */
+const WALKABLE = new Set([
+  'table',
+  'numbered_list_item',
+  'bulleted_list_item',
+  'toggle',
+  'column_list',
+  'column',
+  'synced_block',
+  'callout',
+  'quote',
+])
 
 async function childrenOf(id: string, depth = 0): Promise<any[]> {
   const rows: any[] = []
@@ -71,10 +109,20 @@ async function childrenOf(id: string, depth = 0): Promise<any[]> {
 
   if (depth >= 2) return rows
   for (const row of rows) {
-    if (row.has_children) row.__children = await childrenOf(row.id, depth + 1)
+    if (row.has_children && WALKABLE.has(row.type)) {
+      row.__children = await childrenOf(row.id, depth + 1)
+    }
   }
   return rows
 }
+
+/* The brief is written once each morning, so a short hold lets repeated
+   unlocks and refreshes share one read instead of walking Notion again.
+   Held in module scope, never in a shared HTTP cache, and only ever
+   returned after the access key has already been checked. */
+type Cached = { at: number; body: unknown }
+const HOLD_MS = 120_000
+let cached: Cached | null = null
 
 function normalize(rows: any[]): OutBlock[] {
   return rows.map((row) => {
@@ -205,6 +253,8 @@ export default async function handler(request: Request): Promise<Response> {
   const supplied = request.headers.get('x-terminal-key')?.trim() ?? ''
   if (!sameSecret(supplied, expected)) return json({ error: 'Access key required.' }, 401)
 
+  if (cached && Date.now() - cached.at < HOLD_MS) return json(cached.body)
+
   try {
     const query = await notion(`/databases/${DB}/query`, {
       filter: { property: 'Name', title: { starts_with: 'Macro Desk —' } },
@@ -218,7 +268,7 @@ export default async function handler(request: Request): Promise<Response> {
     const raw = await childrenOf(page.id)
     const blocks = normalize(raw)
     await attachShareImages(blocks)
-    return json({
+    const body = {
       title: plain(props.Name?.title) || 'Macro Desk',
       date: props.Date?.date?.start ?? '',
       status: props.Status?.select?.name ?? '',
@@ -226,8 +276,15 @@ export default async function handler(request: Request): Promise<Response> {
       sourceUrl: page.url,
       lastEdited: page.last_edited_time,
       blocks,
-    })
+    }
+    cached = { at: Date.now(), body }
+    return json(body)
   } catch (error) {
+    /* A held copy is better than an empty desk. Say that it is held so
+       nobody mistakes it for this minute's read. */
+    if (cached) {
+      return json({ ...(cached.body as object), stale: true, staleSince: new Date(cached.at).toISOString() })
+    }
     return json({ error: error instanceof Error ? error.message : 'The Macro Desk could not be loaded.' }, 502)
   }
 }
