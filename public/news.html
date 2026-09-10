@@ -136,6 +136,79 @@
     .story-thumb { display:none; }
     .desk-stamp { align-items:flex-start; text-align:left; }
   }
+
+  /* ---- desk / system mode ---- */
+  .view-switch { display:inline-flex; gap:4px; padding:4px; margin:-2px 0 18px; border:1px solid var(--border); border-radius:10px; background:#eaf0f5; }
+  .view-tab { border:0; border-radius:7px; padding:9px 15px; background:transparent; color:var(--muted); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .view-tab[aria-selected="true"] { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(17,38,58,.12); }
+  .tape-wrap { margin-bottom:16px; }
+  .tape-wrap .tape { margin-bottom:0; }
+  .tape-meta { margin:7px 3px 0; color:var(--muted); font-size:11.5px; text-align:right; }
+  .lane-disclosure { margin-bottom:16px; }
+  .lane-disclosure > summary { display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border:1px solid var(--border); border-radius:9px; background:#fff; color:var(--ink); font-size:13.5px; font-weight:600; cursor:pointer; list-style:none; }
+  .lane-disclosure > summary::-webkit-details-marker { display:none; }
+  .lane-disclosure > summary::after { content:'+'; color:var(--blue); font-size:19px; font-weight:400; }
+  .lane-disclosure[open] > summary { margin-bottom:12px; }
+  .lane-disclosure[open] > summary::after { content:'−'; }
+
+  /* ---- Satstreet OS presentation ---- */
+  .system-view { padding-bottom:10px; }
+  .system-hero { position:relative; overflow:hidden; display:grid; grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); gap:30px; padding:34px; margin-bottom:16px; color:#fff; background:linear-gradient(135deg,#091b2d 0%,#103d59 70%,#0d5169 100%); border-color:#163e59; }
+  .system-hero::after { content:''; position:absolute; width:420px; height:420px; right:-230px; bottom:-300px; border:1px solid rgba(79,205,238,.2); border-radius:50%; box-shadow:0 0 0 55px rgba(79,205,238,.045),0 0 0 110px rgba(79,205,238,.03); }
+  .system-hero .eyebrow { color:#72d7f2; }
+  .system-hero h2 { margin:6px 0 11px; color:#fff; font-size:32px; line-height:1.15; }
+  .system-hero p { position:relative; z-index:1; max-width:65ch; margin:0; color:#d3e2ec; font-size:16px; line-height:1.6; }
+  .system-proof { position:relative; z-index:1; display:grid; gap:9px; align-content:center; }
+  .proof-row { display:flex; justify-content:space-between; gap:18px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.14); }
+  .proof-row:last-child { border-bottom:0; }
+  .proof-row b { color:#fff; font-size:14px; }
+  .proof-row span { color:#9fc1d2; font-size:12px; text-align:right; }
+  .section-intro { margin:0 0 13px; }
+  .section-intro h2 { margin:0 0 4px; font-size:21px; }
+  .section-intro p { margin:0; color:var(--muted); font-size:14px; line-height:1.5; }
+  .system-card { margin-bottom:16px; }
+  .system-flow { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+  .flow-step { position:relative; min-height:168px; padding:18px; border:1px solid var(--border); border-radius:10px; background:linear-gradient(145deg,#fff,#f7fafc); }
+  .flow-step:not(:last-child)::after { content:'→'; position:absolute; top:50%; right:-18px; z-index:2; width:24px; height:24px; display:grid; place-items:center; border:1px solid var(--border); border-radius:50%; background:#fff; color:var(--blue); transform:translateY(-50%); }
+  .flow-num { display:block; margin-bottom:14px; color:var(--cyan); font-family:var(--font-data); font-size:11px; font-weight:700; letter-spacing:.8px; }
+  .flow-step h3 { margin:0 0 7px; font-size:17px; }
+  .flow-step p { margin:0; color:var(--ink-2); font-size:13.5px; line-height:1.5; }
+  .cadence-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .rhythm { margin:0; padding:0; list-style:none; }
+  .rhythm li { display:grid; grid-template-columns:92px 1fr; gap:13px; padding:12px 0; border-top:1px solid var(--border-2); }
+  .rhythm li:first-child { border-top:0; padding-top:2px; }
+  .rhythm time, .rhythm b { color:var(--blue); font-family:var(--font-data); font-size:11.5px; font-weight:700; }
+  .rhythm span { color:var(--ink-2); font-size:13.5px; line-height:1.5; }
+  .module-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .module-card { padding:18px; border:1px solid var(--border); border-radius:10px; background:#fff; }
+  .module-card .module-label { display:block; margin-bottom:8px; color:var(--cyan); font-size:10.5px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; }
+  .module-card h3 { margin:0 0 7px; font-size:17px; }
+  .module-card p { margin:0 0 13px; color:var(--ink-2); font-size:13.5px; line-height:1.5; }
+  .module-links { display:flex; flex-wrap:wrap; gap:6px; }
+  .module-links a { color:var(--blue); background:#edf5fb; border-radius:999px; padding:5px 9px; font-size:11.5px; font-weight:600; text-decoration:none; }
+  .value-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+  .value-item { padding:19px; border-left:3px solid var(--cyan); background:#f3f9fc; border-radius:0 9px 9px 0; }
+  .value-item h3 { margin:0 0 6px; font-size:16px; }
+  .value-item p { margin:0; color:var(--ink-2); font-size:13.5px; line-height:1.5; }
+  .presentation-close { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:23px 25px; margin-bottom:16px; background:#0b2035; color:#fff; }
+  .presentation-close h2 { margin:0 0 5px; color:#fff; font-size:21px; }
+  .presentation-close p { margin:0; color:#bdd0dc; font-size:14px; }
+  .presentation-close .btn { flex:none; }
+  #nl-badge-frame { display:none !important; }
+  @media (max-width:900px) {
+    .system-hero,.cadence-grid { grid-template-columns:1fr; }
+    .system-flow { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .flow-step::after { display:none !important; }
+    .module-grid,.value-grid { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:620px) {
+    .view-switch { display:flex; width:100%; }
+    .view-tab { flex:1; }
+    .system-hero { padding:24px; }
+    .system-flow,.module-grid,.value-grid { grid-template-columns:1fr; }
+    .rhythm li { grid-template-columns:74px 1fr; }
+    .presentation-close { align-items:flex-start; flex-direction:column; }
+  }
 </style>
 </head>
 <body>
@@ -156,6 +229,13 @@
     </div>
   </div>
 
+  <div class="view-switch" role="tablist" aria-label="Macro Desk views">
+    <button class="view-tab" id="desk-tab" type="button" role="tab" aria-selected="true" aria-controls="desk-view">Daily brief</button>
+    <button class="view-tab" id="system-tab" type="button" role="tab" aria-selected="false" aria-controls="system-view">How Satstreet OS works</button>
+  </div>
+
+  <section id="desk-view" role="tabpanel" aria-labelledby="desk-tab">
+
   <!-- gate-v3 -->
   <section class="card gate" id="gate">
     <p class="gate-copy">The Notion feed is protected because these pages are marked internal. You can remember access on this trusted device, while the Notion token always stays private on Netlify.</p>
@@ -164,7 +244,7 @@
         <div class="field"><label for="access-key">Terminal access key</label><input id="access-key" type="password" autocomplete="current-password" /></div>
         <button class="btn" type="submit">Unlock</button>
       </form>
-      <label class="remember-device" for="remember-key"><input id="remember-key" type="checkbox" checked />Remember this trusted device</label>
+      <label class="remember-device" for="remember-key"><input id="remember-key" type="checkbox" />Remember this browser</label>
       <div class="gate-actions"><button class="btn ghost small" id="demo" type="button">View illustrative layout</button></div>
       <div class="gate-error" id="gate-error" role="alert"></div>
     </div>
@@ -177,7 +257,15 @@
       <p id="breaking-body"></p>
     </section>
 
-    <section class="card tape" id="tape" aria-label="Reference tape"></section>
+    <div class="tape-wrap">
+      <section class="card tape" id="tape" aria-label="Reference tape"></section>
+      <p class="tape-meta" id="tape-meta"></p>
+    </div>
+
+    <section class="card" id="stories-card" aria-labelledby="stories-title" style="margin-bottom:16px">
+      <header><h2 id="stories-title">Today's five</h2><span class="eyebrow" id="story-count"></span></header>
+      <div id="stories"></div>
+    </section>
 
     <div class="brief-grid">
       <section class="card lead-card" aria-labelledby="overnight-title">
@@ -197,13 +285,11 @@
       </aside>
     </div>
 
-    <section class="card" id="stories-card" aria-labelledby="stories-title" style="margin-bottom:16px">
-      <header><h2 id="stories-title">Today's five</h2><span class="eyebrow" id="story-count"></span></header>
-      <div id="stories"></div>
-    </section>
-
-    <div class="filterbar" id="filters" role="group" aria-label="Filter desk lanes"></div>
-    <div class="sector-grid" id="sectors"></div>
+    <details class="lane-disclosure">
+      <summary>Explore the full intelligence lanes</summary>
+      <div class="filterbar" id="filters" role="group" aria-label="Filter desk lanes"></div>
+      <div class="sector-grid" id="sectors"></div>
+    </details>
 
     <div class="lower-grid">
       <section class="card calendar-card" aria-labelledby="calendar-title">
@@ -223,10 +309,113 @@
 
     <div class="source-line"><span id="source-meta"></span><a id="source-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open source page ↗</a></div>
   </div>
+  </section>
+
+
+  <section class="system-view" id="system-view" role="tabpanel" aria-labelledby="system-tab" hidden>
+    <section class="card system-hero">
+      <div>
+        <p class="eyebrow">Satstreet OS · Internal operating system</p>
+        <h2>Research once. Use it across the firm.</h2>
+        <p>Satstreet OS turns scattered market information into a shared daily view, then carries that intelligence into trading conversations, client service, sales outreach and content—without removing human judgment.</p>
+      </div>
+      <div class="system-proof" aria-label="Operating system principles">
+        <div class="proof-row"><b>One source of truth</b><span>Notion</span></div>
+        <div class="proof-row"><b>One daily decision layer</b><span>Macro Desk</span></div>
+        <div class="proof-row"><b>Multiple team outputs</b><span>Human approved</span></div>
+      </div>
+    </section>
+
+    <section class="card system-card" aria-labelledby="flow-title">
+      <div class="section-intro"><h2 id="flow-title">How information moves through the system</h2><p>The dashboard is the decision layer between raw information and the work the team performs.</p></div>
+      <div class="system-flow">
+        <article class="flow-step"><span class="flow-num">01 · CAPTURE</span><h3>Monitor the market</h3><p>Macro, crypto, regulation, geopolitics, market prices and social signals are scanned through defined research windows.</p></article>
+        <article class="flow-step"><span class="flow-num">02 · STRUCTURE</span><h3>Write to Notion</h3><p>Daily Intel, client resources and content knowledge are organized in one source of truth rather than scattered across tabs and chats.</p></article>
+        <article class="flow-step"><span class="flow-num">03 · DECIDE</span><h3>Prioritize for Satstreet</h3><p>The Macro Desk ranks Today's Five, identifies the desk implication and separates confirmed developments from noise.</p></article>
+        <article class="flow-step"><span class="flow-num">04 · ACTIVATE</span><h3>Put it to work</h3><p>The same approved intelligence supports trading, client conversations, outreach, social content and the Thursday newsletter.</p></article>
+      </div>
+    </section>
+
+    <div class="cadence-grid">
+      <section class="card">
+        <header><h2>A normal day</h2><span class="eyebrow">Operating rhythm</span></header>
+        <ol class="rhythm">
+          <li><time>Before 8:30</time><span>The research process reviews the defined macro and crypto sources and writes the morning Macro Desk into Notion.</span></li>
+          <li><time>Morning</time><span>The team scans the reference tape, Today's Five, Satstreet so-what and the seven-day catalyst calendar.</span></li>
+          <li><time>During day</time><span>Sales and trading use the same talking points; material developments can trigger an updated brief.</span></li>
+          <li><time>End of day</time><span>Client questions, desk feedback and useful signals return to the knowledge layer for the next cycle.</span></li>
+        </ol>
+      </section>
+      <section class="card">
+        <header><h2>A normal week</h2><span class="eyebrow">Compounding workflow</span></header>
+        <ol class="rhythm">
+          <li><b>MON–WED</b><span>Build the market narrative, capture recurring client questions and identify the strongest themes.</span></li>
+          <li><b>THURSDAY</b><span>Turn the week's approved intelligence into inputs for Mike's newsletter and supporting social content.</span></li>
+          <li><b>FRIDAY</b><span>Review what generated conversations, refine the system and set the following week's priorities.</span></li>
+          <li><b>ONGOING</b><span>Expand the knowledge base while keeping client-facing language and internal intelligence clearly separated.</span></li>
+        </ol>
+      </section>
+    </div>
+
+    <section class="card system-card" aria-labelledby="modules-title">
+      <div class="section-intro"><h2 id="modules-title">What has been built</h2><p>Each module has a distinct job. Together they form one connected operating system.</p></div>
+      <div class="module-grid">
+        <article class="module-card"><span class="module-label">Intelligence</span><h3>Markets and Macro Desk</h3><p>Live reference prices, charts, ranked news, catalysts and a Satstreet-specific interpretation.</p><div class="module-links"><a href="./ticker.html">Markets</a><a href="./chart.html">Charts</a><a href="./news.html">Macro Desk</a></div></article>
+        <article class="module-card"><span class="module-label">Trading context</span><h3>Structure and Treasuries</h3><p>Tools that help the team explain market structure and frame corporate treasury conversations.</p><div class="module-links"><a href="./structure.html">Structure</a><a href="./treasuries.html">Treasuries</a></div></article>
+        <article class="module-card"><span class="module-label">Client experience</span><h3>Resources and Portfolio</h3><p>A cleaner educational and account experience for clients, including people who do not use the trading platform.</p><div class="module-links"><a href="./resources.html">Resources</a><a href="./portfolio.html">Portfolio</a></div></article>
+        <article class="module-card"><span class="module-label">Knowledge layer</span><h3>Notion workspace</h3><p>Daily Intel, educational resources and reusable internal context live in one organized source of truth.</p></article>
+        <article class="module-card"><span class="module-label">Content engine</span><h3>Telegram, social and newsletter</h3><p>Approved research can be adapted for X, client updates and the weekly newsletter without restarting from a blank page.</p></article>
+        <article class="module-card"><span class="module-label">Governance</span><h3>Human review stays central</h3><p>Internal status labels, sourcing rules and explicit human sign-off keep automation useful without outsourcing judgment.</p></article>
+      </div>
+    </section>
+
+    <section class="card system-card" aria-labelledby="value-title">
+      <div class="section-intro"><h2 id="value-title">The value proposition</h2><p>This is not another dashboard. It is a shared workflow for turning information into coordinated action.</p></div>
+      <div class="value-grid">
+        <article class="value-item"><h3>Less duplicated work</h3><p>Research is captured once and reused across sales, trading, client service and marketing.</p></article>
+        <article class="value-item"><h3>More consistent judgment</h3><p>The team begins with the same facts, priorities and Satstreet-specific interpretation.</p></article>
+        <article class="value-item"><h3>Better client conversations</h3><p>Relevant developments surface earlier, with clearer context and a more institutional client experience.</p></article>
+      </div>
+    </section>
+
+    <section class="card presentation-close">
+      <div><h2>The principle: automate preparation, preserve judgment.</h2><p>Satstreet OS gives the team more time for high-value human work—relationships, decisions and execution.</p></div>
+      <button class="btn" id="open-desk" type="button">Open today's brief</button>
+    </section>
+  </section>
 
   <footer class="legal"><p><strong>Internal desk material.</strong> This briefing is for informational use by Satstreet personnel. It is not investment advice, a recommendation, an executable quote or client copy. Source links remain subject to their publishers’ terms.</p></footer>
 </main>
 <script src="./assets/terminal.js"></script>
 <script src="./assets/news-desk.js"></script>
+
+<script>
+(function () {
+  var deskTab = document.getElementById('desk-tab');
+  var systemTab = document.getElementById('system-tab');
+  var deskView = document.getElementById('desk-view');
+  var systemView = document.getElementById('system-view');
+
+  function show(view) {
+    var system = view === 'system';
+    deskTab.setAttribute('aria-selected', String(!system));
+    systemTab.setAttribute('aria-selected', String(system));
+    deskView.hidden = system;
+    systemView.hidden = !system;
+    var url = new URL(window.location.href);
+    if (system) url.searchParams.set('view', 'system');
+    else url.searchParams.delete('view');
+    history.replaceState(null, '', url);
+  }
+
+  deskTab.addEventListener('click', function () { show('desk'); });
+  systemTab.addEventListener('click', function () { show('system'); });
+  document.getElementById('open-desk').addEventListener('click', function () {
+    show('desk');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  if (new URLSearchParams(window.location.search).get('view') === 'system') show('system');
+})();
+</script>
 </body>
 </html>
