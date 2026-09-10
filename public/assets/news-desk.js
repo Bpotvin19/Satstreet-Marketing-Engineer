@@ -639,9 +639,14 @@
     $('gate').hidden = true;
     $('lock').hidden = preview;
     setViewsUnlocked(!preview);
-    if (!preview && pendingView === 'system') {
+    if (!preview && pendingView) {
+      var wanted = pendingView;
       pendingView = null;
-      loadSystemView().then(function (ok) { if (ok) showView('system'); });
+      if (wanted === 'system') loadSystemView().then(function (ok) { if (ok) showView('system'); });
+      else if (WORKSPACE_VIEWS.indexOf(wanted) >= 0) {
+        showView(wanted);
+        if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.show(wanted);
+      }
     }
     var clock = function (iso) {
       return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
@@ -679,23 +684,44 @@
 
   /* ---------- gated views ---------- */
 
-  /* "How Satstreet OS works" describes how the firm runs, so it sits behind
-     the same key as the brief. Its markup is not in this page at all — it is
-     fetched from /api/system after a key is accepted, because anything in
-     news.html is readable with View Source, and news.html is the site's
-     landing page. */
+  /* Every view except the brief sits behind the access key, and none of their
+     content is in this page. "How Satstreet OS works" comes from /api/system;
+     the person, email and prospect tabs come from /api/workspace. Anything in
+     news.html is readable with View Source, and news.html is the landing page. */
   var systemLoaded = false;
+  var currentView = 'desk';
   var pendingView = new URLSearchParams(window.location.search).get('view');
 
+  var WORKSPACE_VIEWS = ['ben', 'george', 'dan', 'mike', 'email', 'prospects'];
+  var TAB_OF = {
+    desk: 'desk-tab', system: 'system-tab', email: 'email-tab', prospects: 'prospects-tab',
+    ben: 'ben-tab', george: 'george-tab', dan: 'dan-tab', mike: 'mike-tab'
+  };
+  var PANEL_OF = {
+    desk: 'desk-view', system: 'system-view', email: 'email-view', prospects: 'prospects-view',
+    ben: 'person-view', george: 'person-view', dan: 'person-view', mike: 'person-view'
+  };
+  var PANELS = ['desk-view', 'person-view', 'email-view', 'prospects-view', 'system-view'];
+
   function showView(view) {
-    var system = view === 'system' && !$('view-switch').hidden && systemLoaded;
-    $('desk-tab').setAttribute('aria-selected', String(!system));
-    $('system-tab').setAttribute('aria-selected', String(system));
-    $('desk-view').hidden = system;
-    $('system-view').hidden = !system;
+    if ($('view-switch').hidden) view = 'desk';
+    if (view === 'system' && !systemLoaded) view = 'desk';
+    if (!PANEL_OF[view]) view = 'desk';
+
+    Object.keys(TAB_OF).forEach(function (name) {
+      var tab = $(TAB_OF[name]);
+      if (tab) tab.setAttribute('aria-selected', String(name === view));
+    });
+    PANELS.forEach(function (id) {
+      var panel = $(id);
+      if (panel) panel.hidden = id !== PANEL_OF[view];
+    });
+    $('workspace-bar').hidden = WORKSPACE_VIEWS.indexOf(view) < 0;
+
+    currentView = view;
     var url = new URL(window.location.href);
-    if (system) url.searchParams.set('view', 'system');
-    else url.searchParams.delete('view');
+    if (view === 'desk') url.searchParams.delete('view');
+    else url.searchParams.set('view', view);
     history.replaceState(null, '', url);
   }
 
@@ -724,20 +750,34 @@
   }
 
   /* The switcher appears only after a real key is accepted. The illustrative
-     layout is the unauthenticated path, so it never offers the system view. */
+     layout is the unauthenticated path, so it offers none of these. */
   function setViewsUnlocked(on) {
     $('view-switch').hidden = !on;
-    if (!on) {
-      systemLoaded = false;
-      $('system-view').innerHTML = '';
-      showView('desk');
+    if (on) {
+      if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.mount();
+      return;
     }
+    systemLoaded = false;
+    $('system-view').innerHTML = '';
+    if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.unmount();
+    showView('desk');
   }
 
+  $('desk-tab').addEventListener('click', function () { showView('desk'); });
   $('system-tab').addEventListener('click', function () {
     loadSystemView().then(function (ok) { if (ok) showView('system'); });
   });
-  $('desk-tab').addEventListener('click', function () { showView('desk'); });
+  WORKSPACE_VIEWS.forEach(function (view) {
+    var tab = $(TAB_OF[view]);
+    if (!tab) return;
+    tab.addEventListener('click', function () {
+      showView(view);
+      if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.show(view);
+    });
+  });
+  $('workspace-refresh').addEventListener('click', function () {
+    if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.refresh(currentView);
+  });
 
   function unlock(key, persist) {
     $('gate-error').textContent = '';
