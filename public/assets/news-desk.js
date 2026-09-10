@@ -215,8 +215,23 @@
     return true;
   }
 
+  /* Editions written before the contract settled put the source URL in the
+     headline text and run several sentences together. Trim the URL and let
+     the first sentence be the headline. */
+  function tidyHeadline(text) {
+    return text.replace(/\s*[[(]?\s*https?:\/\/\S+\s*[\])]?\s*$/i, '').trim();
+  }
+
+  function splitLongHeadline(story) {
+    if (story.what || story.headline.length <= 130) return;
+    var cut = story.headline.match(/^(.{40,160}?[.!?])\s+(\S[\s\S]*)$/);
+    if (!cut) return;
+    story.headline = cut[1];
+    story.what = cut[2];
+  }
+
   function parse(payload) {
-    var out = { breaking: [], overnight: [], stories: [], lanes: [], calendar: [], so: [], wire: [], excluded: [] };
+    var out = { breaking: [], overnight: [], stories: [], lanes: [], calendar: [], so: [], wire: [], excluded: [], wireTitle: '' };
     var section = '';
     var lane = null;
     var story = null;
@@ -226,6 +241,7 @@
 
       if (b.type === 'heading_2') {
         section = sectionOf(text);
+        if (section === 'wire') out.wireTitle = text.replace(/^[0A-Z]\.\s*/, '');
         lane = null;
         story = null;
         return;
@@ -243,7 +259,7 @@
 
       if (section === 'stories') {
         if (isListItem(b.type)) {
-          var headline = text.replace(/^\s*headline\s*[:–—-]\s*/i, '');
+          var headline = tidyHeadline(text.replace(/^\s*headline\s*[:–—-]\s*/i, ''));
           story = { headline: headline, what: '', deskRead: '', links: b.links || [] };
           (b.children || []).forEach(function (child) { absorb(story, child); });
           out.stories.push(story);
@@ -256,15 +272,30 @@
       if (section === 'lanes' && lane && text) {
         if (QUIET.test(text)) { lane.quiet = true; return; }
         var tag = labelled(text);
-        if (tag && (tag.key === 'what' || tag.key === 'why' || tag.key === 'watch')) lane[tag.key] = tag.value;
-        else if (!lane.what) lane.what = text;
+        if (tag && (tag.key === 'what' || tag.key === 'why' || tag.key === 'watch')) { lane[tag.key] = tag.value; return; }
+        if (lane.what) return;
+        /* An unlabelled lane paragraph often still ends with its own
+           "Watch: ..." sentence. Lift it rather than losing it in the body. */
+        var tail = text.match(/^([\s\S]*?)[\s.]*\bWatch(?:\s*72h)?:\s*([\s\S]+)$/i);
+        if (tail) { lane.what = tail[1].trim(); lane.watch = tail[2].trim(); }
+        else lane.what = text;
         return;
       }
 
-      if (section === 'calendar' && b.type === 'table' && b.children) {
-        b.children.forEach(function (row, i) {
-          if (i) out.calendar.push((row.cells || []).map(function (c) { return c[0] || ''; }));
-        });
+      if (section === 'calendar') {
+        if (b.type === 'table' && b.children) {
+          b.children.forEach(function (row, i) {
+            if (i) out.calendar.push((row.cells || []).map(function (c) { return c[0] || ''; }));
+          });
+          return;
+        }
+        /* Editions that write the calendar as a list instead of a table:
+           "Fri 11 Sep 08:30 ET: US CPI ...". Split on the first colon that
+           is followed by a space, so clock times stay intact. */
+        if (isListItem(b.type) && text) {
+          var row = text.match(/^(.{1,64}?):\s+([\s\S]+)$/);
+          out.calendar.push(row ? [row[1].trim(), row[2].trim(), ''] : ['', text, '']);
+        }
         return;
       }
 
@@ -273,6 +304,7 @@
       if (section === 'excluded' && isListItem(b.type) && text) out.excluded.push(text);
     });
 
+    out.stories.forEach(splitLongHeadline);
     return out;
   }
 
@@ -432,7 +464,10 @@
     });
   }
 
-  function renderWire(wire) {
+  function renderWire(wire, title) {
+    /* Let the card follow the brief. An edition that files section F as
+       "Blind spots" should not be captioned "On the wire". */
+    if (title) $('wire-title').textContent = title;
     if (!wire.length) {
       $('wire').innerHTML = '<li class="quiet-lane">No social signal was included in this edition.</li>';
       return;
@@ -467,7 +502,7 @@
         return '<tr><td>' + esc(r[0] || '') + '</td><td>' + esc(r[1] || '') + '</td><td>' + esc(r[2] || '') + '</td></tr>';
       }).join('');
 
-    renderWire(d.wire);
+    renderWire(d.wire, d.wireTitle);
 
     $('excluded-card').hidden = !d.excluded.length;
     $('excluded').innerHTML = d.excluded.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
