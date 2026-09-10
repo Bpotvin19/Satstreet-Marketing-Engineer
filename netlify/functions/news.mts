@@ -13,13 +13,15 @@
 const NOTION = 'https://api.notion.com/v1'
 const NOTION_VERSION = '2022-06-28'
 const DB = process.env.NOTION_DAILY_INTEL_DB?.trim() || '91d74bd8-2086-4536-a739-0ce7cf4964c5'
+const WEEKLY_PREFIX = process.env.NOTION_WEEKLY_PREFIX?.trim() || 'Weekly Newsletter Research —'
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36'
 
-type Rich = { plain_text?: string; href?: string | null }
+type Rich = { plain_text?: string; href?: string | null; annotations?: { bold?: boolean } }
 type OutBlock = {
   type: string
   text?: string
+  lead?: string
   links?: { text: string; href: string }[]
   image?: string
   cells?: string[][]
@@ -28,6 +30,20 @@ type OutBlock = {
 
 const plain = (rich: Rich[] | undefined): string =>
   (rich ?? []).map((part) => part.plain_text ?? '').join('').trim()
+
+/* The weekly recap writes each item as a bold lead-in followed by the
+   detail. Plain text loses that boundary, and several leads contain an
+   em dash of their own, so splitting on punctuation downstream gets it
+   wrong. Carry the bold run across instead. */
+function leadOf(rich: Rich[] | undefined): string {
+  let out = ''
+  for (const part of rich ?? []) {
+    const text = part.plain_text ?? ''
+    if (part.annotations?.bold) out += text
+    else if (out || text.trim()) break
+  }
+  return out.trim()
+}
 
 const links = (rich: Rich[] | undefined): { text: string; href: string }[] =>
   (rich ?? [])
@@ -124,6 +140,23 @@ type Cached = { at: number; body: unknown }
 const HOLD_MS = 120_000
 let cached: Cached | null = null
 
+/* Newest edition whose title starts with `prefix`. Several editions can carry
+   the same date — a trial run and a re-run of the weekly pack both landed on
+   2026-09-10 — so among the newest date, take the one edited last. */
+async function latestPage(prefix: string): Promise<any> {
+  const query = await notion(`/databases/${DB}/query`, {
+    filter: { property: 'Name', title: { starts_with: prefix } },
+    sorts: [{ property: 'Date', direction: 'descending' }],
+    page_size: 10,
+  })
+  const results: any[] = query.results ?? []
+  if (!results.length) return null
+  const newest = results[0]?.properties?.Date?.date?.start ?? ''
+  return results
+    .filter((row) => (row.properties?.Date?.date?.start ?? '') === newest)
+    .sort((a, b) => String(b.last_edited_time ?? '').localeCompare(String(a.last_edited_time ?? '')))[0]
+}
+
 function normalize(rows: any[]): OutBlock[] {
   return rows.map((row) => {
     const value = row[row.type] ?? {}
@@ -134,6 +167,8 @@ function normalize(rows: any[]): OutBlock[] {
     const out: OutBlock = { type: row.type }
     const text = plain(rich)
     if (text) out.text = text
+    const lead = leadOf(rich)
+    if (lead && lead !== text) out.lead = lead
     const found = links(rich)
     if (found.length) out.links = found
     if (row.__children?.length) out.children = normalize(row.__children)
@@ -256,19 +291,14 @@ export default async function handler(request: Request): Promise<Response> {
   if (cached && Date.now() - cached.at < HOLD_MS) return json(cached.body)
 
   try {
-    const query = await notion(`/databases/${DB}/query`, {
-      filter: { property: 'Name', title: { starts_with: 'Macro Desk —' } },
-      sorts: [{ property: 'Date', direction: 'descending' }],
-      page_size: 10,
-    })
-    const page = (query.results ?? [])[0]
+    const page = await latestPage('Macro Desk —')
     if (!page) return json({ error: 'No Macro Desk page was found.' }, 404)
 
     const props = page.properties ?? {}
     const raw = await childrenOf(page.id)
     const blocks = normalize(raw)
     await attachShareImages(blocks)
-    const body = {
+    const body: Record<string, unknown> = {
       title: plain(props.Name?.title) || 'Macro Desk',
       date: props.Date?.date?.start ?? '',
       status: props.Status?.select?.name ?? '',
@@ -277,6 +307,29 @@ export default async function handler(request: Request): Promise<Response> {
       lastEdited: page.last_edited_time,
       blocks,
     }
+
+    /* Thursday's weekly recap feeds the "Top news this week" card. Best
+       effort: if it is missing or Notion throttles, the daily brief still
+       renders and the card says so. Depth 2 stops the block walk straight
+       away — the section we read is a flat list, and the recap's tables
+       would otherwise cost a request each. */
+    try {
+      const weeklyPage = await latestPage(WEEKLY_PREFIX)
+      if (weeklyPage) {
+        const weeklyProps = weeklyPage.properties ?? {}
+        body.weekly = {
+          title: plain(weeklyProps.Name?.title) || 'Weekly recap',
+          date: weeklyProps.Date?.date?.start ?? '',
+          window: plain(weeklyProps.Window?.rich_text),
+          sourceUrl: weeklyPage.url,
+          lastEdited: weeklyPage.last_edited_time,
+          blocks: normalize(await childrenOf(weeklyPage.id, 2)),
+        }
+      }
+    } catch {
+      /* leave body.weekly unset */
+    }
+
     cached = { at: Date.now(), body }
     return json(body)
   } catch (error) {
