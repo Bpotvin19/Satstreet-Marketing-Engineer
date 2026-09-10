@@ -650,7 +650,7 @@
         : freshnessWarning ? 'Check brief date' : 'Source updated ' + clock(payload.lastEdited);
 
     market = referenceMarket;
-    if (preview) $('tape-meta').textContent = 'Illustrative prices · not live market data';
+    $('tape-meta').textContent = preview ? 'Illustrative prices · not live market data' : marketAsOf ? 'Indicative reference data · fetched ' + new Date(marketAsOf).toLocaleString('en-CA', {timeZone:'America/Toronto', timeZoneName:'short'}) : 'Reference data currently unavailable';
     if (!preview) hydrateThumbs(d.stories.slice(0, 5));
   }
 
