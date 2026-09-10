@@ -27,6 +27,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var esc = Terminal.esc;
   var market = {};
+  var marketAsOf = '';
   var STORAGE_KEY = 'satstreet.news.key';
 
   function storedKey() {
@@ -288,7 +289,12 @@
   }
 
   function change(q) {
-    if (!q || q.changePct == null) return { cls: 'flat', text: '—' };
+    if (!q) return { cls: 'flat', text: '—' };
+    if (q.kind === 'pct' && q.changeAbs != null) {
+      var bps = Math.round(q.changeAbs * 100);
+      return { cls: bps > 0 ? 'up' : (bps < 0 ? 'down' : 'flat'), text: (bps > 0 ? '+' : '') + bps + ' bps' };
+    }
+    if (q.changePct == null) return { cls: 'flat', text: '—' };
     var v = q.changePct;
     var cls = v > 0.005 ? 'up' : (v < -0.005 ? 'down' : 'flat');
     return { cls: cls, text: (v > 0 ? '+' : '') + v.toFixed(2) + '%' };
@@ -473,7 +479,7 @@
     $('excluded').innerHTML = d.excluded.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
 
     var stamp = payload.window || payload.date || '';
-    $('edition-stamp').textContent = preview ? 'Illustrative layout' : stamp;
+    $('edition-stamp').textContent = preview ? 'Preview data' : stamp;
     $('source-meta').textContent = (preview ? 'Illustrative preview' : 'Notion · ' + (payload.status || 'Status not set')) +
       (stamp ? ' · ' + stamp : '');
     $('source-link').hidden = !payload.sourceUrl;
@@ -483,7 +489,7 @@
     $('gate').hidden = true;
     $('lock').hidden = preview;
     var clock = function (iso) {
-      return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
     };
     $('news-pip').className = 'pip ' + (preview || payload.stale ? 'warn' : 'ok');
     $('news-state').textContent = preview
@@ -500,8 +506,17 @@
   function loadMarket() {
     return fetch('/api/market')
       .then(function (r) { return r.ok ? r.json() : { quotes: [] }; })
-      .then(function (d) { (d.quotes || []).forEach(function (q) { market[q.symbol] = q; }); })
-      .catch(function () {});
+      .then(function (d) {
+        marketAsOf = d.asOf || '';
+        (d.quotes || []).forEach(function (q) { market[q.symbol] = q; });
+        if ($('tape-meta') && marketAsOf) {
+          $('tape-meta').textContent = 'Indicative reference data · as of ' +
+            new Date(marketAsOf).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
+        }
+      })
+      .catch(function () {
+        if ($('tape-meta')) $('tape-meta').textContent = 'Reference data currently unavailable';
+      });
   }
 
   function unlock(key, persist) {
