@@ -7,14 +7,17 @@
      A. Overnight           paragraphs
      B. Today's five        numbered items + What / Desk read children
      C. Lane check          heading_3 per lane + What / Why / Watch
-     D. Calendar            table
-     E. Satstreet so-what   bullets
+     D. Calendar            table or list
      F. On the wire         bullets
      G. Not in today's brief bullets
 
    Headings are matched on either the letter prefix or the words, and the
    earlier contract (A. World brief / B. Must-read / C. Industry tiles) still
    parses, so an edition written before the prompt changed still renders.
+
+   "Top news this week" is the exception: it comes from Thursday's Weekly
+   Newsletter Research page, delivered on the same payload as `weekly`, and
+   reads that page's "1. WEEK IN ONE PAGE" list.
 
    Prices are never read from the brief. The tape and the per-lane quotes come
    from /api/market so a number on this page is always a live one.
@@ -56,7 +59,6 @@
     ['stories',  /^B\.|today'?s five|top five|must.?read/i],
     ['lanes',    /^C\.|lane check|industry tile|sector/i],
     ['calendar', /^D\.|calendar/i],
-    ['so',       /^E\.|so.?what|desk lens/i],
     ['wire',     /^F\.|on the wire|x signal|social/i],
     ['excluded', /^G\.|not in (today|the)|excluded|left out/i]
   ];
@@ -106,6 +108,22 @@
     window: 'Illustrative layout — not live desk content',
     sourceUrl: '',
     lastEdited: new Date().toISOString(),
+    weekly: {
+      title: 'Weekly Newsletter Research — illustrative',
+      window: 'Thu → Thu',
+      sourceUrl: '',
+      blocks: [
+        { type: 'heading_2', text: '1. WEEK IN ONE PAGE' },
+        { type: 'numbered_list_item', lead: 'Oil through $100 on Gulf shipping risk', text: 'Oil through $100 on Gulf shipping risk — tanker attacks near Hormuz pushed Brent and WTI to their highest closes since May. (Reuters / AP)' },
+        { type: 'numbered_list_item', lead: 'Canada–US trade spiral', text: 'Canada–US trade spiral — retaliatory tariffs took effect and further import bans were proclaimed for the end of the month. (Reuters)' },
+        { type: 'numbered_list_item', lead: 'Hot pipeline inflation into the FOMC', text: 'Hot pipeline inflation into the FOMC — producer prices ran ahead of the annual target with CPI still to come. (BLS / AP)' },
+        { type: 'numbered_list_item', lead: 'ECB raises by 25 basis points', text: 'ECB raises by 25 basis points — the deposit facility moved on energy inflation. (ECB)' },
+        { type: 'numbered_list_item', lead: 'Large sidechain exploit', text: 'Large sidechain exploit — a bitcoin sidechain lost several thousand coins, most later returned, with a restart under way. (Chainalysis / TRM)' },
+        { type: 'numbered_list_item', lead: 'Exchange tokenization capital', text: 'Exchange tokenization capital — a major venue took a nine-figure strategic investment for tokenized equities infrastructure. (Reuters / CNBC)' },
+        { type: 'heading_2', text: '2. FRONTIER AI' },
+        { type: 'numbered_list_item', text: 'Not part of the ranked section.' }
+      ]
+    },
     blocks: [
       { type: 'heading_2', text: 'A. Overnight' },
       { type: 'paragraph', text: 'Asia traded the session on light volume with the dollar firm into the European open. Risk assets held their range and there was no single dominant driver overnight.' },
@@ -216,8 +234,23 @@
     return true;
   }
 
+  /* Editions written before the contract settled put the source URL in the
+     headline text and run several sentences together. Trim the URL and let
+     the first sentence be the headline. */
+  function tidyHeadline(text) {
+    return text.replace(/\s*[[(]?\s*https?:\/\/\S+\s*[\])]?\s*$/i, '').trim();
+  }
+
+  function splitLongHeadline(story) {
+    if (story.what || story.headline.length <= 130) return;
+    var cut = story.headline.match(/^(.{40,160}?[.!?])\s+(\S[\s\S]*)$/);
+    if (!cut) return;
+    story.headline = cut[1];
+    story.what = cut[2];
+  }
+
   function parse(payload) {
-    var out = { breaking: [], overnight: [], stories: [], lanes: [], calendar: [], so: [], wire: [], excluded: [] };
+    var out = { breaking: [], overnight: [], stories: [], lanes: [], calendar: [], wire: [], excluded: [], wireTitle: '' };
     var section = '';
     var lane = null;
     var story = null;
@@ -227,6 +260,7 @@
 
       if (b.type === 'heading_2') {
         section = sectionOf(text);
+        if (section === 'wire') out.wireTitle = text.replace(/^[0A-Z]\.\s*/, '');
         lane = null;
         story = null;
         return;
@@ -244,7 +278,7 @@
 
       if (section === 'stories') {
         if (isListItem(b.type)) {
-          var headline = text.replace(/^\s*headline\s*[:–—-]\s*/i, '');
+          var headline = tidyHeadline(text.replace(/^\s*headline\s*[:–—-]\s*/i, ''));
           story = { headline: headline, what: '', deskRead: '', links: b.links || [] };
           (b.children || []).forEach(function (child) { absorb(story, child); });
           out.stories.push(story);
@@ -257,23 +291,38 @@
       if (section === 'lanes' && lane && text) {
         if (QUIET.test(text)) { lane.quiet = true; return; }
         var tag = labelled(text);
-        if (tag && (tag.key === 'what' || tag.key === 'why' || tag.key === 'watch')) lane[tag.key] = tag.value;
-        else if (!lane.what) lane.what = text;
+        if (tag && (tag.key === 'what' || tag.key === 'why' || tag.key === 'watch')) { lane[tag.key] = tag.value; return; }
+        if (lane.what) return;
+        /* An unlabelled lane paragraph often still ends with its own
+           "Watch: ..." sentence. Lift it rather than losing it in the body. */
+        var tail = text.match(/^([\s\S]*?)[\s.]*\bWatch(?:\s*72h)?:\s*([\s\S]+)$/i);
+        if (tail) { lane.what = tail[1].trim(); lane.watch = tail[2].trim(); }
+        else lane.what = text;
         return;
       }
 
-      if (section === 'calendar' && b.type === 'table' && b.children) {
-        b.children.forEach(function (row, i) {
-          if (i) out.calendar.push((row.cells || []).map(function (c) { return c[0] || ''; }));
-        });
+      if (section === 'calendar') {
+        if (b.type === 'table' && b.children) {
+          b.children.forEach(function (row, i) {
+            if (i) out.calendar.push((row.cells || []).map(function (c) { return c[0] || ''; }));
+          });
+          return;
+        }
+        /* Editions that write the calendar as a list instead of a table:
+           "Fri 11 Sep 08:30 ET: US CPI ...". Split on the first colon that
+           is followed by a space, so clock times stay intact. */
+        if (isListItem(b.type) && text) {
+          var row = text.match(/^(.{1,64}?):\s+([\s\S]+)$/);
+          out.calendar.push(row ? [row[1].trim(), row[2].trim(), ''] : ['', text, '']);
+        }
         return;
       }
 
-      if (section === 'so' && isListItem(b.type) && text) out.so.push(text);
       if (section === 'wire' && isListItem(b.type) && text) out.wire.push(text);
       if (section === 'excluded' && isListItem(b.type) && text) out.excluded.push(text);
     });
 
+    out.stories.forEach(splitLongHeadline);
     return out;
   }
 
@@ -438,7 +487,83 @@
     });
   }
 
-  function renderWire(wire) {
+  /* ---------- weekly recap ---------- */
+
+  /* Thursday's pack opens with "1. WEEK IN ONE PAGE". Anchored so the later
+     "10." and "11." headings do not re-open the section. */
+  var WEEKLY_SECTION = /^\s*1\.(?!\d)|week in one page|top news/i;
+
+  function weeklyItem(block) {
+    var text = (block.text || '').trim();
+    var sources = '';
+    var tail = text.match(/^([\s\S]*?)\s*\(([^()]{2,80})\)\s*$/);
+    if (tail) { text = tail[1].trim(); sources = tail[2].trim(); }
+
+    var lead = (block.lead || '').trim();
+    var title = lead;
+    var detail = '';
+    if (lead && text.slice(0, lead.length) === lead) {
+      detail = text.slice(lead.length).replace(/^\s*[—–:-]\s*/, '').trim();
+    } else if (lead) {
+      detail = text;
+    } else {
+      /* No bold run survived. Fall back to a spaced dash, which will not
+         split a compound like "US–Iran". */
+      var dash = text.match(/^(.{3,90}?)\s+[—–]\s+([\s\S]+)$/);
+      if (dash) { title = dash[1].trim(); detail = dash[2].trim(); }
+      else title = text;
+    }
+    return { title: title.replace(/\s*[:—–-]\s*$/, '').trim(), detail: detail, sources: sources };
+  }
+
+  function parseWeekly(weekly) {
+    if (!weekly || !weekly.blocks) return [];
+    var items = [], inSection = false;
+    weekly.blocks.forEach(function (b) {
+      if (b.type === 'heading_2' || b.type === 'heading_1') {
+        inSection = WEEKLY_SECTION.test((b.text || '').trim());
+        return;
+      }
+      if (inSection && isListItem(b.type) && (b.text || '').trim()) items.push(weeklyItem(b));
+    });
+    return items;
+  }
+
+  function renderWeekly(weekly) {
+    var items = parseWeekly(weekly);
+    var stamp = weekly && (weekly.window || weekly.date) ? (weekly.window || weekly.date) : '';
+    $('weekly-window').textContent = items.length && stamp ? stamp : '';
+
+    if (!items.length) {
+      $('weekly').innerHTML = '<li class="weekly-empty">' +
+        (weekly ? 'This week’s recap has no ranked section yet.' : 'The weekly recap is written on Thursdays.') +
+        '</li>';
+      $('weekly-link').hidden = !(weekly && weekly.sourceUrl);
+      if (weekly && weekly.sourceUrl) $('weekly-link').href = weekly.sourceUrl;
+      return;
+    }
+
+    $('weekly').innerHTML = items.slice(0, 8).map(function (it) {
+      return '<li>' +
+        '<span class="wk-title">' + esc(it.title) + '</span>' +
+        (it.detail ? '<span class="wk-detail">' + esc(it.detail) + '</span>' : '') +
+        (it.sources ? '<span class="wk-src">' + esc(it.sources) + '</span>' : '') +
+        '</li>';
+    }).join('');
+
+    $('weekly-link').hidden = !weekly.sourceUrl;
+    if (weekly.sourceUrl) {
+      $('weekly-link').href = weekly.sourceUrl;
+      $('weekly-link').textContent = items.length > 8
+        ? 'Open the full weekly recap (' + items.length + ' items) ↗'
+        : 'Open the full weekly recap ↗';
+    }
+  }
+
+  function renderWire(wire, title) {
+    /* Let the card follow the brief. An edition that files section F as
+       "Blind spots" should not be captioned "On the wire". */
+    if (title) $('wire-title').textContent = title;
     if (!wire.length) {
       $('wire').innerHTML = '<li class="quiet-lane">No social signal was included in this edition.</li>';
       return;
@@ -462,8 +587,7 @@
     $('overnight').innerHTML = (d.overnight.length ? d.overnight : ['No overnight summary was included in this edition.'])
       .map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
 
-    $('so-list').innerHTML = (d.so.length ? d.so : ['No Satstreet lens was included in this edition.'])
-      .map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
+    renderWeekly(payload.weekly);
 
     renderStories(d.stories);
     renderLanes(d.lanes);
@@ -473,7 +597,7 @@
         return '<tr><td>' + esc(r[0] || '') + '</td><td>' + esc(r[1] || '') + '</td><td>' + esc(r[2] || '') + '</td></tr>';
       }).join('');
 
-    renderWire(d.wire);
+    renderWire(d.wire, d.wireTitle);
 
     $('excluded-card').hidden = !d.excluded.length;
     $('excluded').innerHTML = d.excluded.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');

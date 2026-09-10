@@ -57,11 +57,17 @@
   .overnight-body p { margin:0 0 10px; color:#d3e0e9; font-size:14.5px; line-height:1.6; max-width:62ch; }
   .overnight-body p:last-child { margin-bottom:0; }
 
-  .so-list { margin:0; padding:0; list-style:none; }
-  .so-list li { position:relative; margin:0; padding:11px 0 11px 18px; border-top:1px solid var(--border-2); color:var(--ink-2); font-size:13.5px; line-height:1.5; }
-  .so-list li:first-child { border-top:0; padding-top:2px; }
-  .so-list li::before { content:''; position:absolute; left:0; top:19px; width:6px; height:6px; border-radius:50%; background:var(--cyan); }
-  .so-list li:first-child::before { top:10px; }
+  .weekly-list { margin:0; padding:0; list-style:none; counter-reset:wk; }
+  .weekly-list li { position:relative; margin:0; padding:11px 0 11px 26px; border-top:1px solid var(--border-2); counter-increment:wk; }
+  .weekly-list li:first-child { border-top:0; padding-top:2px; }
+  .weekly-list li::before { content:counter(wk,decimal-leading-zero); position:absolute; left:0; top:13px; font-family:var(--font-data); font-size:10px; font-weight:600; color:var(--faint); font-variant-numeric:tabular-nums; }
+  .weekly-list li:first-child::before { top:4px; }
+  .weekly-list .wk-title { display:block; color:var(--ink); font-size:13.5px; font-weight:700; line-height:1.4; }
+  .weekly-list .wk-detail { display:block; margin-top:3px; color:var(--ink-2); font-size:12.5px; line-height:1.5; }
+  .weekly-list .wk-src { display:inline-block; margin-top:5px; color:var(--muted); font-size:10.5px; font-weight:600; letter-spacing:.3px; }
+  .weekly-more { display:inline-block; margin-top:14px; color:var(--blue); font-size:12.5px; font-weight:600; text-decoration:none; }
+  .weekly-more:hover { text-decoration:underline; }
+  .weekly-empty { color:var(--faint); font-size:13px; font-style:italic; padding-top:2px; }
 
   /* ---- top five ---- */
   .story { display:grid; grid-template-columns:34px 108px 1fr; gap:16px; align-items:start; padding:16px 0; border-top:1px solid var(--border-2); }
@@ -279,9 +285,10 @@
         </div>
         <div class="overnight-body" id="overnight"></div>
       </section>
-      <aside class="card so-what" aria-labelledby="so-title">
-        <header><h2 id="so-title">Satstreet so-what</h2><span class="eyebrow">Desk lens</span></header>
-        <ul class="so-list" id="so-list"></ul>
+      <aside class="card weekly-card" aria-labelledby="weekly-title">
+        <header><h2 id="weekly-title">Top news this week</h2><span class="eyebrow" id="weekly-window"></span></header>
+        <ol class="weekly-list" id="weekly"></ol>
+        <a class="weekly-more" id="weekly-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Open the full weekly recap ↗</a>
       </aside>
     </div>
 
