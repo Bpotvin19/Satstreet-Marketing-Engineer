@@ -55,6 +55,7 @@ function draftFrom(row: any) {
     voice: selectOf(p['Primary Voice']),
     platforms: (p.Platform?.multi_select ?? []).map((o: any) => o.name),
     pillar: selectOf(p.Pillar),
+    campaign: textOf(p.Campaign),
     draft: textOf(p.Draft),
     screenedDraft: textOf(p['Screened Draft']),
     approval: selectOf(p.Approval),

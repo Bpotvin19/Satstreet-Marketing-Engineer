@@ -40,12 +40,29 @@
     return (data && data.people || []).filter(function (p) { return p.key === key; })[0] || null;
   }
 
-  function isSocial(d) {
-    return (d.platforms || []).some(function (p) { return p === 'X' || p === 'LinkedIn'; });
+  /* The Email option was added to Content Queue after the daily client note
+     had been running for weeks, so existing email drafts still carry the
+     LinkedIn label. Recognise them by what they are rather than losing them:
+     a Subject line, the Client AM Email campaign, or the card's own name.
+     Rows found this way are badged so the mislabelling stays visible. */
+  function looksLikeEmail(d) {
+    if (/^\s*subject\s*:/im.test(d.draft || '')) return true;
+    if (/client\s+(am\s+)?email|weekly\s+client\s+email/i.test(d.campaign || '')) return true;
+    if (/^\s*client\s+email\b/i.test(d.name || '')) return true;
+    return false;
+  }
+
+  function labelledEmail(d) {
+    return (d.platforms || []).indexOf('Email') >= 0;
   }
 
   function isEmail(d) {
-    return (d.platforms || []).indexOf('Email') >= 0;
+    return labelledEmail(d) || looksLikeEmail(d);
+  }
+
+  function isSocial(d) {
+    if (isEmail(d)) return false;
+    return (d.platforms || []).some(function (p) { return p === 'X' || p === 'LinkedIn'; });
   }
 
   /* ---------- shared pieces ---------- */
@@ -56,7 +73,7 @@
     return '<span class="wchip ' + cls + '">' + esc(approval) + '</span>';
   }
 
-  function draftCard(d, showVoice) {
+  function draftCard(d, showVoice, flag) {
     var platforms = (d.platforms || []).map(function (p) {
       return '<span class="wchip plain">' + esc(p) + '</span>';
     }).join('');
@@ -73,6 +90,7 @@
         '<h3>' + esc(d.name || 'Untitled draft') + '</h3>' +
         '<div class="draft-chips">' +
           (showVoice && d.voice ? '<span class="wchip voice">' + esc(d.voice) + '</span>' : '') +
+          (flag ? '<span class="wchip warn">' + esc(flag) + '</span>' : '') +
           platforms + statusChip(d) +
         '</div>' +
       '</header>' +
@@ -171,11 +189,21 @@
 
   function renderEmail() {
     var drafts = (data.drafts || []).filter(isEmail);
+    var unlabelled = drafts.filter(function (d) { return !labelledEmail(d); }).length;
+    var warn = unlabelled
+      ? '<p class="wnote warn-note"><b>' + unlabelled + ' of these are not tagged Email in Notion.</b> ' +
+        'They were matched by their subject line or campaign instead. Setting Platform to Email on the ' +
+        'drafting bot makes this exact.</p>'
+      : '';
     $('email-view').innerHTML =
-      '<div class="whead"><div><p class="eyebrow">Shared queue</p><h2>Email drafts</h2></div></div>' +
-      '<p class="wnote">Written by the bots into the Content Queue. Nothing here is sent from this page — sending and approval stay with a person.</p>' +
+      '<div class="whead"><div><p class="eyebrow">Shared queue</p><h2>Email drafts</h2></div>' +
+      '<span class="wchip plain">' + drafts.length + ' drafts</span></div>' +
+      '<p class="wnote">Written by the bots into the Content Queue. Nothing is sent from this page — sending and approval stay with a person.</p>' +
+      warn +
       (drafts.length
-        ? '<div class="draft-list">' + drafts.map(function (d) { return draftCard(d, true); }).join('') + '</div>'
+        ? '<div class="draft-list">' + drafts.map(function (d) {
+            return draftCard(d, true, labelledEmail(d) ? '' : 'Untagged');
+          }).join('') + '</div>'
         : emptyState('No email drafts are waiting.'));
   }
 
