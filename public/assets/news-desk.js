@@ -6,6 +6,27 @@
   var $ = function (id) { return document.getElementById(id); };
   var esc = Terminal.esc;
   var market = {};
+  var STORAGE_KEY = 'satstreet.news.key';
+
+  function storedKey() {
+    try { return localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY) || ''; }
+    catch (e) { return sessionStorage.getItem(STORAGE_KEY) || ''; }
+  }
+
+  function rememberKey(key, persist) {
+    sessionStorage.setItem(STORAGE_KEY, key);
+    try {
+      if (persist) localStorage.setItem(STORAGE_KEY, key);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+  }
+
+  function forgetKey() {
+    sessionStorage.removeItem(STORAGE_KEY);
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    window.__newsKey = '';
+  }
+
   var categoryMeta = [
     ['rates','Rates and dollar','Rates & FX','^TNX'],
     ['equities','Equities US + Canada','Equities','^GSPC'],
@@ -85,7 +106,7 @@
   }
 
   function hydrateThumbs(reads) {
-    var key = window.__newsKey || sessionStorage.getItem('satstreet.news.key') || '';
+    var key = window.__newsKey || storedKey();
     var urls = (reads || []).map(function(r){ return (r.links && r.links[0] && r.links[0].href) || ''; }).filter(Boolean);
     if (!key || !urls.length) return;
     fetch('/api/news-thumbs', {
@@ -138,12 +159,16 @@
   }
 
   function loadMarket() { return fetch('/api/market').then(function(r){return r.ok?r.json():{quotes:[]};}).then(function(d){(d.quotes||[]).forEach(function(q){market[q.symbol]=q;});}).catch(function(){}); }
-  function unlock(key) {
+  function unlock(key, persist) {
     $('gate-error').textContent=''; $('news-state').textContent='Loading Macro Desk\u2026';
-    return fetch('/api/news',{headers:{'x-terminal-key':key},cache:'no-store'}).then(function(r){return r.json().then(function(j){if(!r.ok) throw new Error(j.error||'Unable to load the feed.'); return j;});}).then(function(d){sessionStorage.setItem('satstreet.news.key',key); window.__newsKey=key; render(d,false);}).catch(function(e){$('news-pip').className='pip bad'; $('news-state').textContent='Protected Notion feed'; $('gate-error').textContent=e.message;});
+    return fetch('/api/news',{headers:{'x-terminal-key':key},cache:'no-store'}).then(function(r){return r.json().then(function(j){if(!r.ok) throw new Error(j.error||'Unable to load the feed.'); return j;});}).then(function(d){rememberKey(key, persist); window.__newsKey=key; render(d,false);}).catch(function(e){$('news-pip').className='pip bad'; $('news-state').textContent='Protected Notion feed'; $('gate-error').textContent=e.message;});
   }
-  $('gate-form').addEventListener('submit',function(e){e.preventDefault(); var key=$('access-key').value.trim(); if(key) unlock(key);});
+  $('gate-form').addEventListener('submit',function(e){e.preventDefault(); var key=$('access-key').value.trim(); if(key) unlock(key, $('remember-key').checked);});
   $('demo').addEventListener('click',function(){render(demoPayload,true);});
-  $('lock').addEventListener('click',function(){sessionStorage.removeItem('satstreet.news.key'); $('desk').hidden=true; $('gate').hidden=false; $('lock').hidden=true; $('news-pip').className='pip'; $('news-state').textContent='Protected Notion feed'; $('access-key').value='';});
-  loadMarket().then(function(){var key=sessionStorage.getItem('satstreet.news.key'); if(key) unlock(key);});
+  $('lock').addEventListener('click',function(){forgetKey(); $('desk').hidden=true; $('gate').hidden=false; $('lock').hidden=true; $('news-pip').className='pip'; $('news-state').textContent='Protected Notion feed'; $('access-key').value='';});
+  loadMarket().then(function(){
+    var key=storedKey(), persisted=false;
+    try { persisted=!!localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if(key) { $('remember-key').checked=persisted; unlock(key,persisted); }
+  });
 })();
