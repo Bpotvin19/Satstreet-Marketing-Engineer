@@ -17,6 +17,8 @@
   .gate-form .field { flex:1; margin:0; }
   .gate-side { min-width:0; }
   .gate-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .remember-device { display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--muted); font-size:12.5px; cursor:pointer; }
+  .remember-device input { width:15px; height:15px; margin:0; accent-color:var(--blue); }
   .gate-error { color:var(--down); font-size:12.5px; margin-top:10px; }
   .brief-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(300px,.8fr); gap:16px; margin-bottom:16px; }
   .lead-card { position:relative; overflow:hidden; padding:25px; min-height:282px; color:#fff; background:linear-gradient(145deg,#0b2035 0%,#143c59 100%); border-color:#183e5b; }
@@ -94,12 +96,13 @@
   </div>
   <!-- gate-v3 -->
   <section class="card gate" id="gate">
-    <p class="gate-copy">The Notion feed is protected because these pages are marked internal. The access key stays in this browser session and your Notion token never leaves Netlify.</p>
+    <p class="gate-copy">The Notion feed is protected because these pages are marked internal. You can remember access on this trusted device, while the Notion token always stays private on Netlify.</p>
     <div class="gate-side">
       <form class="gate-form" id="gate-form">
         <div class="field"><label for="access-key">Terminal access key</label><input id="access-key" type="password" autocomplete="current-password" /></div>
         <button class="btn" type="submit">Unlock</button>
       </form>
+      <label class="remember-device" for="remember-key"><input id="remember-key" type="checkbox" checked />Remember this trusted device</label>
       <div class="gate-actions"><button class="btn ghost small" id="demo" type="button">View illustrative layout</button></div>
       <div class="gate-error" id="gate-error" role="alert"></div>
     </div>
