@@ -638,6 +638,16 @@
     $('desk').hidden = false;
     $('gate').hidden = true;
     $('lock').hidden = preview;
+    setViewsUnlocked(!preview);
+    if (!preview && pendingView) {
+      var wanted = pendingView;
+      pendingView = null;
+      if (wanted === 'system') loadSystemView().then(function (ok) { if (ok) showView('system'); });
+      else if (WORKSPACE_VIEWS.indexOf(wanted) >= 0) {
+        showView(wanted);
+        if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.show(wanted);
+      }
+    }
     var clock = function (iso) {
       return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
     };
@@ -672,6 +682,103 @@
       });
   }
 
+  /* ---------- gated views ---------- */
+
+  /* Every view except the brief sits behind the access key, and none of their
+     content is in this page. "How Satstreet OS works" comes from /api/system;
+     the person, email and prospect tabs come from /api/workspace. Anything in
+     news.html is readable with View Source, and news.html is the landing page. */
+  var systemLoaded = false;
+  var currentView = 'desk';
+  var pendingView = new URLSearchParams(window.location.search).get('view');
+
+  var WORKSPACE_VIEWS = ['ben', 'george', 'dan', 'mike', 'email', 'prospects'];
+  var TAB_OF = {
+    desk: 'desk-tab', system: 'system-tab', email: 'email-tab', prospects: 'prospects-tab',
+    ben: 'ben-tab', george: 'george-tab', dan: 'dan-tab', mike: 'mike-tab'
+  };
+  var PANEL_OF = {
+    desk: 'desk-view', system: 'system-view', email: 'email-view', prospects: 'prospects-view',
+    ben: 'person-view', george: 'person-view', dan: 'person-view', mike: 'person-view'
+  };
+  var PANELS = ['desk-view', 'person-view', 'email-view', 'prospects-view', 'system-view'];
+
+  function showView(view) {
+    if ($('view-switch').hidden) view = 'desk';
+    if (view === 'system' && !systemLoaded) view = 'desk';
+    if (!PANEL_OF[view]) view = 'desk';
+
+    Object.keys(TAB_OF).forEach(function (name) {
+      var tab = $(TAB_OF[name]);
+      if (tab) tab.setAttribute('aria-selected', String(name === view));
+    });
+    PANELS.forEach(function (id) {
+      var panel = $(id);
+      if (panel) panel.hidden = id !== PANEL_OF[view];
+    });
+    $('workspace-bar').hidden = WORKSPACE_VIEWS.indexOf(view) < 0;
+
+    currentView = view;
+    var url = new URL(window.location.href);
+    if (view === 'desk') url.searchParams.delete('view');
+    else url.searchParams.set('view', view);
+    history.replaceState(null, '', url);
+  }
+
+  function loadSystemView() {
+    if (systemLoaded) return Promise.resolve(true);
+    var key = window.__newsKey || storedKey();
+    if (!key) return Promise.resolve(false);
+    return fetch('/api/system', { headers: { 'x-terminal-key': key }, cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('Locked');
+        return r.text();
+      })
+      .then(function (html) {
+        $('system-view').innerHTML = html;
+        systemLoaded = true;
+        var back = document.getElementById('open-desk');
+        if (back) {
+          back.addEventListener('click', function () {
+            showView('desk');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
+        return true;
+      })
+      .catch(function () { return false; });
+  }
+
+  /* The switcher appears only after a real key is accepted. The illustrative
+     layout is the unauthenticated path, so it offers none of these. */
+  function setViewsUnlocked(on) {
+    $('view-switch').hidden = !on;
+    if (on) {
+      if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.mount();
+      return;
+    }
+    systemLoaded = false;
+    $('system-view').innerHTML = '';
+    if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.unmount();
+    showView('desk');
+  }
+
+  $('desk-tab').addEventListener('click', function () { showView('desk'); });
+  $('system-tab').addEventListener('click', function () {
+    loadSystemView().then(function (ok) { if (ok) showView('system'); });
+  });
+  WORKSPACE_VIEWS.forEach(function (view) {
+    var tab = $(TAB_OF[view]);
+    if (!tab) return;
+    tab.addEventListener('click', function () {
+      showView(view);
+      if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.show(view);
+    });
+  });
+  $('workspace-refresh').addEventListener('click', function () {
+    if (window.SATSTREET_WORKSPACE) window.SATSTREET_WORKSPACE.refresh(currentView);
+  });
+
   function unlock(key, persist) {
     $('gate-error').textContent = '';
     $('news-state').textContent = 'Loading Macro Desk…';
@@ -700,6 +807,7 @@
   });
   $('lock').addEventListener('click', function () {
     forgetKey();
+    setViewsUnlocked(false);
     $('desk').hidden = true;
     $('gate').hidden = false;
     $('lock').hidden = true;
