@@ -638,6 +638,11 @@
     $('desk').hidden = false;
     $('gate').hidden = true;
     $('lock').hidden = preview;
+    setViewsUnlocked(!preview);
+    if (!preview && pendingView === 'system') {
+      pendingView = null;
+      loadSystemView().then(function (ok) { if (ok) showView('system'); });
+    }
     var clock = function (iso) {
       return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
     };
@@ -672,6 +677,68 @@
       });
   }
 
+  /* ---------- gated views ---------- */
+
+  /* "How Satstreet OS works" describes how the firm runs, so it sits behind
+     the same key as the brief. Its markup is not in this page at all — it is
+     fetched from /api/system after a key is accepted, because anything in
+     news.html is readable with View Source, and news.html is the site's
+     landing page. */
+  var systemLoaded = false;
+  var pendingView = new URLSearchParams(window.location.search).get('view');
+
+  function showView(view) {
+    var system = view === 'system' && !$('view-switch').hidden && systemLoaded;
+    $('desk-tab').setAttribute('aria-selected', String(!system));
+    $('system-tab').setAttribute('aria-selected', String(system));
+    $('desk-view').hidden = system;
+    $('system-view').hidden = !system;
+    var url = new URL(window.location.href);
+    if (system) url.searchParams.set('view', 'system');
+    else url.searchParams.delete('view');
+    history.replaceState(null, '', url);
+  }
+
+  function loadSystemView() {
+    if (systemLoaded) return Promise.resolve(true);
+    var key = window.__newsKey || storedKey();
+    if (!key) return Promise.resolve(false);
+    return fetch('/api/system', { headers: { 'x-terminal-key': key }, cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('Locked');
+        return r.text();
+      })
+      .then(function (html) {
+        $('system-view').innerHTML = html;
+        systemLoaded = true;
+        var back = document.getElementById('open-desk');
+        if (back) {
+          back.addEventListener('click', function () {
+            showView('desk');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
+        return true;
+      })
+      .catch(function () { return false; });
+  }
+
+  /* The switcher appears only after a real key is accepted. The illustrative
+     layout is the unauthenticated path, so it never offers the system view. */
+  function setViewsUnlocked(on) {
+    $('view-switch').hidden = !on;
+    if (!on) {
+      systemLoaded = false;
+      $('system-view').innerHTML = '';
+      showView('desk');
+    }
+  }
+
+  $('system-tab').addEventListener('click', function () {
+    loadSystemView().then(function (ok) { if (ok) showView('system'); });
+  });
+  $('desk-tab').addEventListener('click', function () { showView('desk'); });
+
   function unlock(key, persist) {
     $('gate-error').textContent = '';
     $('news-state').textContent = 'Loading Macro Desk…';
@@ -700,6 +767,7 @@
   });
   $('lock').addEventListener('click', function () {
     forgetKey();
+    setViewsUnlocked(false);
     $('desk').hidden = true;
     $('gate').hidden = false;
     $('lock').hidden = true;
