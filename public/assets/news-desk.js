@@ -692,14 +692,14 @@
   var currentView = 'desk';
   var pendingView = new URLSearchParams(window.location.search).get('view');
 
-  var WORKSPACE_VIEWS = ['ben', 'george', 'dan', 'mike', 'email', 'prospects'];
+  var WORKSPACE_VIEWS = ['ben', 'george', 'dan', 'mike', 'levy', 'email', 'prospects'];
   var TAB_OF = {
     desk: 'desk-tab', system: 'system-tab', email: 'email-tab', prospects: 'prospects-tab',
-    ben: 'ben-tab', george: 'george-tab', dan: 'dan-tab', mike: 'mike-tab'
+    ben: 'ben-tab', george: 'george-tab', dan: 'dan-tab', mike: 'mike-tab', levy: 'levy-tab'
   };
   var PANEL_OF = {
     desk: 'desk-view', system: 'system-view', email: 'email-view', prospects: 'prospects-view',
-    ben: 'person-view', george: 'person-view', dan: 'person-view', mike: 'person-view'
+    ben: 'person-view', george: 'person-view', dan: 'person-view', mike: 'person-view', levy: 'person-view'
   };
   var PANELS = ['desk-view', 'person-view', 'email-view', 'prospects-view', 'system-view'];
 

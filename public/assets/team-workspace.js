@@ -17,6 +17,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var PEOPLE = ['ben', 'george', 'dan', 'mike'];
+  var COMPLIANCE = 'levy';
   var OWNERS = ['Ben', 'George', 'Dan', 'Mike'];
   var data = null;
   var activePerson = 'ben';
@@ -188,15 +189,83 @@
       options + '</select>';
   }
 
+  function canonicalTable(rows) {
+    if (!rows.length) return emptyState('No records match this filter.');
+    return '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
+        '<th>Company</th><th>Decision maker</th><th>Why now</th><th>Source</th><th>Score</th><th>Owner</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (p) {
+        return '<tr data-row="' + esc(p.id) + '">' +
+          '<td><a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.company) + '</a>' +
+            '<span class="psub">' + esc([p.segment, p.region].filter(Boolean).join(' · ')) + '</span></td>' +
+          '<td>' + esc(p.decisionMaker || '—') + '</td>' +
+          '<td class="pwhy">' + esc(p.whyNow || p.trigger || '—') + '</td>' +
+          '<td>' + (p.leadSource ? '<span class="wchip plain">' + esc(p.leadSource) + '</span>' : '—') +
+            (p.sourcePack ? ' <a class="ppack" href="' + esc(p.sourcePack) + '" target="_blank" rel="noopener noreferrer">pack ↗</a>' : '') + '</td>' +
+          '<td class="pscore">' + (p.score == null ? '—' : esc(String(p.score))) + '</td>' +
+          '<td>' + ownerControl(p) + '<span class="save-state" data-state="' + esc(p.id) + '"></span></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function linkedinTable(rows) {
+    if (!rows.length) return emptyState('No LinkedIn relationships in the working slice.');
+    return '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
+        '<th>Person</th><th>Company</th><th>Segment</th><th>Next step</th><th>Score</th><th>Status</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (p) {
+        return '<tr>' +
+          '<td><a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.person || '—') + '</a>' +
+            '<span class="psub">' + esc(p.position || '') + '</span></td>' +
+          '<td>' + esc(p.company || '—') + '</td>' +
+          '<td>' + esc(p.segment || '—') + '<span class="psub">' + esc(p.opportunity || '') + '</span></td>' +
+          '<td class="pwhy">' + esc(p.nextStep || p.angle || '—') + '</td>' +
+          '<td class="pscore">' + (p.score == null ? '—' : esc(String(p.score))) + '</td>' +
+          '<td>' + (p.thisWeek ? '<span class="wchip warn">This week</span> ' : '') +
+            '<span class="wchip plain">' + esc(p.outreachStatus || 'Not reviewed') + '</span></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function packTable(rows) {
+    if (!rows.length) return emptyState('No offshore packs were readable.');
+    return '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
+        '<th>Fund</th><th>Contact</th><th>Jurisdiction</th><th>Score</th><th>Priority</th><th>Pack</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (p) {
+        return '<tr>' +
+          '<td>' + esc(p.company) + '</td>' +
+          '<td>' + esc(p.person || '—') + '<span class="psub">' + esc(p.position || '') + '</span></td>' +
+          '<td>' + esc(p.region || '—') + '</td>' +
+          '<td class="pscore">' + (p.score == null ? '—' : esc(String(p.score))) + '</td>' +
+          '<td>' + (p.priority ? '<span class="wchip plain">' + esc(p.priority) + '</span>' : '—') + '</td>' +
+          '<td><a class="ppack" href="' + esc(p.packUrl) + '" target="_blank" rel="noopener noreferrer">' +
+            esc(p.packDate || 'pack') + ' ↗</a></td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+
+  function section(title, note, html) {
+    return '<h3 class="wsection">' + esc(title) + (note ? '<span>' + esc(note) + '</span>' : '') + '</h3>' + html;
+  }
+
   function renderProspects() {
     var all = data.prospects || [];
-    var rows = leadFilter === 'all' ? all : all.filter(function (p) { return p.leadSource === leadFilter; });
-    var counts = { all: all.length, Daily: 0, Offshore: 0 };
-    all.forEach(function (p) { if (counts[p.leadSource] !== undefined) counts[p.leadSource] += 1; });
+    var linked = data.linkedin || [];
+    var packs = data.offshore || [];
+    var daily = all.filter(function (p) { return p.leadSource === 'Daily'; });
+    var offshoreRows = all.filter(function (p) { return p.leadSource === 'Offshore'; });
 
-    var filters = [['all', 'All'], ['Daily', 'Daily'], ['Offshore', 'Offshore']].map(function (f) {
+    var chips = [
+      ['all', 'All sources', all.length + linked.length + packs.length],
+      ['Daily', 'Daily', daily.length],
+      ['Offshore', 'Offshore', offshoreRows.length],
+      ['LinkedIn', 'LinkedIn network', linked.length],
+      ['Packs', 'Offshore packs', packs.length]
+    ];
+    var filters = chips.map(function (f) {
       return '<button class="subtab" type="button" data-lead="' + f[0] + '" aria-selected="' + (leadFilter === f[0]) + '">' +
-        esc(f[1]) + '<span class="count">' + counts[f[0]] + '</span></button>';
+        esc(f[1]) + '<span class="count">' + f[2] + '</span></button>';
     }).join('');
 
     var mine = {};
@@ -205,27 +274,21 @@
       return '<span class="wchip plain">' + esc(o) + ' <b>' + (mine[o] || 0) + '</b></span>';
     }).join('');
 
-    var body = rows.length
-      ? '<div class="ptable-wrap"><table class="ptable"><thead><tr>' +
-          '<th>Company</th><th>Decision maker</th><th>Why now</th><th>Source</th><th>Score</th><th>Owner</th>' +
-        '</tr></thead><tbody>' +
-        rows.map(function (p) {
-          return '<tr data-row="' + esc(p.id) + '">' +
-            '<td><a href="' + esc(p.url) + '" target="_blank" rel="noopener noreferrer">' + esc(p.company) + '</a>' +
-              '<span class="psub">' + esc([p.segment, p.region].filter(Boolean).join(' · ')) + '</span></td>' +
-            '<td>' + esc(p.decisionMaker || '—') + '</td>' +
-            '<td class="pwhy">' + esc(p.whyNow || p.trigger || '—') + '</td>' +
-            '<td>' + (p.leadSource ? '<span class="wchip plain">' + esc(p.leadSource) + '</span>' : '—') +
-              (p.sourcePack ? ' <a class="ppack" href="' + esc(p.sourcePack) + '" target="_blank" rel="noopener noreferrer">pack ↗</a>' : '') + '</td>' +
-            '<td class="pscore">' + (p.score == null ? '—' : esc(String(p.score))) + '</td>' +
-            '<td>' + ownerControl(p) + '<span class="save-state" data-state="' + esc(p.id) + '"></span></td>' +
-          '</tr>';
-        }).join('') + '</tbody></table></div>'
-      : emptyState('No prospects match this filter.');
+    var body;
+    if (leadFilter === 'LinkedIn') body = linkedinTable(linked);
+    else if (leadFilter === 'Packs') body = packTable(packs);
+    else if (leadFilter === 'Daily') body = canonicalTable(daily);
+    else if (leadFilter === 'Offshore') body = canonicalTable(offshoreRows);
+    else {
+      body = section('Prospect list', all.length + ' records · assignable', canonicalTable(all)) +
+        section('LinkedIn network', linked.length + ' in the working slice', linkedinTable(linked)) +
+        section('Offshore research packs', packs.length + ' funds across recent packs', packTable(packs));
+    }
 
     $('prospects-view').innerHTML =
       '<div class="whead"><div><p class="eyebrow">Revenue</p><h2>Prospecting list</h2></div><div class="tally">' + tally + '</div></div>' +
-      '<p class="wnote">Daily and offshore research in one list. Assigning a name records who intends to reach out — it is not contact, and it does not change the research status.</p>' +
+      '<p class="wnote">Assigning a name records who intends to reach out — it is not contact, and it does not change the research status. ' +
+      'Only the prospect list can be assigned here: LinkedIn tracks its owner as a Notion person, and the offshore packs are research documents rather than records.</p>' +
       '<div class="subnav">' + filters + '</div><div class="wbody">' + body + '</div>';
 
     Array.prototype.forEach.call($('prospects-view').querySelectorAll('[data-lead]'), function (btn) {
@@ -233,6 +296,51 @@
     });
     Array.prototype.forEach.call($('prospects-view').querySelectorAll('.owner-pick'), function (sel) {
       sel.addEventListener('change', function () { assign(sel.getAttribute('data-id'), sel.value, sel); });
+    });
+  }
+
+  /* ---------- Levy: compliance review ---------- */
+
+  function renderLevy() {
+    var drafts = data.drafts || [];
+    var waiting = drafts.filter(function (d) {
+      return d.screenStatus === 'Ready for Compliance' || d.screenStatus === 'In Compliance Review';
+    });
+    var returned = drafts.filter(function (d) { return d.screenStatus === 'Returned'; });
+    var approved = drafts.filter(function (d) { return d.approval === 'Approved'; });
+
+    var buckets = [
+      ['waiting', 'Waiting on you', waiting],
+      ['returned', 'Returned for changes', returned],
+      ['approved', 'Recently approved', approved]
+    ];
+    var which = activeSection.levy || 'waiting';
+    var chosen = buckets.filter(function (b) { return b[0] === which; })[0] || buckets[0];
+
+    var subnav = '<div class="subnav" role="tablist" aria-label="Compliance queue">' +
+      buckets.map(function (b) {
+        return '<button class="subtab" type="button" role="tab" data-section="' + b[0] + '"' +
+          ' aria-selected="' + (b[0] === which) + '">' + esc(b[1]) +
+          '<span class="count">' + b[2].length + '</span></button>';
+      }).join('') + '</div>';
+
+    var body = chosen[2].length
+      ? '<div class="draft-list">' + chosen[2].map(function (d) { return draftCard(d, true); }).join('') + '</div>'
+      : emptyState(which === 'waiting' ? 'Nothing is waiting on compliance review.' : 'Nothing in this bucket.');
+
+    $('person-view').innerHTML =
+      '<div class="whead">' +
+        '<div><p class="eyebrow">Compliance</p><h2>Levy</h2></div>' +
+        '<span class="wchip warn">Approval stays in Notion</span>' +
+      '</div>' +
+      '<p class="wnote">Everything the screener has passed to compliance. This page shows the draft and the screener verdict — it cannot approve, change status or publish. Use the Notion link on a card to record a decision.</p>' +
+      subnav + '<div class="wbody">' + body + '</div>';
+
+    Array.prototype.forEach.call($('person-view').querySelectorAll('.subtab'), function (btn) {
+      btn.addEventListener('click', function () {
+        activeSection.levy = btn.getAttribute('data-section');
+        renderLevy();
+      });
     });
   }
 
@@ -265,7 +373,8 @@
 
   function renderActive(view) {
     if (!data) return;
-    if (PEOPLE.indexOf(view) >= 0) renderPerson(view);
+    if (view === COMPLIANCE) renderLevy();
+    else if (PEOPLE.indexOf(view) >= 0) renderPerson(view);
     else if (view === 'email') renderEmail();
     else if (view === 'prospects') renderProspects();
   }
