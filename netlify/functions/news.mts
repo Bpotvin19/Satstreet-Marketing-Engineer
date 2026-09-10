@@ -4,18 +4,13 @@
    TERMINAL_NEWS_KEY before this function will read or return it. NOTION_TOKEN
    stays server-side and the response is never stored in a shared cache.
 
-   After the page is read, Must-read article URLs are fetched just far enough
-   to pick up the publisher's public share image (og:image / twitter:image).
-   The image itself is not stored. Official prints often have no hero photo;
-   those cards stay as an outlet mark. Graphic / casualty stills are skipped.
+   Article thumbnails load separately after the text is rendered.
 */
 
 const NOTION = 'https://api.notion.com/v1'
 const NOTION_VERSION = '2022-06-28'
 const DB = process.env.NOTION_DAILY_INTEL_DB?.trim() || '91d74bd8-2086-4536-a739-0ce7cf4964c5'
 const WEEKLY_PREFIX = process.env.NOTION_WEEKLY_PREFIX?.trim() || 'Weekly Newsletter Research —'
-const UA =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36'
 
 type Rich = { plain_text?: string; href?: string | null; annotations?: { bold?: boolean } }
 type OutBlock = {
@@ -176,99 +171,6 @@ function normalize(rows: any[]): OutBlock[] {
   })
 }
 
-const FIRST_URL = /https?:\/\/[^\s)>\]]+/i
-const GRAPHIC =
-  /\b(casualty|casualties|bodies|body bag|behead|massacre|funeral|morgue|execution|wedding strike|dead children)\b/i
-
-function articleUrl(block: OutBlock): string {
-  const href = block.links?.[0]?.href
-  if (href && /^https?:\/\//i.test(href)) return href.split('#')[0]
-  const fromText = block.text?.match(FIRST_URL)?.[0]
-  return fromText ? fromText.split('#')[0] : ''
-}
-
-function isPublicHttp(url: string): boolean {
-  try {
-    const u = new URL(url)
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
-    const host = u.hostname.toLowerCase()
-    if (host === 'localhost' || host.endsWith('.local')) return false
-    if (/^(127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(host)) return false
-    return true
-  } catch {
-    return false
-  }
-}
-
-function absUrl(value: string, base: string): string {
-  try {
-    return new URL(value.replace(/&/g, '&').trim(), base).toString()
-  } catch {
-    return ''
-  }
-}
-
-function pickShareImage(html: string, base: string): string {
-  const patterns = [
-    /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image(?::secure_url)?["']/i,
-    /<meta[^>]+name=["']twitter:image(?::src)?["'][^>]+content=["']([^"']+)/i,
-    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image(?::src)?["']/i,
-    /<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)/i,
-  ]
-  for (const pattern of patterns) {
-    const match = html.match(pattern)
-    if (!match?.[1]) continue
-    const url = absUrl(match[1], base)
-    if (isPublicHttp(url) && !url.startsWith('data:')) return url
-  }
-  return ''
-}
-
-async function shareImageFor(url: string): Promise<string> {
-  if (!isPublicHttp(url)) return ''
-  try {
-    const response = await fetch(url, {
-      headers: { 'user-agent': UA, accept: 'text/html,application/xhtml+xml' },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(2200),
-    })
-    if (!response.ok) return ''
-    const type = response.headers.get('content-type') || ''
-    if (!/html/i.test(type) && type) return ''
-    const html = await response.text()
-    return pickShareImage(html.slice(0, 180_000), url)
-  } catch {
-    return ''
-  }
-}
-
-async function attachShareImages(blocks: OutBlock[]): Promise<void> {
-  let section = ''
-  const jobs: { block: OutBlock; url: string }[] = []
-  for (const block of blocks) {
-    if (block.type === 'heading_2') {
-      const title = block.text || ''
-      section = /^B\./.test(title) ? 'reads' : ''
-      continue
-    }
-    if (section !== 'reads') continue
-    if (block.type !== 'numbered_list_item' && block.type !== 'bulleted_list_item') continue
-    if (GRAPHIC.test(block.text || '')) continue
-    const url = articleUrl(block)
-    if (!url) continue
-    jobs.push({ block, url })
-    if (jobs.length >= 7) break
-  }
-
-  await Promise.all(
-    jobs.map(async ({ block, url }) => {
-      const image = await shareImageFor(url)
-      if (image) block.image = image
-    }),
-  )
-}
-
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -297,11 +199,11 @@ export default async function handler(request: Request): Promise<Response> {
     const props = page.properties ?? {}
     const raw = await childrenOf(page.id)
     const blocks = normalize(raw)
-    await attachShareImages(blocks)
     const body: Record<string, unknown> = {
+      fetchedAt: new Date().toISOString(),
       title: plain(props.Name?.title) || 'Macro Desk',
       date: props.Date?.date?.start ?? '',
-      status: props.Status?.select?.name ?? '',
+      status: props.Status?.select?.name ?? props.Status?.status?.name ?? '',
       window: plain(props.Window?.rich_text),
       sourceUrl: page.url,
       lastEdited: page.last_edited_time,
@@ -335,7 +237,7 @@ export default async function handler(request: Request): Promise<Response> {
   } catch (error) {
     /* A held copy is better than an empty desk. Say that it is held so
        nobody mistakes it for this minute's read. */
-    if (cached) {
+    if (cached && Date.now() - cached.at < 24 * 60 * 60 * 1000) {
       return json({ ...(cached.body as object), stale: true, staleSince: new Date(cached.at).toISOString() })
     }
     return json({ error: error instanceof Error ? error.message : 'The Macro Desk could not be loaded.' }, 502)
@@ -343,3 +245,4 @@ export default async function handler(request: Request): Promise<Response> {
 }
 
 export const config = { path: '/api/news' }
+

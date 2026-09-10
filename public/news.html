@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Satstreet · Macro Desk</title>
-<meta name="description" content="Satstreet's protected daily cross-asset macro briefing." />
+<title>Satstreet OS · Daily brief &amp; team workflow</title>
+<meta name="description" content="Satstreet's daily brief, team workflow and operating guide." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -215,6 +215,22 @@
     .rhythm li { grid-template-columns:74px 1fr; }
     .presentation-close { align-items:flex-start; flex-direction:column; }
   }
+  [hidden] { display:none !important; }
+  .guide-nav { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+  .guide-nav a { color:var(--blue); font-size:14px; padding:8px 12px; border:1px solid var(--border); border-radius:6px; text-decoration:none; }
+  .guide-nav a:hover { background:#edf5fb; }
+  .system-hero { padding:24px; }
+  .system-hero h2 { font-size:28px; }
+  .system-view .flow-step p,.system-view .module-card p,.system-view .value-item p,.rhythm span { font-size:16px; line-height:1.55; }
+  .rhythm time,.rhythm b,.module-links a,.proof-row span { font-size:14px; }
+  .brief-health { margin-bottom:16px; }
+  .brief-health p { margin:0 0 12px; font-size:16px; }
+  .brief-health dl { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:0; }
+  .brief-health dt { color:var(--muted); font-size:14px; }
+  .brief-health dd { margin:4px 0 0; font-size:14px; }
+  .brief-health.attention { border-color:#c99036; background:#fffbf2; }
+  :focus-visible { outline:3px solid #157dab; outline-offset:3px; }
+  @media(max-width:620px) { .brief-health dl { grid-template-columns:1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -223,8 +239,8 @@
   <div class="pagehead">
     <div>
       <p class="eyebrow">Institutional intelligence</p>
-      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V9m5 9V5m5 13v-7m5 7V3"/><path d="M2 21h20"/></svg></span><h1>Macro Desk</h1></div>
-      <p>The daily brief: what moved overnight, the five stories that matter to this desk, and what each one means for Satstreet.</p>
+      <div class="page-title-row"><span class="page-emblem" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 18V9m5 9V5m5 13v-7m5 7V3"/><path d="M2 21h20"/></svg></span><h1 id="page-title">Macro Desk</h1></div>
+      <p id="page-description">The daily brief: what moved overnight, the five stories that matter to this desk, and what each one means for Satstreet.</p>
     </div>
     <div class="desk-actions">
       <div class="desk-stamp">
@@ -235,7 +251,7 @@
     </div>
   </div>
 
-  <div class="view-switch" role="tablist" aria-label="Macro Desk views">
+  <div class="view-switch" role="tablist" aria-label="Satstreet OS views">
     <button class="view-tab" id="desk-tab" type="button" role="tab" aria-selected="true" aria-controls="desk-view">Daily brief</button>
     <button class="view-tab" id="system-tab" type="button" role="tab" aria-selected="false" aria-controls="system-view">How Satstreet OS works</button>
   </div>
@@ -244,7 +260,7 @@
 
   <!-- gate-v3 -->
   <section class="card gate" id="gate">
-    <p class="gate-copy">The Notion feed is protected because these pages are marked internal. You can remember access on this trusted device, while the Notion token always stays private on Netlify.</p>
+    <p class="gate-copy">Unlock the internal brief with your team access key. The operating guide is available in the next tab. Remember access only on a trusted device.</p>
     <div class="gate-side">
       <form class="gate-form" id="gate-form">
         <div class="field"><label for="access-key">Terminal access key</label><input id="access-key" type="password" autocomplete="current-password" /></div>
@@ -257,6 +273,7 @@
   </section>
 
   <div id="desk" hidden>
+    <section class="card brief-health" aria-label="Brief freshness"><p id="brief-warning" role="status"></p><dl id="brief-metadata"></dl></section>
 
     <section class="card breaking" id="breaking" hidden aria-labelledby="breaking-title">
       <span class="flagword" id="breaking-title">Breaking</span>
@@ -320,68 +337,85 @@
 
 
   <section class="system-view" id="system-view" role="tabpanel" aria-labelledby="system-tab" hidden>
+    <nav class="guide-nav" aria-label="Operating guide sections"><a href="#flow-title">Workflow</a><a href="#team-title">Your role</a><a href="#day-title">Day &amp; week</a><a href="#modules-title">Tools</a><a href="#readiness-title">Readiness</a><a href="#value-title">Value</a></nav>
     <section class="card system-hero">
       <div>
-        <p class="eyebrow">Satstreet OS · Internal operating system</p>
-        <h2>Research once. Use it across the firm.</h2>
-        <p>Satstreet OS turns scattered market information into a shared daily view, then carries that intelligence into trading conversations, client service, sales outreach and content—without removing human judgment.</p>
+        <p class="eyebrow">The operating guide</p>
+        <h2>One shared brief. Clear next actions.</h2>
+        <p>Start with the market, choose the relationships and work that need attention, then prepare and review the next action. Use this guide to understand the workflow; private records stay in the team workspace.</p>
       </div>
       <div class="system-proof" aria-label="Operating system principles">
-        <div class="proof-row"><b>One source of truth</b><span>Notion</span></div>
-        <div class="proof-row"><b>One daily decision layer</b><span>Macro Desk</span></div>
-        <div class="proof-row"><b>Multiple team outputs</b><span>Human approved</span></div>
+        <div class="proof-row"><b>Records &amp; priorities</b><span>Notion</span></div>
+        <div class="proof-row"><b>Brief &amp; reference tools</b><span>This dashboard</span></div>
+        <div class="proof-row"><b>Decisions &amp; external use</b><span>Human responsibility</span></div>
       </div>
     </section>
 
     <section class="card system-card" aria-labelledby="flow-title">
-      <div class="section-intro"><h2 id="flow-title">How information moves through the system</h2><p>The dashboard is the decision layer between raw information and the work the team performs.</p></div>
+      <div class="section-intro"><h2 id="flow-title">How information moves through the system</h2><p>The intended handoff: each step uses the previous output, and a person reviews material before external use.</p></div>
       <div class="system-flow">
         <article class="flow-step"><span class="flow-num">01 · CAPTURE</span><h3>Monitor the market</h3><p>Macro, crypto, regulation, geopolitics, market prices and social signals are scanned through defined research windows.</p></article>
         <article class="flow-step"><span class="flow-num">02 · STRUCTURE</span><h3>Write to Notion</h3><p>Daily Intel, client resources and content knowledge are organized in one source of truth rather than scattered across tabs and chats.</p></article>
-        <article class="flow-step"><span class="flow-num">03 · DECIDE</span><h3>Prioritize for Satstreet</h3><p>The Macro Desk ranks Today's Five, identifies the desk implication and separates confirmed developments from noise.</p></article>
-        <article class="flow-step"><span class="flow-num">04 · ACTIVATE</span><h3>Put it to work</h3><p>The same approved intelligence supports trading, client conversations, outreach, social content and the Thursday newsletter.</p></article>
+        <article class="flow-step"><span class="flow-num">03 · DECIDE</span><h3>Choose the next action</h3><p>Choose the relevant relationship, client question or content opportunity. Assign an owner and a next step in the team workspace.</p></article>
+        <article class="flow-step"><span class="flow-num">04 · ACTIVATE</span><h3>Put it to work</h3><p>Review the draft and its evidence. Obtain required approval, then deliberately send or publish. Record the outcome separately from approval.</p></article>
       </div>
     </section>
 
+    <section class="card system-card" aria-labelledby="team-title">
+      <div class="section-intro"><h2 id="team-title">Where each team starts</h2><p>Use the brief to prepare. Keep ownership and outcomes in the existing team records.</p></div>
+      <div class="module-grid">
+        <article class="module-card"><span class="module-label">Sales &amp; relationships</span><h3>Choose who needs a conversation</h3><p>Review priority relationships, follow-ups and referrals. Adapt the relevant research to the conversation, then record the next step.</p></article>
+        <article class="module-card"><span class="module-label">Trading &amp; client service</span><h3>Explain what matters</h3><p>Check market context and source dates. Use approved educational resources to answer recurring questions; obtain executable quotes from the desk.</p></article>
+        <article class="module-card"><span class="module-label">Content &amp; review</span><h3>Prepare, check, then publish</h3><p>Develop a sourced draft, review company claims and obtain required sign-off. Approval is a separate step from sending or publishing.</p></article>
+      </div>
+    </section>
     <div class="cadence-grid">
       <section class="card">
-        <header><h2>A normal day</h2><span class="eyebrow">Operating rhythm</span></header>
+        <header><h2 id="day-title">A normal day</h2><span class="eyebrow">Operating rhythm</span></header>
         <ol class="rhythm">
-          <li><time>Before 8:30</time><span>The research process reviews the defined macro and crypto sources and writes the morning Macro Desk into Notion.</span></li>
-          <li><time>Morning</time><span>The team scans the reference tape, Today's Five, Satstreet so-what and the seven-day catalyst calendar.</span></li>
-          <li><time>During day</time><span>Sales and trading use the same talking points; material developments can trigger an updated brief.</span></li>
-          <li><time>End of day</time><span>Client questions, desk feedback and useful signals return to the knowledge layer for the next cycle.</span></li>
+          <li><time>Before 8:30</time><span>Check that the morning brief exists and its date is current. If it is missing or stale, check the source before relying on it.</span></li>
+          <li><time>Morning</time><span>Read the top stories and catalysts. Choose the day's priority relationships, follow-ups and decisions in Notion.</span></li>
+          <li><time>During day</time><span>Use the research for calls and drafts. Review material developments, approve the work that is ready and resolve blocked handoffs.</span></li>
+          <li><time>End of day</time><span>Record conversations and next steps. Capture recurring questions and flag missing outputs for the responsible owner.</span></li>
         </ol>
       </section>
       <section class="card">
         <header><h2>A normal week</h2><span class="eyebrow">Compounding workflow</span></header>
         <ol class="rhythm">
-          <li><b>MON–WED</b><span>Build the market narrative, capture recurring client questions and identify the strongest themes.</span></li>
+          <li><b>MONDAY</b><span>Choose priority relationships and referrals. Confirm owners and the outcomes to pursue this week.</span></li>
           <li><b>THURSDAY</b><span>Turn the week's approved intelligence into inputs for Mike's newsletter and supporting social content.</span></li>
           <li><b>FRIDAY</b><span>Review what generated conversations, refine the system and set the following week's priorities.</span></li>
-          <li><b>ONGOING</b><span>Expand the knowledge base while keeping client-facing language and internal intelligence clearly separated.</span></li>
+          <li><b>TUE–WED</b><span>Research prospects, follow up with relationships and improve resources using recurring client questions.</span></li>
         </ol>
       </section>
     </div>
 
     <section class="card system-card" aria-labelledby="modules-title">
-      <div class="section-intro"><h2 id="modules-title">What has been built</h2><p>Each module has a distinct job. Together they form one connected operating system.</p></div>
+      <div class="section-intro"><h2 id="modules-title">What has been built</h2><p>Open the reference tools here. Work queues and private records remain in Notion; this guide does not display live queue counts.</p></div>
       <div class="module-grid">
         <article class="module-card"><span class="module-label">Intelligence</span><h3>Markets and Macro Desk</h3><p>Live reference prices, charts, ranked news, catalysts and a Satstreet-specific interpretation.</p><div class="module-links"><a href="./ticker.html">Markets</a><a href="./chart.html">Charts</a><a href="./news.html">Macro Desk</a></div></article>
         <article class="module-card"><span class="module-label">Trading context</span><h3>Structure and Treasuries</h3><p>Tools that help the team explain market structure and frame corporate treasury conversations.</p><div class="module-links"><a href="./structure.html">Structure</a><a href="./treasuries.html">Treasuries</a></div></article>
-        <article class="module-card"><span class="module-label">Client experience</span><h3>Resources and Portfolio</h3><p>A cleaner educational and account experience for clients, including people who do not use the trading platform.</p><div class="module-links"><a href="./resources.html">Resources</a><a href="./portfolio.html">Portfolio</a></div></article>
-        <article class="module-card"><span class="module-label">Knowledge layer</span><h3>Notion workspace</h3><p>Daily Intel, educational resources and reusable internal context live in one organized source of truth.</p></article>
-        <article class="module-card"><span class="module-label">Content engine</span><h3>Telegram, social and newsletter</h3><p>Approved research can be adapted for X, client updates and the weekly newsletter without restarting from a blank page.</p></article>
-        <article class="module-card"><span class="module-label">Governance</span><h3>Human review stays central</h3><p>Internal status labels, sourcing rules and explicit human sign-off keep automation useful without outsourcing judgment.</p></article>
+        <article class="module-card"><span class="module-label">Client experience</span><h3>Resources and Portfolio</h3><p>Educational resources for clients and watch-only Bitcoin analytics. Portfolio estimates are not Satstreet account balances or tax cost basis.</p><div class="module-links"><a href="./resources.html">Resources</a><a href="./portfolio.html">Portfolio</a></div></article>
+        <article class="module-card"><span class="module-label">Knowledge layer</span><h3>Notion workspace</h3><p>Research, priority relationships, content queues, approvals and decisions have their working records in Notion.</p></article>
+        <article class="module-card"><span class="module-label">Content engine</span><h3>Telegram, social and newsletter</h3><p>Telegram supports research and drafting. Reuse source material for social posts, client drafts and the weekly newsletter; review each output before use.</p></article>
+        <article class="module-card"><span class="module-label">Governance</span><h3>Human review stays central</h3><p>Check evidence, company claims and required approvals. A bot screen supports review; it does not grant approval or confirm publication.</p></article>
       </div>
     </section>
 
-    <section class="card system-card" aria-labelledby="value-title">
-      <div class="section-intro"><h2 id="value-title">The value proposition</h2><p>This is not another dashboard. It is a shared workflow for turning information into coordinated action.</p></div>
+    <section class="card system-card" aria-labelledby="readiness-title">
+      <div class="section-intro"><h2 id="readiness-title">Know what is ready to use</h2><p>This guide describes the workflow. It is not a live automation health monitor.</p></div>
       <div class="value-grid">
-        <article class="value-item"><h3>Less duplicated work</h3><p>Research is captured once and reused across sales, trading, client service and marketing.</p></article>
-        <article class="value-item"><h3>More consistent judgment</h3><p>The team begins with the same facts, priorities and Satstreet-specific interpretation.</p></article>
-        <article class="value-item"><h3>Better client conversations</h3><p>Relevant developments surface earlier, with clearer context and a more institutional client experience.</p></article>
+        <article class="value-item"><h3>Reference tools</h3><p>Open the tools above and check their source dates. Missing or delayed data should remain visibly unavailable.</p></article>
+        <article class="value-item"><h3>Scheduled work</h3><p>Confirm the last successful run and open its output in the team workspace. A schedule or “Live” label alone is not evidence of a completed run.</p></article>
+        <article class="value-item"><h3>External communication</h3><p>Check the reviewer and approval record. Send or publish deliberately, then save the outcome. Escalate missing ownership or evidence.</p></article>
+      </div>
+    </section>
+    <section class="card system-card" aria-labelledby="value-title">
+      <div class="section-intro"><h2 id="value-title">The value proposition</h2><p>Measure the system by time saved, useful conversations and completed handoffs.</p></div>
+      <div class="value-grid">
+        <article class="value-item"><h3>Less duplicated work</h3><p>Reuse a sourced brief across the team. Track time spent preparing calls and drafts to see whether that reuse saves work.</p></article>
+        <article class="value-item"><h3>More consistent judgment</h3><p>Make priorities, evidence and owners visible. Track approval turnaround and missed or stale handoffs.</p></article>
+        <article class="value-item"><h3>Better client conversations</h3><p>Use relevant context to start useful conversations. Track replies, meetings and next steps rather than counting bot outputs.</p></article>
       </div>
     </section>
 
@@ -407,6 +441,12 @@
     var system = view === 'system';
     deskTab.setAttribute('aria-selected', String(!system));
     systemTab.setAttribute('aria-selected', String(system));
+    document.getElementById('page-title').textContent = system ? 'Satstreet OS' : 'Macro Desk';
+    document.getElementById('page-description').textContent = system ? 'The team workflow: research, relationships, client service and reviewed content.' : 'The daily brief: the stories that matter, their sources and the implications for the desk.';
+    document.querySelector('.desk-actions').hidden = system;
+    document.title = system ? 'Satstreet OS · Team workflow' : 'Satstreet · Macro Desk';
+    deskTab.tabIndex = system ? -1 : 0;
+    systemTab.tabIndex = system ? 0 : -1;
     deskView.hidden = system;
     systemView.hidden = !system;
     var url = new URL(window.location.href);
@@ -421,8 +461,18 @@
     show('desk');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
-  if (new URLSearchParams(window.location.search).get('view') === 'system') show('system');
+  [deskTab, systemTab].forEach(function (tab) {
+    tab.addEventListener('keydown', function (event) {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      var target = event.key === 'Home' ? deskTab : event.key === 'End' ? systemTab : tab === deskTab ? systemTab : deskTab;
+      show(target === systemTab ? 'system' : 'desk');
+      target.focus();
+    });
+  });
+  show(new URLSearchParams(window.location.search).get('view') === 'system' ? 'system' : 'desk');
 })();
 </script>
 </body>
 </html>
+
