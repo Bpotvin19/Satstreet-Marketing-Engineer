@@ -28,7 +28,7 @@
   if (!Terminal) return;
   Terminal.mountHeader('News');
   var $ = function (id) { return document.getElementById(id); };
-  var esc = Terminal.esc;
+  var esc = function (value) { return Terminal.esc(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); };
   var market = {};
   var marketAsOf = '';
   var STORAGE_KEY = 'satstreet.news.key';
@@ -79,8 +79,7 @@
   var TAPE_ORDER = ['BTC-USD', 'ETH-USD', 'GC=F', 'CL=F', 'CAD=X', '^TNX', '^GSPC', '^IXIC'];
   var QUIET = /^(nothing material|nothing|none|no material|n\/a|—|-)\.?$/i;
 
-  /* Illustrative quotes, used only by "View illustrative layout" and only when
-     /api/market returned nothing. Shaped, not random, so the preview is stable. */
+  /* Illustrative quotes, used only by "View illustrative layout" and regardless of live feed availability. Shaped, not random, so the preview is stable. */
   function demoSpark(base, drift) {
     var out = [], v = base;
     for (var i = 0; i < 24; i += 1) {
@@ -416,12 +415,12 @@
   }
 
   function renderStories(stories) {
-    $('story-count').textContent = stories.length ? stories.length + ' ranked' : '';
+    $('story-count').textContent = stories.length ? Math.min(stories.length, 5) + ' shown' + (stories.length > 5 ? ' · ' + stories.length + ' in source' : '') : '';
     if (!stories.length) {
       $('stories').innerHTML = '<p class="quiet-lane">No ranked stories were included in this edition.</p>';
       return;
     }
-    $('stories').innerHTML = stories.slice(0, 7).map(function (s, i) {
+    $('stories').innerHTML = stories.slice(0, 5).map(function (s, i) {
       var href = (s.links[0] || {}).href || '';
       if (!href) {
         var m = (s.headline || '').match(/https?:\/\/[^\s)>\]]+/);
@@ -576,7 +575,34 @@
     }).join('');
   }
 
+  function briefFreshness(payload, now) {
+    var today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Toronto', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+    var date = String(payload.date || '').slice(0, 10);
+    var valid = /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date)) && new Date(date).toISOString().slice(0, 10) === date;
+    if (payload.stale) return 'Cached brief: the latest source could not be retrieved. Check the dates before use.';
+    if (!valid) return 'The brief date is missing or invalid. Freshness cannot be confirmed.';
+    if (date < today) return 'Earlier edition: this brief is not dated today. Check the source before use.';
+    if (date > today) return 'Future-dated edition: verify the source date before use.';
+    return '';
+  }
+
+  function renderHealth(payload, preview) {
+    var warning = preview ? 'Illustrative demonstration: headlines and prices are examples, not current market information.' : briefFreshness(payload, new Date());
+    $('brief-warning').textContent = warning || 'Dated today · source status is shown below; this does not confirm approval for external use.';
+    $('brief-warning').parentElement.classList.toggle('attention', !!warning);
+    var stamp = function (value) {
+      var d = new Date(value || '');
+      return Number.isFinite(d.getTime()) ? d.toLocaleString('en-CA', {timeZone:'America/Toronto', timeZoneName:'short'}) : 'Not available';
+    };
+    var rows = preview ? [['Mode', 'Illustrative'], ['Prices', 'Examples only'], ['Headlines', 'Examples only'], ['External use', 'Not approved']] :
+      [['Brief date', payload.date || 'Not available'], ['Source updated', stamp(payload.lastEdited)], ['Retrieved from Notion', stamp(payload.fetchedAt)], ['Source status', payload.status || 'Not set']];
+    $('brief-metadata').innerHTML = rows.map(function (r) { return '<div><dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd></div>'; }).join('');
+  }
+
   function render(payload, preview) {
+    renderHealth(payload, preview);
+    var referenceMarket = market;
+    if (preview) market = demoMarket;
     var d = parse(payload);
 
     $('breaking').hidden = !d.breaking.length;
@@ -615,14 +641,17 @@
     var clock = function (iso) {
       return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
     };
-    $('news-pip').className = 'pip ' + (preview || payload.stale ? 'warn' : 'ok');
+    var freshnessWarning = briefFreshness(payload, new Date());
+    $('news-pip').className = 'pip ' + (preview || freshnessWarning ? 'warn' : 'ok');
     $('news-state').textContent = preview
       ? 'Illustrative layout'
       : payload.stale
         ? 'Held copy from ' + clock(payload.staleSince) + ' · Notion unreachable'
-        : 'Updated ' + clock(payload.lastEdited);
+        : freshnessWarning ? 'Check brief date' : 'Source updated ' + clock(payload.lastEdited);
 
-    if (!preview) hydrateThumbs(d.stories);
+    market = referenceMarket;
+    if (preview) $('tape-meta').textContent = 'Illustrative prices · not live market data';
+    if (!preview) hydrateThumbs(d.stories.slice(0, 5));
   }
 
   /* ---------- boot ---------- */
@@ -634,7 +663,7 @@
         marketAsOf = d.asOf || '';
         (d.quotes || []).forEach(function (q) { market[q.symbol] = q; });
         if ($('tape-meta') && marketAsOf) {
-          $('tape-meta').textContent = 'Indicative reference data · as of ' +
+          $('tape-meta').textContent = 'Indicative reference data · fetched ' +
             new Date(marketAsOf).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short' });
         }
       })
@@ -667,9 +696,6 @@
     if (key) unlock(key, $('remember-key').checked);
   });
   $('demo').addEventListener('click', function () {
-    if (!Object.keys(market).length) {
-      Object.keys(demoMarket).forEach(function (k) { market[k] = demoMarket[k]; });
-    }
     render(demoPayload, true);
   });
   $('lock').addEventListener('click', function () {
@@ -689,3 +715,4 @@
     if (key) { $('remember-key').checked = persisted; unlock(key, persisted); }
   });
 })();
+
