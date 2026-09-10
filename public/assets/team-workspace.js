@@ -40,12 +40,29 @@
     return (data && data.people || []).filter(function (p) { return p.key === key; })[0] || null;
   }
 
-  function isSocial(d) {
-    return (d.platforms || []).some(function (p) { return p === 'X' || p === 'LinkedIn'; });
+  /* The Email option was added to Content Queue after the daily client note
+     had been running for weeks, so existing email drafts still carry the
+     LinkedIn label. Recognise them by what they are rather than losing them:
+     a Subject line, the Client AM Email campaign, or the card's own name.
+     Rows found this way are badged so the mislabelling stays visible. */
+  function looksLikeEmail(d) {
+    if (/^\s*subject\s*:/im.test(d.draft || '')) return true;
+    if (/client\s+(am\s+)?email|weekly\s+client\s+email/i.test(d.campaign || '')) return true;
+    if (/^\s*client\s+email\b/i.test(d.name || '')) return true;
+    return false;
+  }
+
+  function labelledEmail(d) {
+    return (d.platforms || []).indexOf('Email') >= 0;
   }
 
   function isEmail(d) {
-    return (d.platforms || []).indexOf('Email') >= 0;
+    return labelledEmail(d) || looksLikeEmail(d);
+  }
+
+  function isSocial(d) {
+    if (isEmail(d)) return false;
+    return (d.platforms || []).some(function (p) { return p === 'X' || p === 'LinkedIn'; });
   }
 
   /* ---------- shared pieces ---------- */
@@ -56,7 +73,7 @@
     return '<span class="wchip ' + cls + '">' + esc(approval) + '</span>';
   }
 
-  function draftCard(d, showVoice) {
+  function draftCard(d, showVoice, flag) {
     var platforms = (d.platforms || []).map(function (p) {
       return '<span class="wchip plain">' + esc(p) + '</span>';
     }).join('');
@@ -73,6 +90,7 @@
         '<h3>' + esc(d.name || 'Untitled draft') + '</h3>' +
         '<div class="draft-chips">' +
           (showVoice && d.voice ? '<span class="wchip voice">' + esc(d.voice) + '</span>' : '') +
+          (flag ? '<span class="wchip warn">' + esc(flag) + '</span>' : '') +
           platforms + statusChip(d) +
         '</div>' +
       '</header>' +
@@ -120,12 +138,13 @@
     var name = person ? person.name : key;
     var voice = person ? person.voice : name;
     var social = (data.drafts || []).filter(function (d) { return d.voice === voice && isSocial(d); });
-    var isMike = key === 'mike';
+    var archive = (person && person.archive) || [];
+    var archiveLabel = (person && person.archiveLabel) || 'Archive';
     var section = activeSection[key] || 'social';
-    if (section === 'newsletters' && !isMike) section = 'social';
+    if (section === 'archive' && !archive.length) section = 'social';
 
     var sections = [['social', 'Potential social posts', social.length]];
-    if (isMike) sections.push(['newsletters', 'Newsletters', (data.newsletters || []).length]);
+    if (archive.length) sections.push(['archive', archiveLabel, archive.length]);
     sections.push(['voice', 'Voice reference', 0]);
 
     var subnav = '<div class="subnav" role="tablist" aria-label="' + esc(name) + ' sections">' +
@@ -140,14 +159,16 @@
       body = social.length
         ? '<div class="draft-list">' + social.map(function (d) { return draftCard(d, false); }).join('') + '</div>'
         : emptyState('No social drafts are waiting in ' + name + "'s voice right now.");
-    } else if (section === 'newsletters') {
-      var list = data.newsletters || [];
-      body = list.length
-        ? '<ul class="nlist">' + list.map(function (n) {
-            return '<li><a href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' +
-              (n.lastEdited ? '<span>' + esc(day(n.lastEdited)) + '</span>' : '') + '</li>';
-          }).join('') + '</ul>'
-        : emptyState('The newsletter archive is empty.');
+    } else if (section === 'archive') {
+      body = '<p class="wnote">Published work, kept for cadence and structure. ' +
+        'Style reference only — do not lift copy or company claims from it.</p>' +
+        '<ul class="nlist">' + archive.map(function (n) {
+          return '<li><a href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' +
+            (n.lastEdited ? '<span>' + esc(day(n.lastEdited)) + '</span>' : '') + '</li>';
+        }).join('') + '</ul>' +
+        (person && person.archiveUrl
+          ? '<a class="weekly-more" href="' + esc(person.archiveUrl) + '" target="_blank" rel="noopener noreferrer">Open the full archive ↗</a>'
+          : '');
     } else {
       body = '<div class="voice-doc">' + voiceHtml(person) + '</div>';
     }
@@ -171,11 +192,21 @@
 
   function renderEmail() {
     var drafts = (data.drafts || []).filter(isEmail);
+    var unlabelled = drafts.filter(function (d) { return !labelledEmail(d); }).length;
+    var warn = unlabelled
+      ? '<p class="wnote warn-note"><b>' + unlabelled + ' of these are not tagged Email in Notion.</b> ' +
+        'They were matched by their subject line or campaign instead. Setting Platform to Email on the ' +
+        'drafting bot makes this exact.</p>'
+      : '';
     $('email-view').innerHTML =
-      '<div class="whead"><div><p class="eyebrow">Shared queue</p><h2>Email drafts</h2></div></div>' +
-      '<p class="wnote">Written by the bots into the Content Queue. Nothing here is sent from this page — sending and approval stay with a person.</p>' +
+      '<div class="whead"><div><p class="eyebrow">Shared queue</p><h2>Email drafts</h2></div>' +
+      '<span class="wchip plain">' + drafts.length + ' drafts</span></div>' +
+      '<p class="wnote">Written by the bots into the Content Queue. Nothing is sent from this page — sending and approval stay with a person.</p>' +
+      warn +
       (drafts.length
-        ? '<div class="draft-list">' + drafts.map(function (d) { return draftCard(d, true); }).join('') + '</div>'
+        ? '<div class="draft-list">' + drafts.map(function (d) {
+            return draftCard(d, true, labelledEmail(d) ? '' : 'Untagged');
+          }).join('') + '</div>'
         : emptyState('No email drafts are waiting.'));
   }
 
