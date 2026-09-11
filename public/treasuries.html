@@ -191,15 +191,20 @@
         Array.prototype.forEach.call(document.querySelectorAll('#rows .entity-mark[data-slug]'), function (mark) {
           var url = found[mark.getAttribute('data-slug')];
           if (!url) return;
-          var img = new Image();
+          /* Attach first, then load. A detached image marked lazy never
+             fetches, so appending only on load would wait forever. It stays
+             hidden until it decodes so a failure never flashes over the
+             initials, and the initials are only dropped once it is showing. */
+          var img = document.createElement('img');
           img.alt = '';
-          img.loading = 'lazy';
+          img.hidden = true;
           img.onload = function () {
+            img.hidden = false;
             var text = mark.querySelector('.mark-text');
             if (text) text.hidden = true;
-            mark.appendChild(img);
           };
-          img.onerror = function () {};
+          img.onerror = function () { img.remove(); };
+          mark.appendChild(img);
           img.src = '/api/news-image?u=' + encodeURIComponent(url);
         });
       })
