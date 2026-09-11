@@ -66,6 +66,23 @@
   .feednote { margin:2px 0 0; font-size:12.5px; color:var(--muted); max-width:78ch; }
   #feed-stat .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--faint); margin-right:6px; vertical-align:1px; }
   #feed-stat .dot.on { background:var(--up); }
+
+  /* The flow chart card sized itself to the fund list beside it and left a
+     tall empty area. Let each card take its own height instead. */
+  #p-institutional .panelgrid { align-items:start; }
+  .flowbar { height:132px !important; position:relative; }
+  .flowbar::after { content:''; position:absolute; left:0; right:0; top:50%; border-top:1px dashed var(--border); pointer-events:none; }
+  .flowbar i { transition:opacity .15s; }
+  .flowbar i:hover { opacity:1; }
+
+  .issuer { position:relative; }
+  .issuer .mag { position:absolute; left:0; bottom:2px; height:2px; border-radius:1px; background:#27d3a5; opacity:.55; }
+  .issuer .mag.out { background:#d15a5a; }
+
+  .curvewrap { margin-top:6px; }
+  .curvewrap svg { display:block; width:100%; height:96px; overflow:visible; }
+  .curvefoot { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .dcell .trend { display:block; margin-top:4px; }
 </style>
 </head>
 <body>
@@ -80,24 +97,11 @@
     <span class="feedstate"><span class="pip" id="pip"></span><span id="feedstate">Loading…</span></span>
   </div>
   <div class="tabs" role="tablist" aria-label="Market structure sections">
-    <button role="tab" id="tab-institutional" aria-selected="true" aria-controls="p-institutional" data-t="institutional"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>ETF Inflows + Outflows</button>
-    <button role="tab" id="tab-derivatives" aria-selected="false" aria-controls="p-derivatives" data-t="derivatives" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
-    <button role="tab" id="tab-network" aria-selected="false" aria-controls="p-network" data-t="network" tabindex="-1"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
+    <button role="tab" id="tab-network" aria-selected="true" aria-controls="p-network" data-t="network"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/></svg></span>Network</button>
+    <button role="tab" id="tab-institutional" tabindex="-1" aria-selected="false" aria-controls="p-institutional" data-t="institutional"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 16h12M8 13h8M12 4l8 5H4z"/></svg></span>ETF Inflows + Outflows</button>
+    <button role="tab" id="tab-derivatives" tabindex="-1" aria-selected="false" aria-controls="p-derivatives" data-t="derivatives"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16c3-8 6 5 9-3s5-4 7-1"/></svg></span>Derivatives</button>
   </div>
-  <section id="p-institutional" role="tabpanel" aria-labelledby="tab-institutional" tabindex="0">
-    <p class="ctx">US spot Bitcoin ETF creations and redemptions. Daily tape compiled by TFTC from SoSoValue and Farside Investors. Figures are not a Satstreet view on demand.</p>
-    <div class="metrics" id="etf-kpis"></div>
-    <div class="panelgrid" style="margin-top:16px">
-      <div class="card" id="etf-tape"></div>
-      <div class="card" id="etf-issuers"></div>
-    </div>
-    <div class="card" id="etf-days" style="margin-top:16px"></div>
-  </section>
-  <section id="p-derivatives" role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0" hidden>
-    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a single venue and are not a view on the market.</p>
-    <div class="panelgrid" id="deriv"></div>
-  </section>
-  <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
+  <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0">
     <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
     <div class="metrics" id="net"></div>
     <section class="card" id="net-feed" style="margin-top:16px">
@@ -109,6 +113,19 @@
     <div class="card" id="net-fees" style="margin-top:16px"></div>
     <div class="card" id="net-blocks" style="margin-top:16px"></div>
     <div class="card" id="net-extra" style="margin-top:16px"></div>
+  </section>
+  <section id="p-institutional" hidden role="tabpanel" aria-labelledby="tab-institutional" tabindex="0">
+    <p class="ctx">US spot Bitcoin ETF creations and redemptions. Daily tape compiled by TFTC from SoSoValue and Farside Investors. Figures are not a Satstreet view on demand.</p>
+    <div class="metrics" id="etf-kpis"></div>
+    <div class="panelgrid" style="margin-top:16px">
+      <div class="card" id="etf-tape"></div>
+      <div class="card" id="etf-issuers"></div>
+    </div>
+    <div class="card" id="etf-days" style="margin-top:16px"></div>
+  </section>
+  <section id="p-derivatives" hidden role="tabpanel" aria-labelledby="tab-derivatives" tabindex="0">
+    <p class="ctx">What positioning looks like, rather than what price is doing. Figures describe a single venue and are not a view on the market.</p>
+    <div class="panelgrid" id="deriv"></div>
   </section>
   <div class="disclosure" id="disclosure"></div>
 </main>

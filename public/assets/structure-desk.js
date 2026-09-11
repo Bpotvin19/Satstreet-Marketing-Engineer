@@ -4,7 +4,7 @@
   var esc = S.esc, fmt = S.fmt;
   S.mountHeader('Structure');
 
-  var TABS = ['institutional', 'derivatives', 'network'];
+  var TABS = ['network', 'institutional', 'derivatives'];
   var loaded = {}, updated = {};
 
   var DISCLOSURE = {
@@ -68,6 +68,45 @@
     return '<abbr class="tip" title="' + esc(text) + '">' + esc(label) + '</abbr>';
   };
 
+  /* The futures curve. Annualised premium of each dated contract over the
+     index, plotted against days to expiry. Sloping up is contango, down is
+     backwardation, and the zero line is the thing to read it against. */
+  function curveChart(points) {
+    if (!points || points.length < 2) return '';
+    var w = 300, h = 96, padL = 6, padR = 6;
+    var vals = points.map(function (p) { return p.annualPct; });
+    var lo = Math.min.apply(null, vals.concat([0]));
+    var hi = Math.max.apply(null, vals.concat([0]));
+    if (hi - lo < 0.5) { hi += 0.25; lo -= 0.25; }
+    var span = hi - lo;
+    var maxDays = points[points.length - 1].days || 1;
+    var xOf = function (d) { return padL + (d / maxDays) * (w - padL - padR); };
+    var yOf = function (v) { return h - ((v - lo) / span) * h; };
+
+    var line = points.map(function (p, i) {
+      return (i ? 'L' : 'M') + xOf(p.days).toFixed(1) + ' ' + yOf(p.annualPct).toFixed(1);
+    }).join(' ');
+    var area = line + ' L' + xOf(maxDays).toFixed(1) + ' ' + yOf(lo).toFixed(1) +
+               ' L' + xOf(points[0].days).toFixed(1) + ' ' + yOf(lo).toFixed(1) + ' Z';
+    var zero = yOf(0).toFixed(1);
+    var dots = points.map(function (p) {
+      return '<circle cx="' + xOf(p.days).toFixed(1) + '" cy="' + yOf(p.annualPct).toFixed(1) +
+        '" r="2.4" fill="#0f8a63"><title>' + esc(p.label) + ' · ' + p.annualPct.toFixed(2) +
+        '% annualised · ' + p.days + 'd</title></circle>';
+    }).join('');
+
+    return '<div class="curvewrap"><svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="Futures curve">' +
+      '<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#0f8a63" stop-opacity=".22"/>' +
+      '<stop offset="100%" stop-color="#0f8a63" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + area + '" fill="url(#cg)"/>' +
+      '<line x1="0" y1="' + zero + '" x2="' + w + '" y2="' + zero + '" stroke="#c3cedb" stroke-width="1" stroke-dasharray="3 3"/>' +
+      '<path d="' + line + '" fill="none" stroke="#0f8a63" stroke-width="2" stroke-linejoin="round"/>' + dots +
+      '</svg><div class="curvefoot"><span>' + esc(points[0].label) + '</span>' +
+      '<span>' + (hi > 0 ? '+' : '') + hi.toFixed(1) + '% to ' + (lo > 0 ? '+' : '') + lo.toFixed(1) + '% annualised</span>' +
+      '<span>' + esc(points[points.length - 1].label) + '</span></div></div>';
+  }
+
   function loadDerivatives() {
     $('deriv').innerHTML = '<div class="card">' + S.skeleton(4, 18) + '</div><div class="card">' + S.skeleton(4, 18) + '</div>';
     fetch('/api/structure', { cache: 'no-store' })
@@ -79,11 +118,20 @@
           var cell = function (k, tipText, val, cls, sub) {
             return '<div class="dcell"><div class="k">' + tip(k, tipText) + '</div><div class="v ' + (cls || '') + '">' + val + '</div><div class="s">' + esc(sub || '') + '</div></div>';
           };
-          return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2></header><div class="dgrid">' +
-            cell('Funding', 'The periodic payment between long and short holders of a perpetual contract, shown annualised from the venue\u2019s 8-hour rate. Positive means long holders are paying short holders.', fmt.pct(f), fmt.dir(f), f === null ? '' : f > 0 ? 'longs paying shorts' : f < 0 ? 'shorts paying longs' : 'flat') +
+          var spark = function (series, cls) {
+            return series && series.length > 3 ? '<span class="trend">' + S.spark(series, cls, 120, 24) + '</span>' : '';
+          };
+          return '<div class="card"><header><h2>' + esc(a.asset) + ' perpetual</h2>' +
+            (a.curve && a.curve.length > 1
+              ? '<span class="eyebrow">' + (a.curve[a.curve.length - 1].annualPct >= a.curve[0].annualPct ? 'contango' : 'backwardation') + '</span>'
+              : '') +
+            '</header>' + curveChart(a.curve) + '<div class="dgrid">' +
+            cell('Funding', 'The periodic payment between long and short holders of a perpetual contract, shown annualised from the venue\u2019s 8-hour rate. Positive means long holders are paying short holders.', fmt.pct(f), fmt.dir(f), (f === null ? '' : f > 0 ? 'longs paying shorts' : f < 0 ? 'shorts paying longs' : 'flat')) +
             cell('Basis', 'The perpetual contract\u2019s mark price relative to the venue\u2019s spot index, in percent. A positive basis means the contract trades above spot.', bs === null ? '\u2014' : (bs > 0 ? '+' : '') + bs.toFixed(3) + '%', fmt.dir(bs), 'perpetual vs spot') +
             cell('Open interest', 'The total notional value of contracts currently open at this venue. It measures how much is committed, not direction.', fmt.compact(a.openInterestUsd), '', 'notional') +
             cell('Implied volatility', 'The venue\u2019s 30-day volatility index, derived from options pricing. It reflects expected magnitude of movement, not direction.', a.impliedVol === null ? '\u2014' : a.impliedVol.toFixed(1), '', '30-day index') +
+            (spark(a.volHistory, 'up') ? '<div class="dcell"><div class="k">Seven days</div>' + spark(a.volHistory, 'up') + '<div class="s">implied volatility</div></div>' : '') +
+            (spark(a.fundingHistory, 'up') ? '<div class="dcell"><div class="k">Seven days</div>' + spark(a.fundingHistory, 'up') + '<div class="s">funding, annualised</div></div>' : '') +
             '</div><div class="venue"><span>Venue: ' + esc(d.venue) + '</span><span>24h volume ' + fmt.compact(a.volume24hUsd) + '</span><span>Updated ' + fmt.time(d.asOf) + '</span></div></div>';
         }).join('');
         updated.derivatives = new Date(d.asOf).getTime();
@@ -312,7 +360,7 @@
     var vals = days.map(function(d){ return d.flowUsd; }).filter(function(n){ return isFinite(n); });
     var max = Math.max.apply(null, vals.map(Math.abs).concat([1]));
     return '<div class="flowbar" aria-hidden="true">' + days.map(function(d){
-      var h = Math.max(3, Math.round(Math.abs(d.flowUsd)/max*70));
+      var h = Math.max(3, Math.round(Math.abs(d.flowUsd)/max*62));
       return '<i class="'+(d.flowUsd<0?'out':'')+'" style="height:'+h+'px" title="'+esc(d.date)+' '+money(d.flowUsd)+'"></i>';
     }).join('') + '</div>';
   }
@@ -343,8 +391,13 @@
         $('etf-issuers').innerHTML = '<header><h2>Latest session by fund</h2><span class="eyebrow">Same-day prints</span></header>' +
           (issuers.length? issuers.map(function(x){
             var print = x.lastFlowUsd != null ? x.lastFlowUsd : x.aumUsd;
+            var peak = Math.max.apply(null, issuers.map(function(y){
+              var v = y.lastFlowUsd != null ? y.lastFlowUsd : y.aumUsd; return Math.abs(Number(v)||0);
+            }).concat([1]));
+            var w = Math.round(Math.abs(Number(print)||0)/peak*100);
             return '<div class="issuer"><div><strong>'+esc(x.ticker)+'</strong><div class="s">'+esc(x.name||'')+'</div></div>' +
-              '<div style="text-align:right"><div class="v" style="font-size:16px">'+money(print)+'</div></div></div>';
+              '<div style="text-align:right"><div class="v" style="font-size:16px">'+money(print)+'</div></div>' +
+              '<span class="mag'+(Number(print)<0?' out':'')+'" style="width:'+w+'%"></span></div>';
           }).join('') : '<p class="ctx">Per-fund prints were not included in this refresh.</p>') +
           '<div class="venue"><span>Updated '+fmt.time(d.asOf)+'</span></div>';
         var rows = d.days.slice(-12).reverse();
@@ -368,5 +421,5 @@
   }
 
   var LOAD = { institutional: loadInstitutional, derivatives: loadDerivatives, network: loadNetwork };
-  show('institutional');
+  show('network');
 })();
