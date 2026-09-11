@@ -10,6 +10,8 @@ type Row = {
   name: string
   slug?: string
   profileUrl?: string
+  logo?: string
+  website?: string
   ticker: string
   country?: string
   holdings: number
@@ -35,6 +37,25 @@ const text = (html: string) => html
   .replace(/&nbsp;/g, ' ')
   .replace(/\s+/g, ' ')
   .trim()
+
+/* The Ethereum feed is community-edited, so a URL from it is treated as
+   untrusted input: anything that is not plainly http(s) is dropped rather
+   than rendered as a link. Logos must be https so the page stays secure. */
+const linkUrl = (value: unknown): string | undefined => {
+  const raw = String(value ?? '').trim()
+  if (!/^https?:\/\//i.test(raw)) return undefined
+  try {
+    const url = new URL(raw)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const imageUrl = (value: unknown): string | undefined => {
+  const url = linkUrl(value)
+  return url && url.startsWith('https://') ? url : undefined
+}
 
 const number = (value: string) => {
   const n = Number(value.replace(/[^0-9.-]/g, ''))
@@ -124,6 +145,8 @@ async function ethereum() {
     rank: String(index + 1),
     name: String(company.name || 'Unknown'),
     ticker: String(company.ticker || '—'),
+    logo: imageUrl(company.logo),
+    website: linkUrl(company.website),
     holdings: Number(company.reserve),
     value: price === null ? null : Number(company.reserve) * price,
     change: Number.isFinite(Number(company.pctDiff)) ? Number(company.pctDiff) : null,
