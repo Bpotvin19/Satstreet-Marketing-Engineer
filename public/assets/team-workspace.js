@@ -138,13 +138,13 @@
     var name = person ? person.name : key;
     var voice = person ? person.voice : name;
     var social = (data.drafts || []).filter(function (d) { return d.voice === voice && isSocial(d); });
-    var archive = (person && person.archive) || [];
-    var archiveLabel = (person && person.archiveLabel) || 'Archive';
+    var archives = (person && person.archives) || [];
     var section = activeSection[key] || 'social';
-    if (section === 'archive' && !archive.length) section = 'social';
+    var chosenArchive = /^archive:(\d+)$/.exec(section);
+    if (chosenArchive && !archives[Number(chosenArchive[1])]) { section = 'social'; chosenArchive = null; }
 
     var sections = [['social', 'Potential social posts', social.length]];
-    if (archive.length) sections.push(['archive', archiveLabel, archive.length]);
+    archives.forEach(function (a, i) { sections.push(['archive:' + i, a.label, a.items.length]); });
     sections.push(['voice', 'Voice reference', 0]);
 
     var subnav = '<div class="subnav" role="tablist" aria-label="' + esc(name) + ' sections">' +
@@ -159,16 +159,16 @@
       body = social.length
         ? '<div class="draft-list">' + social.map(function (d) { return draftCard(d, false); }).join('') + '</div>'
         : emptyState('No social drafts are waiting in ' + name + "'s voice right now.");
-    } else if (section === 'archive') {
+    } else if (chosenArchive) {
+      var group = archives[Number(chosenArchive[1])];
       body = '<p class="wnote">Published work, kept for cadence and structure. ' +
         'Style reference only — do not lift copy or company claims from it.</p>' +
-        '<ul class="nlist">' + archive.map(function (n) {
+        '<ul class="nlist">' + group.items.map(function (n) {
           return '<li><a href="' + esc(n.url) + '" target="_blank" rel="noopener noreferrer">' + esc(n.title) + '</a>' +
             (n.lastEdited ? '<span>' + esc(day(n.lastEdited)) + '</span>' : '') + '</li>';
         }).join('') + '</ul>' +
-        (person && person.archiveUrl
-          ? '<a class="weekly-more" href="' + esc(person.archiveUrl) + '" target="_blank" rel="noopener noreferrer">Open the full archive ↗</a>'
-          : '');
+        '<a class="weekly-more" href="' + esc(group.url) + '" target="_blank" rel="noopener noreferrer">Open ' +
+        esc(group.label.toLowerCase()) + ' in Notion ↗</a>';
     } else {
       body = '<div class="voice-doc">' + voiceHtml(person) + '</div>';
     }
