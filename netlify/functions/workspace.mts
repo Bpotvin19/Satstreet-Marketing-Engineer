@@ -32,33 +32,37 @@ const LINKEDIN_FILTER = {
 }
 
 /* `voice` matches the Content Queue "Primary Voice" option exactly — that is
-   what ties a person's tab to their drafts. `archive` is an optional page of
-   published work; its child pages become that person's back catalogue. */
+   what ties a person's tab to their drafts. `archives` is an ordered list of
+   pages of published work; each one's child pages become a section in that
+   person's tab. */
 const PEOPLE = [
   {
     key: 'ben', name: 'Ben', voice: 'Ben',
     voiceTitle: "Ben's Brain", page: '3d6e562f-a5bd-8189-857d-e5c974793692',
-    archive: '', archiveLabel: '',
+    archives: [] as { page: string; label: string }[],
   },
   {
     key: 'george', name: 'George', voice: 'George',
     voiceTitle: 'George McBride Voice', page: '3c7e562f-a5bd-8134-a7e9-dac1c0b44cea',
-    archive: '', archiveLabel: '',
+    archives: [] as { page: string; label: string }[],
   },
   {
     key: 'dan', name: 'Dan', voice: 'Dan',
     voiceTitle: 'Dan Wright — LinkedIn Voice', page: '3d7e562f-a5bd-81d9-a986-ce7d8313841c',
-    archive: '3d7e562f-a5bd-8191-899e-c8f81df38244', archiveLabel: 'Past posts',
+    archives: [{ page: '3d7e562f-a5bd-8191-899e-c8f81df38244', label: 'Past posts' }],
   },
   {
     key: 'jon', name: 'Jon', voice: 'Jon',
     voiceTitle: 'Jon Lister Voice', page: '3c7e562f-a5bd-814e-baf4-f58cc1fd4f46',
-    archive: '3d8e562f-a5bd-8199-b6ef-ffbaf8fbebb0', archiveLabel: 'Past posts',
+    archives: [{ page: '3d8e562f-a5bd-8199-b6ef-ffbaf8fbebb0', label: 'Past posts' }],
   },
   {
     key: 'mike', name: 'Mike', voice: 'Mike',
     voiceTitle: 'Mike Nasser Voice', page: '3c7e562f-a5bd-8141-b5a4-f587115aa12b',
-    archive: NEWSLETTER_ARCHIVE, archiveLabel: 'Newsletters',
+    archives: [
+      { page: NEWSLETTER_ARCHIVE, label: 'Newsletters' },
+      { page: '3d8e562f-a5bd-8154-be31-d886eb65705b', label: 'Past posts' },
+    ],
   },
 ]
 
@@ -273,16 +277,19 @@ export default async function handler(request: Request): Promise<Response> {
         } catch (e) {
           error = e instanceof Error ? e.message : 'Voice reference unavailable.'
         }
-        let archive: any[] = []
-        if (person.archive) {
-          try { archive = await childPages(person.archive) } catch { archive = [] }
-        }
+        /* One archive failing should cost that section, not the tab. */
+        const archives = await Promise.all(
+          person.archives.map(async (entry) => {
+            let items: any[] = []
+            try { items = await childPages(entry.page) } catch { items = [] }
+            return { label: entry.label, url: pageUrl(entry.page), items }
+          }),
+        )
         return {
           ...person,
           url: pageUrl(person.page),
-          archiveUrl: person.archive ? pageUrl(person.archive) : '',
+          archives: archives.filter((a) => a.items.length),
           lines,
-          archive,
           error,
         }
       }),
