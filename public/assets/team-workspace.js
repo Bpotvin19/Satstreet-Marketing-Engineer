@@ -16,7 +16,7 @@
   var esc = Terminal.esc;
   var $ = function (id) { return document.getElementById(id); };
 
-  var PEOPLE = ['ben', 'george', 'dan', 'mike'];
+  var PEOPLE = ['ben', 'george', 'dan', 'mike', 'jon'];
   var COMPLIANCE = 'levy';
   var OWNERS = ['Ben', 'George', 'Dan', 'Mike'];
   var data = null;
