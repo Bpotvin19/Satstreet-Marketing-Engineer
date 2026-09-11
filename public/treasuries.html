@@ -179,8 +179,33 @@
       ? metric('Reported ETH reserves', compact(summary.holdings,'ETH'), 'across active entities','eth') + metric('Indicative value', money(summary.value), 'at current ETH reference','value') + metric('Tracked entities', String(summary.entities), 'active source records','entities') + metric('Share of supply', Number(summary.supply).toFixed(2) + '%', 'estimated circulating supply','reference',true)
       : metric('Public-company BTC', String(summary.holdings), 'reported holdings','asset') + metric('Indicative value', String(summary.value), 'reported by source','value') + metric('Public companies', String(summary.entities), 'tracked entities','entities') + metric('BTC reference', String(summary.price), String(summary.supply) + ' asset dominance','reference',true);
 
-  /* The leaderboard has no images, so logos are resolved separately and
-     dropped in once they arrive. A row without one keeps its initials. */
+  /* Ethereum entities carry their logo in the feed, so those paint straight
+     away. Bitcoin rows have none in the leaderboard and are resolved from
+     their profile pages afterwards. Either way a row without one keeps its
+     initials. */
+  function installLogo(mark, url) {
+    /* Attach first, then load. A detached image marked lazy never fetches,
+       so appending only on load would wait forever. It stays hidden until it
+       decodes so a failure never flashes over the initials. */
+    var img = document.createElement('img');
+    img.alt = '';
+    img.hidden = true;
+    img.onload = function () {
+      img.hidden = false;
+      var text = mark.querySelector('.mark-text');
+      if (text) text.hidden = true;
+    };
+    img.onerror = function () { img.remove(); };
+    mark.appendChild(img);
+    img.src = '/api/news-image?u=' + encodeURIComponent(url);
+  }
+
+  function paintFeedLogos() {
+    Array.prototype.forEach.call(document.querySelectorAll('#rows .entity-mark[data-logo]'), function (mark) {
+      installLogo(mark, mark.getAttribute('data-logo'));
+    });
+  }
+
   function hydrateLogos(rows) {
     var slugs = rows.map(function (r) { return r.slug; }).filter(Boolean);
     if (!slugs.length) return;
@@ -191,21 +216,7 @@
         Array.prototype.forEach.call(document.querySelectorAll('#rows .entity-mark[data-slug]'), function (mark) {
           var url = found[mark.getAttribute('data-slug')];
           if (!url) return;
-          /* Attach first, then load. A detached image marked lazy never
-             fetches, so appending only on load would wait forever. It stays
-             hidden until it decodes so a failure never flashes over the
-             initials, and the initials are only dropped once it is showing. */
-          var img = document.createElement('img');
-          img.alt = '';
-          img.hidden = true;
-          img.onload = function () {
-            img.hidden = false;
-            var text = mark.querySelector('.mark-text');
-            if (text) text.hidden = true;
-          };
-          img.onerror = function () { img.remove(); };
-          mark.appendChild(img);
-          img.src = '/api/news-image?u=' + encodeURIComponent(url);
+          installLogo(mark, url);
         });
       })
       .catch(function () {});
@@ -215,8 +226,9 @@
     $('rows').innerHTML = d.rows.slice(0,20).map(function (r) {
       var extra = isEth ? (r.change === null ? '—' : (r.change > 0 ? '+' : '') + Number(r.change).toFixed(2) + '%') : (r.nav ? r.nav + '×' : '—');
       var extraClass = isEth && r.change !== null ? (r.change > 0 ? 'up' : r.change < 0 ? 'down' : 'flat') : '';
-      return '<tr><td class="rank">' + S.esc(r.rank) + '</td><td><span class="entity">' + '<span class="entity-mark"' + (r.slug ? ' data-slug="' + S.esc(r.slug) + '"' : '') + '>' + '<span class="mark-text">' + S.esc((r.ticker || r.name).slice(0,2).toUpperCase()) + '</span></span>' + '<span><strong>' + (r.profileUrl ? '<a href="' + S.esc(r.profileUrl) + '" target="_blank" rel="noopener noreferrer">' + S.esc(r.name) + '</a>' : S.esc(r.name)) + '</strong><small>' + S.esc((r.country ? r.country + ' · ' : '') + (r.ticker || '—')) + '</small></span></span></td><td><strong>' + compact(r.holdings,unit) + '</strong>' + (isEth && r.value ? '<br><small style="color:var(--muted)">' + money(r.value) + '</small>' : '') + '</td><td class="' + extraClass + '">' + S.esc(extra) + '</td><td style="color:var(--muted)">' + S.esc(isEth ? date(r.asOf) : 'Latest disclosure') + '</td></tr>';
+      return '<tr><td class="rank">' + S.esc(r.rank) + '</td><td><span class="entity">' + '<span class="entity-mark"' + (r.slug ? ' data-slug="' + S.esc(r.slug) + '"' : '') + (r.logo ? ' data-logo="' + S.esc(r.logo) + '"' : '') + '>' + '<span class="mark-text">' + S.esc((r.ticker || r.name).slice(0,2).toUpperCase()) + '</span></span>' + '<span><strong>' + (function (href) { return href ? '<a href="' + S.esc(href) + '" target="_blank" rel="noopener noreferrer">' + S.esc(r.name) + '</a>' : S.esc(r.name); })(r.profileUrl || r.website) + '</strong><small>' + S.esc((r.country ? r.country + ' · ' : '') + (r.ticker || '—')) + '</small></span></span></td><td><strong>' + compact(r.holdings,unit) + '</strong>' + (isEth && r.value ? '<br><small style="color:var(--muted)">' + money(r.value) + '</small>' : '') + '</td><td class="' + extraClass + '">' + S.esc(extra) + '</td><td style="color:var(--muted)">' + S.esc(isEth ? date(r.asOf) : 'Latest disclosure') + '</td></tr>';
     }).join('');
+    paintFeedLogos();
     hydrateLogos(d.rows.slice(0,20));
 
     var top = d.rows.slice(0,7), max = top.length ? top[0].holdings : 1, denominator=total(summary.holdings)||d.rows.reduce(function(n,r){return n+r.holdings;},0), share=top.length?Math.min(100,top[0].holdings/denominator*100):0;
