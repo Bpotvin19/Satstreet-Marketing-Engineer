@@ -51,6 +51,11 @@ const PEOPLE = [
     archive: '3d7e562f-a5bd-8191-899e-c8f81df38244', archiveLabel: 'Past posts',
   },
   {
+    key: 'jon', name: 'Jon', voice: 'Jon',
+    voiceTitle: 'Jon Lister Voice', page: '3c7e562f-a5bd-814e-baf4-f58cc1fd4f46',
+    archive: '3d8e562f-a5bd-8199-b6ef-ffbaf8fbebb0', archiveLabel: 'Past posts',
+  },
+  {
     key: 'mike', name: 'Mike', voice: 'Mike',
     voiceTitle: 'Mike Nasser Voice', page: '3c7e562f-a5bd-8141-b5a4-f587115aa12b',
     archive: NEWSLETTER_ARCHIVE, archiveLabel: 'Newsletters',
