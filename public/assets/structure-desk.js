@@ -364,9 +364,49 @@
       return '<i class="'+(d.flowUsd<0?'out':'')+'" style="height:'+h+'px" title="'+esc(d.date)+' '+money(d.flowUsd)+'"></i>';
     }).join('') + '</div>';
   }
+  /* Cumulative net flow since the US spot products launched. The daily bars
+     above show how noisy the tape is; this shows where it actually got to,
+     including the stretch it spent below zero. */
+  function cumulativeChart(days) {
+    if (!days || days.length < 5) return '';
+    var w = 600, h = 150;
+    var run = 0;
+    var series = days.map(function (d) { run += Number(d.flowUsd) || 0; return run; });
+    var lo = Math.min.apply(null, series.concat([0]));
+    var hi = Math.max.apply(null, series.concat([0]));
+    if (hi - lo < 1) hi = lo + 1;
+    var xOf = function (i) { return (i / (series.length - 1)) * w; };
+    var yOf = function (v) { return h - ((v - lo) / (hi - lo)) * h; };
+
+    var line = series.map(function (v, i) {
+      return (i ? 'L' : 'M') + xOf(i).toFixed(1) + ' ' + yOf(v).toFixed(1);
+    }).join(' ');
+    var base = yOf(Math.max(lo, 0)).toFixed(1);
+    var area = line + ' L' + w + ' ' + base + ' L0 ' + base + ' Z';
+
+    var peak = series.indexOf(hi);
+    var last = series[series.length - 1];
+    var zero = yOf(0).toFixed(1);
+
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="Cumulative net flow since launch">' +
+      '<defs><linearGradient id="cumg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#27d3a5" stop-opacity=".30"/>' +
+      '<stop offset="100%" stop-color="#27d3a5" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + area + '" fill="url(#cumg)"/>' +
+      (lo < 0 ? '<line x1="0" y1="' + zero + '" x2="' + w + '" y2="' + zero + '" stroke="#c3cedb" stroke-width="1" stroke-dasharray="3 3"/>' : '') +
+      '<path d="' + line + '" fill="none" stroke="#17a37d" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>' +
+      '<circle cx="' + xOf(peak).toFixed(1) + '" cy="' + yOf(hi).toFixed(1) + '" r="3" fill="#17a37d" opacity=".55"/>' +
+      '<circle cx="' + xOf(series.length - 1).toFixed(1) + '" cy="' + yOf(last).toFixed(1) + '" r="3.5" fill="#17a37d"/>' +
+      '</svg>' +
+      '<div class="cumfoot"><span>' + esc(days[0].date) + '</span>' +
+      '<span>peak <b>' + money(hi) + '</b> · ' + esc(days[peak].date) + '</span>' +
+      '<span>now <b>' + money(last) + '</b></span></div>';
+  }
+
   function loadInstitutional() {
     $('etf-kpis').innerHTML = Array(4).join('x').split('x').map(function(){ return '<div class="metric">'+S.skeleton(2,16)+'</div>'; }).join('');
     $('etf-tape').innerHTML = S.skeleton(4,16);
+    $('etf-cumulative').innerHTML = S.skeleton(4,16);
     $('etf-issuers').innerHTML = S.skeleton(4,16);
     $('etf-days').innerHTML = S.skeleton(6,14);
     fetch('/api/etf', { cache: 'no-store' })
@@ -387,6 +427,10 @@
         $('etf-tape').innerHTML = '<header><h2>Daily net flow</h2><span class="eyebrow">USD creations minus redemptions</span></header>' +
           flowBars(recent) +
           '<div class="venue"><span>Source: '+esc(d.source||'TFTC')+'</span><span>'+esc(recent[0].date)+' \u2192 '+esc(recent[recent.length-1].date)+'</span></div>';
+        $('etf-cumulative').innerHTML =
+          '<header><h2>Cumulative net flow</h2><span class="eyebrow">since launch · ' + d.days.length + ' sessions</span></header>' +
+          cumulativeChart(d.days);
+
         var issuers = (d.issuers||[]).slice(0,8);
         $('etf-issuers').innerHTML = '<header><h2>Latest session by fund</h2><span class="eyebrow">Same-day prints</span></header>' +
           (issuers.length? issuers.map(function(x){
@@ -413,6 +457,7 @@
       .catch(function(e){
         $('etf-kpis').innerHTML = '';
         $('etf-tape').innerHTML = S.errorState('ETF flow data unavailable', e.message, 'retry-i');
+        $('etf-cumulative').innerHTML = '';
         $('etf-issuers').innerHTML = '';
         $('etf-days').innerHTML = '';
         updated.institutional = 'error'; stamp('institutional');

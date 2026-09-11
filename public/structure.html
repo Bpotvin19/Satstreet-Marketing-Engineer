@@ -83,6 +83,11 @@
   .curvewrap svg { display:block; width:100%; height:96px; overflow:visible; }
   .curvefoot { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:2px; }
   .dcell .trend { display:block; margin-top:4px; }
+
+  .etf-left { display:grid; gap:16px; align-content:start; min-width:0; }
+  #etf-cumulative svg { display:block; width:100%; height:150px; overflow:visible; margin-top:8px; }
+  .cumfoot { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:6px; font-size:11px; color:var(--muted); }
+  .cumfoot b { color:var(--ink); font-family:var(--font-data); font-size:12px; }
 </style>
 </head>
 <body>
@@ -118,7 +123,10 @@
     <p class="ctx">US spot Bitcoin ETF creations and redemptions. Daily tape compiled by TFTC from SoSoValue and Farside Investors. Figures are not a Satstreet view on demand.</p>
     <div class="metrics" id="etf-kpis"></div>
     <div class="panelgrid" style="margin-top:16px">
-      <div class="card" id="etf-tape"></div>
+      <div class="etf-left">
+        <div class="card" id="etf-tape"></div>
+        <div class="card" id="etf-cumulative"></div>
+      </div>
       <div class="card" id="etf-issuers"></div>
     </div>
     <div class="card" id="etf-days" style="margin-top:16px"></div>
