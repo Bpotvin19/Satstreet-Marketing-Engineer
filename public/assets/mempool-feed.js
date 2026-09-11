@@ -41,10 +41,16 @@
 
   /* Area proportional to size would make a 100 kB transaction a thousand
      times a 100 byte one and nothing else would be visible. Square root
-     keeps the comparison honest and the picture readable. */
+     keeps the comparison honest and the picture readable.
+
+     Sides are then snapped to even numbers. Arbitrary fractional sizes can
+     never tile without leaving slivers; a small set of even sizes packs
+     flush, which is what makes the block look built rather than piled. */
+  var STEP = 2;
   function sideFor(vsize) {
-    var s = Math.sqrt(Math.max(1, vsize)) * 0.55;
-    return Math.max(3, Math.min(26, s));
+    var raw = Math.sqrt(Math.max(1, vsize)) * 0.55;
+    var snapped = Math.round(raw / STEP) * STEP;
+    return Math.max(4, Math.min(26, snapped));
   }
 
   function feeOf(tx) {
@@ -67,7 +73,7 @@
   function create(canvas, onStats) {
     var ctx = canvas.getContext('2d');
     var flying = [];
-    var settled = [];
+    var settled = [];   /* reassigned by repack */
     var ws = null;
     var frame = null;
     var retry = 0;
@@ -96,28 +102,92 @@
       repack();
     }
 
-    /* Settled squares fill the left pane in columns, bottom upwards, which
-       reads as a block being filled rather than a scatter. */
-    function repack() {
-      var x = PAD;
-      var y = height - PAD;
-      var columnWidth = 0;
-      var limit = Math.max(120, width * 0.42);
-      for (var i = 0; i < settled.length; i += 1) {
-        var s = settled[i];
-        if (y - s.side < PAD) {
-          x += columnWidth + PAD;
-          columnWidth = 0;
-          y = height - PAD;
+    /* Skyline packing. The block keeps a profile of its current top edge,
+       and each arriving square takes the lowest place it fits, leftmost on
+       a tie. Squares sit flush against their neighbours in both directions,
+       so a small one drops into the notch beside a large one instead of
+       leaving a dead strip beside it — which is what column packing did.
+
+       Segments are {x, w, y}, with y measured upward from the floor. */
+    var sky = [];
+    var blockWidth = 0;
+
+    function floorWidth() {
+      return Math.max(120, Math.round(width * 0.42));
+    }
+
+    function resetSky() {
+      blockWidth = floorWidth();
+      sky = [{ x: 0, w: blockWidth, y: 0 }];
+    }
+
+    /* Lowest resting place for a square of this side, or null if the block
+       has no room left. */
+    function findSpot(side) {
+      var bestY = Infinity;
+      var bestX = 0;
+      for (var i = 0; i < sky.length; i += 1) {
+        var x = sky[i].x;
+        if (x + side > blockWidth) break;
+        var top = 0;
+        var covered = 0;
+        var j = i;
+        while (covered < side && j < sky.length) {
+          if (sky[j].y > top) top = sky[j].y;
+          covered += sky[j].w;
+          j += 1;
         }
-        if (x + s.side > limit) { s.hidden = true; continue; }
-        s.hidden = false;
-        y -= s.side;
-        s.x = x;
-        s.y = y;
-        y -= PAD;
-        if (s.side > columnWidth) columnWidth = s.side;
+        if (covered < side) break;
+        if (top + side > height) continue;
+        if (top < bestY) { bestY = top; bestX = x; }
       }
+      return bestY === Infinity ? null : { x: bestX, y: bestY };
+    }
+
+    /* Raise the profile across the square's footprint, then merge any
+       neighbours that now sit at the same height. */
+    function raise(x, y, side) {
+      var top = y + side;
+      var next = [];
+      for (var i = 0; i < sky.length; i += 1) {
+        var seg = sky[i];
+        var end = seg.x + seg.w;
+        if (end <= x || seg.x >= x + side) { next.push(seg); continue; }
+        if (seg.x < x) next.push({ x: seg.x, w: x - seg.x, y: seg.y });
+        if (end > x + side) next.push({ x: x + side, w: end - (x + side), y: seg.y });
+      }
+      next.push({ x: x, w: side, y: top });
+      next.sort(function (a, b) { return a.x - b.x; });
+
+      var merged = [];
+      for (var k = 0; k < next.length; k += 1) {
+        var last = merged[merged.length - 1];
+        if (last && last.y === next[k].y && last.x + last.w === next[k].x) last.w += next[k].w;
+        else merged.push(next[k]);
+      }
+      sky = merged;
+    }
+
+    /* Seat one square. Returns false when the block is full. */
+    function seat(item) {
+      var spot = findSpot(item.side);
+      if (!spot) return false;
+      raise(spot.x, spot.y, item.side);
+      item.x = spot.x;
+      item.y = height - spot.y - item.side;
+      item.hidden = false;
+      return true;
+    }
+
+    /* Only on resize, a new block, or after making room. Arrivals are
+       seated incrementally, so this is not on the hot path. */
+    function repack() {
+      resetSky();
+      var kept = [];
+      for (var i = 0; i < settled.length; i += 1) {
+        if (seat(settled[i])) kept.push(settled[i]);
+      }
+      settled = kept;
     }
 
     function add(tx) {
@@ -151,15 +221,21 @@
     }
 
     function land(item) {
+      if (!seat(item)) {
+        /* Block is full. Drop the oldest fifth and rebuild, which is rare
+           enough not to matter and keeps the picture moving. */
+        settled = settled.slice(Math.ceil(settled.length * 0.2));
+        repack();
+        if (!seat(item)) return;
+      }
       settled.push(item);
-      if (settled.length > MAX_LIVE) settled.shift();
-      repack();
+      if (settled.length > MAX_LIVE) { settled.shift(); repack(); }
     }
 
     function clearBlock() {
-      settled.length = 0;
+      settled = [];
       sizeTotal = 0;
-      repack();
+      resetSky();
     }
 
     function stats() {
@@ -178,7 +254,7 @@
       ctx.clearRect(0, 0, width, height);
 
       /* The edge of the block being packed. */
-      var limit = Math.max(120, width * 0.42);
+      var limit = blockWidth || floorWidth();
       ctx.strokeStyle = 'rgba(120,140,160,.28)';
       ctx.setLineDash([3, 4]);
       ctx.beginPath();
@@ -192,7 +268,9 @@
         var s = settled[i];
         if (s.hidden) continue;
         ctx.fillStyle = s.tone;
-        ctx.fillRect(s.x, s.y, s.side, s.side);
+        /* Packed flush; the single pixel comes off the drawn square, not
+           the footprint, so the grid reads without opening real gaps. */
+        ctx.fillRect(s.x, s.y, s.side - 1, s.side - 1);
       }
 
       for (i = 0; i < flying.length; i += 1) {
@@ -209,7 +287,7 @@
       for (var i = flying.length - 1; i >= 0; i -= 1) {
         var f = flying[i];
         f.x += f.vx;
-        if (f.x <= Math.max(120, width * 0.42)) {
+        if (f.x <= (blockWidth || floorWidth())) {
           flying.splice(i, 1);
           land(f);
         }
