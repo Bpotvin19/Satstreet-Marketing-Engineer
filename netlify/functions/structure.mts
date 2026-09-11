@@ -37,6 +37,13 @@ interface Structure {
   /** The venue's 30-day implied volatility index. */
   impliedVol: number | null
   volume24hUsd: number | null
+  /** Annualised premium of each dated future over the index, by expiry.
+      Upward sloping is contango, downward is backwardation. */
+  curve: { label: string; days: number; annualPct: number }[]
+  /** Recent 30-day implied volatility, oldest first. */
+  volHistory: number[]
+  /** Recent funding, annualised, oldest first. */
+  fundingHistory: number[]
   error?: string
 }
 
@@ -65,18 +72,99 @@ async function impliedVol(currency: string): Promise<number | null> {
   }
 }
 
+/* Deribit names dated futures BTC-27NOV26. The annualised premium over the
+   index is what says whether the curve is in contango, and it is the only
+   honest way to compare a September contract with a June one. */
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+
+function expiryOf(name: string): Date | null {
+  const m = /-(\d{1,2})([A-Z]{3})(\d{2})$/.exec(name)
+  if (!m) return null
+  const month = MONTHS.indexOf(m[2])
+  if (month < 0) return null
+  return new Date(Date.UTC(2000 + Number(m[3]), month, Number(m[1]), 8, 0, 0))
+}
+
+async function curveFor(currency: string, index: number | null): Promise<Structure['curve']> {
+  if (!index || !isFinite(index)) return []
+  try {
+    const res: any = await json(`get_book_summary_by_currency?currency=${currency}&kind=future`)
+    const rows: any[] = Array.isArray(res) ? res : []
+    const now = Date.now()
+    return rows
+      .map((row) => {
+        const expiry = expiryOf(String(row.instrument_name || ''))
+        const mark = Number(row.mark_price)
+        if (!expiry || !isFinite(mark)) return null
+        const days = (expiry.getTime() - now) / 86400000
+        if (days <= 0.5) return null
+        return {
+          label: String(row.instrument_name).replace(/^[A-Z]+-/, ''),
+          days: Math.round(days),
+          annualPct: (mark / index - 1) * (365 / days) * 100,
+        }
+      })
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.days - b.days) as Structure['curve']
+  } catch {
+    return []
+  }
+}
+
+/* Seven days of history, thinned to something a sparkline can draw. */
+function thin(values: number[], target = 60): number[] {
+  if (values.length <= target) return values
+  const step = values.length / target
+  const out: number[] = []
+  for (let i = 0; i < target; i += 1) out.push(values[Math.floor(i * step)])
+  return out
+}
+
+async function volHistoryFor(currency: string): Promise<number[]> {
+  try {
+    const end = Date.now()
+    const res: any = await json(
+      `get_volatility_index_data?currency=${currency}&start_timestamp=${end - 7 * 86400000}` +
+      `&end_timestamp=${end}&resolution=3600`,
+    )
+    const rows: any[] = res?.data ?? []
+    return thin(rows.map((r) => Number(r[4])).filter((n) => isFinite(n)))
+  } catch {
+    return []
+  }
+}
+
+async function fundingHistoryFor(currency: string): Promise<number[]> {
+  try {
+    const end = Date.now()
+    const res: any = await json(
+      `get_funding_rate_history?instrument_name=${currency}-PERPETUAL` +
+      `&start_timestamp=${end - 7 * 86400000}&end_timestamp=${end}`,
+    )
+    const rows: any[] = Array.isArray(res) ? res : []
+    return thin(rows.map((r) => Number(r.interest_8h) * PERIODS_PER_YEAR * 100).filter((n) => isFinite(n)))
+  } catch {
+    return []
+  }
+}
+
 async function forAsset(asset: 'BTC' | 'ETH'): Promise<Structure> {
   const base: Structure = {
     asset, fundingAnnualPct: null, basisPct: null,
     openInterestUsd: null, impliedVol: null, volume24hUsd: null,
+    curve: [], volHistory: [], fundingHistory: [],
   }
 
   try {
-    const [summary, vol] = await Promise.all([
+    /* History and the curve are decoration around the four headline
+       numbers, so each is allowed to fail on its own. */
+    const [summary, vol, volHistory, fundingHistory] = await Promise.all([
       json(`get_book_summary_by_instrument?instrument_name=${asset}-PERPETUAL`) as Promise<
         Record<string, number>[]
       >,
       impliedVol(asset),
+      volHistoryFor(asset),
+      fundingHistoryFor(asset),
     ])
 
     const s = summary?.[0]
@@ -93,6 +181,9 @@ async function forAsset(asset: 'BTC' | 'ETH'): Promise<Structure> {
       openInterestUsd: isFinite(Number(s.open_interest)) ? Number(s.open_interest) : null,
       volume24hUsd: isFinite(Number(s.volume_usd)) ? Number(s.volume_usd) : null,
       impliedVol: vol,
+      curve: await curveFor(asset, isFinite(index) ? index : null),
+      volHistory,
+      fundingHistory,
     }
   } catch (e) {
     return { ...base, error: e instanceof Error ? e.message : 'failed' }
