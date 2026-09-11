@@ -67,9 +67,10 @@
   #feed-stat .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--faint); margin-right:6px; vertical-align:1px; }
   #feed-stat .dot.on { background:var(--up); }
 
-  /* The flow chart card sized itself to the fund list beside it and left a
-     tall empty area. Let each card take its own height instead. */
-  #p-institutional .panelgrid { align-items:start; }
+  /* The flow chart card used to stretch to the fund list beside it, which
+     is what left the tall empty area. The left column now stretches as a
+     whole while its first row stays auto, so the chart keeps its natural
+     height and the cumulative chart below takes up the slack. */
   .flowbar { height:132px !important; position:relative; }
   .flowbar::after { content:''; position:absolute; left:0; right:0; top:50%; border-top:1px dashed var(--border); pointer-events:none; }
   .flowbar i { transition:opacity .15s; }
