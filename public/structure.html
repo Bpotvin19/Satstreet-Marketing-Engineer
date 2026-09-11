@@ -32,6 +32,35 @@
   .etf-table tr:last-child td { border-bottom:0; }
   .issuer { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--border-2); }
   .issuer:last-child { border-bottom:0; }
+
+  /* ---- mempool block strip ---- */
+  .feegrid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:4px; }
+  @media (max-width:700px){ .feegrid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .feetier { border:1px solid var(--border); border-radius:9px; padding:12px 14px; background:#fff; }
+  .feetier .t { font-size:10.5px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--muted); }
+  .feetier .r { display:block; margin-top:5px; font-family:var(--font-data); font-size:20px; font-weight:600; line-height:1.1; }
+  .feetier .u { font-size:11px; color:var(--muted); }
+  .feetier.sel { border-color:#b7d7ff; background:#f2f8ff; }
+
+  .strip { display:flex; align-items:stretch; gap:8px; overflow-x:auto; padding:4px 2px 12px; scrollbar-width:thin; }
+  .strip::-webkit-scrollbar { height:6px; }
+  .strip::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  .blk { flex:none; width:112px; border:1px solid var(--border); border-radius:9px; padding:10px 11px; background:#fff; position:relative; overflow:hidden; }
+  .blk::before { content:''; position:absolute; left:0; right:0; top:0; height:3px; background:var(--tone,#9fb3c4); }
+  .blk .fee { display:block; font-family:var(--font-data); font-size:15px; font-weight:600; line-height:1.2; margin-top:2px; }
+  .blk .rng { display:block; font-size:10.5px; color:var(--muted); font-family:var(--font-data); }
+  .blk .meta { display:block; margin-top:6px; font-size:10.5px; color:var(--muted); }
+  .blk .hgt { display:block; font-family:var(--font-data); font-size:11px; font-weight:600; color:var(--ink); }
+  .blk .fill { position:absolute; left:0; bottom:0; height:3px; background:var(--tone,#9fb3c4); opacity:.45; }
+  .blk.pending { background:linear-gradient(180deg,#fbfdff,#f4f8fb); border-style:dashed; }
+  .blk a { color:inherit; text-decoration:none; }
+  .blk a:hover .hgt { color:var(--blue); text-decoration:underline; }
+
+  .now { flex:none; width:1px; align-self:stretch; background:var(--border); position:relative; margin:0 12px; }
+  .now span { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(180deg); writing-mode:vertical-rl; font-size:9.5px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:var(--muted); background:var(--bg); padding:5px 1px; }
+
+  .striplegend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-top:2px; font-size:11px; color:var(--muted); }
+  .striplegend i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
 </style>
 </head>
 <body>
@@ -66,7 +95,9 @@
   <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
     <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
     <div class="metrics" id="net"></div>
-    <div class="card" id="net-extra"></div>
+    <div class="card" id="net-fees" style="margin-top:16px"></div>
+    <div class="card" id="net-blocks" style="margin-top:16px"></div>
+    <div class="card" id="net-extra" style="margin-top:16px"></div>
   </section>
   <div class="disclosure" id="disclosure"></div>
 </main>
