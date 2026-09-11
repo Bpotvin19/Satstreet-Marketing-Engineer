@@ -31,6 +31,7 @@
       var panel = $('p-' + t);
       if (panel) panel.hidden = !sel;
     });
+    if (name === 'network') startFeed(); else stopFeed();
     $('disclosure').innerHTML = DISCLOSURE[name] || '';
     stamp(name);
     if (!loaded[name]) { loaded[name] = true; (LOAD[name] || function () {})(); }
@@ -104,6 +105,140 @@
     return 'heavy congestion';
   }
 
+  /* mempool.space's own palette runs green to red as the median fee climbs.
+     Ours is the terminal's, but the ramp carries the same meaning: how much
+     it currently costs to be in the next block. */
+  var FEE_BANDS = [
+    [2,  '#0f8a63', 'Under 2'],
+    [5,  '#3f9a58', '2 to 5'],
+    [15, '#a9823c', '5 to 15'],
+    [50, '#c2761f', '15 to 50'],
+    [1e9,'#c33a49', 'Over 50']
+  ];
+  function feeTone(rate) {
+    var n = Number(rate);
+    if (!isFinite(n)) return '#9fb3c4';
+    for (var i = 0; i < FEE_BANDS.length; i += 1) if (n < FEE_BANDS[i][0]) return FEE_BANDS[i][1];
+    return FEE_BANDS[FEE_BANDS.length - 1][1];
+  }
+  function satvb(n) {
+    var v = Number(n);
+    if (!isFinite(v)) return '—';
+    return v < 10 ? v.toFixed(1).replace(/\.0$/, '') : String(Math.round(v));
+  }
+  function mb(vbytes) {
+    var v = Number(vbytes);
+    return isFinite(v) ? (v / 1e6).toFixed(2) + ' vMB' : '—';
+  }
+  function txs(n) {
+    var v = Number(n);
+    return isFinite(v) ? v.toLocaleString('en-US') + ' tx' : '—';
+  }
+
+  /* The four tiers mempool.space quotes, plus what is actually queued. */
+  function renderFees(fees, pool) {
+    if (!fees) { $('net-fees').innerHTML = ''; return; }
+    var tiers = [
+      ['No priority', fees.economyFee, 'cheapest that still relays'],
+      ['Low', fees.hourFee, 'within an hour'],
+      ['Medium', fees.halfHourFee, 'within 30 minutes'],
+      ['High', fees.fastestFee, 'next block']
+    ];
+    var queued = pool && isFinite(Number(pool.count))
+      ? Number(pool.count).toLocaleString('en-US') + ' transactions waiting · ' + mb(pool.vsize)
+      : 'mempool depth unavailable';
+    $('net-fees').innerHTML =
+      '<header><h2>Fee estimates</h2><span class="eyebrow">' + esc(queued) + '</span></header>' +
+      '<div class="feegrid">' + tiers.map(function (t, i) {
+        return '<div class="feetier' + (i === 3 ? ' sel' : '') + '">' +
+          '<span class="t">' + esc(t[0]) + '</span>' +
+          '<span class="r" style="color:' + feeTone(t[1]) + '">' + esc(satvb(t[1])) + '</span>' +
+          '<span class="u">sat/vB · ' + esc(t[2]) + '</span></div>';
+      }).join('') + '</div>';
+  }
+
+  /* Projected blocks to the left of now, mined blocks to the right, which is
+     the arrangement mempool.space uses and the reason the picture reads at a
+     glance: everything left of the line has not happened yet. */
+  function renderStrip(pending, blocks) {
+    var left = (pending || []).slice(0, 4).reverse();
+    var right = (blocks || []).slice(0, 8);
+    if (!left.length && !right.length) { $('net-blocks').innerHTML = ''; return; }
+
+    var pendingHtml = left.map(function (b, i) {
+      var eta = (left.length - i) * 10;
+      var full = Math.min(100, (Number(b.blockVSize) || 0) / 1e6 * 100);
+      return '<div class="blk pending" style="--tone:' + feeTone(b.medianFee) + '">' +
+        '<span class="meta">next but ' + (left.length - i - 1) + '</span>' +
+        '<span class="fee">' + esc(satvb(b.medianFee)) + ' sat/vB</span>' +
+        '<span class="rng">' + esc((b.feeRange || []).length ? satvb(b.feeRange[0]) + '–' + satvb(b.feeRange[b.feeRange.length - 1]) : '—') + '</span>' +
+        '<span class="meta">' + esc(txs(b.nTx)) + '</span>' +
+        '<span class="meta">~' + eta + ' min</span>' +
+        '<span class="fill" style="width:' + full.toFixed(0) + '%"></span></div>';
+    }).join('');
+
+    var now = Date.now() / 1000;
+    var minedHtml = right.map(function (b) {
+      var age = Math.max(0, Math.round((now - (Number(b.timestamp) || now)) / 60));
+      var median = b.extras && b.extras.medianFee;
+      var pool = b.extras && b.extras.pool && b.extras.pool.name;
+      var full = Math.min(100, (Number(b.weight) || 0) / 4e6 * 100);
+      return '<div class="blk" style="--tone:' + feeTone(median) + '">' +
+        '<a href="https://mempool.space/block/' + esc(b.id) + '" target="_blank" rel="noopener noreferrer">' +
+        '<span class="hgt">' + esc(Number(b.height).toLocaleString('en-US')) + '</span></a>' +
+        '<span class="fee">' + esc(median != null ? satvb(median) + ' sat/vB' : '—') + '</span>' +
+        '<span class="meta">' + esc(txs(b.tx_count)) + '</span>' +
+        '<span class="meta">' + esc(age + ' min ago') + '</span>' +
+        (pool ? '<span class="meta">' + esc(pool) + '</span>' : '') +
+        '<span class="fill" style="width:' + full.toFixed(0) + '%"></span></div>';
+    }).join('');
+
+    var legend = FEE_BANDS.map(function (b) {
+      return '<span><i style="background:' + b[1] + '"></i>' + esc(b[2]) + '</span>';
+    }).join('');
+
+    $('net-blocks').innerHTML =
+      '<header><h2>Mempool and recent blocks</h2><span class="eyebrow">median fee, sat/vB</span></header>' +
+      '<div class="strip">' + pendingHtml +
+      '<div class="now"><span>now</span></div>' + minedHtml + '</div>' +
+      '<div class="striplegend">' + legend + '</div>';
+  }
+
+  /* The live feed runs only while its own tab is on screen and the browser
+     tab is in the foreground. Everywhere else it is torn down, socket and
+     all, rather than left spinning behind a hidden panel. */
+  var feed = null;
+  function feedStats(st) {
+    var el = $('feed-stat');
+    if (!el) return;
+    el.innerHTML = '<span class="dot' + (st.live ? ' on' : '') + '"></span>' +
+      (st.live
+        ? st.perSecond.toFixed(1) + '/s · ' + st.staged.toLocaleString('en-US') + ' packed · ' +
+          (st.vsize / 1e6).toFixed(2) + ' MB' + (st.fills ? ' · ' + st.fills + ' cleared' : '')
+        : 'reconnecting…');
+  }
+  function startFeed() {
+    var canvas = $('feed-canvas');
+    if (!canvas || !window.SATSTREET_MEMPOOL) return;
+    if (!feed) {
+      feed = window.SATSTREET_MEMPOOL.create(canvas, feedStats);
+      var legend = $('feed-legend');
+      if (legend) {
+        legend.innerHTML = [['#0f8a63','under 2'],['#3f9a58','2 to 5'],['#a9823c','5 to 15'],
+                            ['#c2761f','15 to 50'],['#c33a49','over 50'],['#9fb3c4','fee unknown']]
+          .map(function (b) { return '<span><i style="background:' + b[0] + '"></i>' + b[1] + ' sat/vB</span>'; }).join('') +
+          (feed.reduced() ? '<span>reduced motion: squares appear without animating</span>' : '');
+      }
+    }
+    feed.start();
+  }
+  function stopFeed() { if (feed) feed.stop(); }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopFeed();
+    else if (!$('p-network').hidden) startFeed();
+  });
+
   function loadNetwork() {
     var api = 'https://mempool.space/api/';
     $('net').innerHTML = '<div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div><div class="metric">' + S.skeleton(2, 16) + '</div>';
@@ -120,9 +255,11 @@
       get('v1/difficulty-adjustment').catch(function () { return null; }),
       get('v1/fees/recommended').catch(function () { return null; }),
       get('blocks/tip/height').catch(function () { return null; }),
-      get('v1/blocks').catch(function () { return null; })
+      get('v1/blocks').catch(function () { return null; }),
+      get('v1/fees/mempool-blocks').catch(function () { return null; }),
+      get('mempool').catch(function () { return null; })
     ]).then(function (r) {
-      var hash = r[0], diff = r[1], fees = r[2], height = r[3], blocks = r[4];
+      var hash = r[0], diff = r[1], fees = r[2], height = r[3], blocks = r[4], pending = r[5], pool = r[6];
       if (!hash && !diff && !fees && height === null) throw new Error('network data unavailable');
       var hs = hash && hash.hashrates && hash.hashrates.length ? hash.hashrates[hash.hashrates.length - 1].avgHashrate : NaN;
       var m = function (k, v, s) { return '<div class="metric"><div class="k">' + esc(k) + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>'; };
@@ -131,6 +268,9 @@
         m('Difficulty', diff && isFinite(diff.difficultyChange) ? (diff.difficultyChange > 0 ? '+' : '') + diff.difficultyChange.toFixed(2) + '%' : '\u2014', diff ? 'estimated change at next retarget' : '') +
         m('Fee estimate', fees ? fees.fastestFee + ' sat/vB' : '\u2014', fees ? esc(feeWords(fees.fastestFee)) : '') +
         m('Block height', height !== null ? Number(height).toLocaleString('en-US') : '\u2014', 'chain tip');
+      renderFees(fees, pool);
+      renderStrip(pending, blocks);
+
       var rows = [];
       if (diff) {
         rows.push(['Difficulty period', Math.round(diff.progressPercent || 0) + '% complete', (diff.remainingBlocks != null ? Number(diff.remainingBlocks).toLocaleString('en-US') + ' blocks remaining' : '')]);
@@ -147,6 +287,8 @@
       updated.network = Date.now(); stamp('network');
     }).catch(function (e) {
       $('net').innerHTML = '';
+      $('net-fees').innerHTML = '';
+      $('net-blocks').innerHTML = '';
       $('net-extra').innerHTML = S.errorState('Network data unavailable', e.message, 'retry-n');
       updated.network = 'error'; stamp('network');
       var r = $('retry-n'); if (r) r.addEventListener('click', function () { loaded.network = false; show('network'); });
