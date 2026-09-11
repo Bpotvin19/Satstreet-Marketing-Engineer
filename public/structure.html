@@ -84,8 +84,14 @@
   .curvefoot { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:2px; }
   .dcell .trend { display:block; margin-top:4px; }
 
-  .etf-left { display:grid; gap:16px; align-content:start; min-width:0; }
-  #etf-cumulative svg { display:block; width:100%; height:150px; overflow:visible; margin-top:8px; }
+  /* The fund list is the taller column, so the cumulative chart absorbs
+     whatever height is left rather than the column ending early. Both
+     columns then finish on the same line and the chart gets the room. */
+  .etf-left { display:grid; gap:16px; grid-template-rows:auto 1fr; min-width:0; }
+  #etf-cumulative { display:flex; flex-direction:column; }
+  #etf-cumulative svg { display:block; width:100%; flex:1 1 auto; height:auto; min-height:150px; overflow:visible; margin-top:8px; }
+  #etf-cumulative .cumfoot { margin-top:8px; }
+  @media (max-width:719px) { #etf-cumulative svg { flex:none; height:150px; } }
   .cumfoot { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:6px; font-size:11px; color:var(--muted); }
   .cumfoot b { color:var(--ink); font-family:var(--font-data); font-size:12px; }
 </style>
