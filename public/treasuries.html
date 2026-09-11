@@ -36,6 +36,11 @@
   .rank { width:40px; color:var(--faint); }
   .entity { display:flex; align-items:center; gap:9px; min-width:190px; }
   .entity-mark { width:32px; height:32px; display:grid; place-items:center; flex:none; border-radius:50%; color:#476177; background:linear-gradient(145deg,#edf3f7,#dfe8ee); border:1px solid #dce6ec; font-size:10px; font-weight:700; }
+  .entity-mark { position:relative; overflow:hidden; }
+  .entity-mark img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; padding:3px; display:block; }
+  .entity strong a { color:inherit; text-decoration:none; }
+  .entity strong a:hover { color:var(--blue); text-decoration:underline; }
+  .entity strong a:focus-visible { outline:2px solid var(--blue); outline-offset:2px; border-radius:3px; }
   .entity strong { display:block; max-width:230px; overflow:hidden; text-overflow:ellipsis; }
   .entity small { display:block; color:var(--muted); font-size:11.5px; }
   .bars h2 { font-size:21px; margin:0 0 3px; }
@@ -174,12 +179,40 @@
       ? metric('Reported ETH reserves', compact(summary.holdings,'ETH'), 'across active entities','eth') + metric('Indicative value', money(summary.value), 'at current ETH reference','value') + metric('Tracked entities', String(summary.entities), 'active source records','entities') + metric('Share of supply', Number(summary.supply).toFixed(2) + '%', 'estimated circulating supply','reference',true)
       : metric('Public-company BTC', String(summary.holdings), 'reported holdings','asset') + metric('Indicative value', String(summary.value), 'reported by source','value') + metric('Public companies', String(summary.entities), 'tracked entities','entities') + metric('BTC reference', String(summary.price), String(summary.supply) + ' asset dominance','reference',true);
 
+  /* The leaderboard has no images, so logos are resolved separately and
+     dropped in once they arrive. A row without one keeps its initials. */
+  function hydrateLogos(rows) {
+    var slugs = rows.map(function (r) { return r.slug; }).filter(Boolean);
+    if (!slugs.length) return;
+    fetch('/api/treasury-logos?slugs=' + encodeURIComponent(slugs.join(',')))
+      .then(function (r) { return r.ok ? r.json() : { logos: {} }; })
+      .then(function (d) {
+        var found = (d && d.logos) || {};
+        Array.prototype.forEach.call(document.querySelectorAll('#rows .entity-mark[data-slug]'), function (mark) {
+          var url = found[mark.getAttribute('data-slug')];
+          if (!url) return;
+          var img = new Image();
+          img.alt = '';
+          img.loading = 'lazy';
+          img.onload = function () {
+            var text = mark.querySelector('.mark-text');
+            if (text) text.hidden = true;
+            mark.appendChild(img);
+          };
+          img.onerror = function () {};
+          img.src = '/api/news-image?u=' + encodeURIComponent(url);
+        });
+      })
+      .catch(function () {});
+  }
+
     $('row-count').textContent = 'Top ' + Math.min(20,d.rows.length) + ' shown';
     $('rows').innerHTML = d.rows.slice(0,20).map(function (r) {
       var extra = isEth ? (r.change === null ? '—' : (r.change > 0 ? '+' : '') + Number(r.change).toFixed(2) + '%') : (r.nav ? r.nav + '×' : '—');
       var extraClass = isEth && r.change !== null ? (r.change > 0 ? 'up' : r.change < 0 ? 'down' : 'flat') : '';
-      return '<tr><td class="rank">' + S.esc(r.rank) + '</td><td><span class="entity"><span class="entity-mark">' + S.esc((r.ticker || r.name).slice(0,2).toUpperCase()) + '</span><span><strong>' + S.esc(r.name) + '</strong><small>' + S.esc((r.country ? r.country + ' · ' : '') + (r.ticker || '—')) + '</small></span></span></td><td><strong>' + compact(r.holdings,unit) + '</strong>' + (isEth && r.value ? '<br><small style="color:var(--muted)">' + money(r.value) + '</small>' : '') + '</td><td class="' + extraClass + '">' + S.esc(extra) + '</td><td style="color:var(--muted)">' + S.esc(isEth ? date(r.asOf) : 'Latest disclosure') + '</td></tr>';
+      return '<tr><td class="rank">' + S.esc(r.rank) + '</td><td><span class="entity">' + '<span class="entity-mark"' + (r.slug ? ' data-slug="' + S.esc(r.slug) + '"' : '') + '>' + '<span class="mark-text">' + S.esc((r.ticker || r.name).slice(0,2).toUpperCase()) + '</span></span>' + '<span><strong>' + (r.profileUrl ? '<a href="' + S.esc(r.profileUrl) + '" target="_blank" rel="noopener noreferrer">' + S.esc(r.name) + '</a>' : S.esc(r.name)) + '</strong><small>' + S.esc((r.country ? r.country + ' · ' : '') + (r.ticker || '—')) + '</small></span></span></td><td><strong>' + compact(r.holdings,unit) + '</strong>' + (isEth && r.value ? '<br><small style="color:var(--muted)">' + money(r.value) + '</small>' : '') + '</td><td class="' + extraClass + '">' + S.esc(extra) + '</td><td style="color:var(--muted)">' + S.esc(isEth ? date(r.asOf) : 'Latest disclosure') + '</td></tr>';
     }).join('');
+    hydrateLogos(d.rows.slice(0,20));
 
     var top = d.rows.slice(0,7), max = top.length ? top[0].holdings : 1, denominator=total(summary.holdings)||d.rows.reduce(function(n,r){return n+r.holdings;},0), share=top.length?Math.min(100,top[0].holdings/denominator*100):0;
     $('donut').innerHTML='<div class="donut" style="--share:'+share.toFixed(2)+'"><div class="donut-copy"><strong>'+share.toFixed(1)+'%</strong><span>top entity share</span></div></div>';

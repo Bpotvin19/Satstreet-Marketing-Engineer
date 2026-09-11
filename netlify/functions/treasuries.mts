@@ -8,6 +8,8 @@
 type Row = {
   rank: string
   name: string
+  slug?: string
+  profileUrl?: string
   ticker: string
   country?: string
   holdings: number
@@ -54,16 +56,26 @@ async function bitcoin() {
   const seen = new Set<string>()
   for (const match of html.matchAll(/<tr[^>]*data-slot="table-row"[^>]*>([\s\S]*?)<\/tr>/g)) {
     const row = match[1]
-    const company = row.match(/href="\/public-companies\/[^\"]+">([^<]+)<\/a>/)
+    const company = row.match(/href="\/public-companies\/([^"]+)">([^<]+)<\/a>/)
     if (!company) continue
+    const slug = company[1]
     const cells = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((cell) => text(cell[1]))
     if (cells.length < 5) continue
-    const name = text(company[1])
+    const name = text(company[2])
     if (/coinbase/i.test(name) || seen.has(name)) continue
     const holdings = number(cells[4])
     if (holdings === null) continue
     seen.add(name)
-    rows.push({ rank: cells[0], name, country: cells[2], ticker: cells[3] || '—', holdings, nav: cells[5]?.replace(/[\[\]]/g, '') || null })
+    rows.push({
+      rank: cells[0],
+      name,
+      slug,
+      profileUrl: `https://bitcointreasuries.net/public-companies/${slug}`,
+      country: cells[2],
+      ticker: cells[3] || '—',
+      holdings,
+      nav: cells[5]?.replace(/[\[\]]/g, '') || null,
+    })
     if (rows.length === 30) break
   }
   if (rows.length < 5) throw new Error('Bitcoin treasury leaderboard was not recognized')
