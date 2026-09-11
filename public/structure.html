@@ -61,6 +61,11 @@
 
   .striplegend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; margin-top:2px; font-size:11px; color:var(--muted); }
   .striplegend i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+
+  #net-feed canvas { display:block; width:100%; height:240px; margin-top:10px; border:1px solid var(--border); border-radius:9px; background:linear-gradient(180deg,#fbfdff,#f5f8fb); }
+  .feednote { margin:2px 0 0; font-size:12.5px; color:var(--muted); max-width:78ch; }
+  #feed-stat .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--faint); margin-right:6px; vertical-align:1px; }
+  #feed-stat .dot.on { background:var(--up); }
 </style>
 </head>
 <body>
@@ -95,6 +100,12 @@
   <section id="p-network" role="tabpanel" aria-labelledby="tab-network" tabindex="0" hidden>
     <p class="ctx">Conditions on the Bitcoin network itself, independent of price.</p>
     <div class="metrics" id="net"></div>
+    <section class="card" id="net-feed" style="margin-top:16px">
+      <header><h2>Live transactions</h2><span class="eyebrow" id="feed-stat">connecting…</span></header>
+      <p class="feednote">Every unconfirmed transaction as it is relayed. Each square is one transaction: area is its size in bytes, colour is what the sender pays per byte. They pack into the block being built, and clear when one is found.</p>
+      <canvas id="feed-canvas" height="240" aria-label="Live mempool transactions"></canvas>
+      <div class="striplegend" id="feed-legend"></div>
+    </section>
     <div class="card" id="net-fees" style="margin-top:16px"></div>
     <div class="card" id="net-blocks" style="margin-top:16px"></div>
     <div class="card" id="net-extra" style="margin-top:16px"></div>
@@ -102,6 +113,7 @@
   <div class="disclosure" id="disclosure"></div>
 </main>
 <script src="./assets/terminal.js"></script>
+<script src="./assets/mempool-feed.js"></script>
 <script src="./assets/structure-desk.js"></script>
 </body>
 </html>

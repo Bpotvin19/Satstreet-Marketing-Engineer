@@ -31,6 +31,7 @@
       var panel = $('p-' + t);
       if (panel) panel.hidden = !sel;
     });
+    if (name === 'network') startFeed(); else stopFeed();
     $('disclosure').innerHTML = DISCLOSURE[name] || '';
     stamp(name);
     if (!loaded[name]) { loaded[name] = true; (LOAD[name] || function () {})(); }
@@ -202,6 +203,41 @@
       '<div class="now"><span>now</span></div>' + minedHtml + '</div>' +
       '<div class="striplegend">' + legend + '</div>';
   }
+
+  /* The live feed runs only while its own tab is on screen and the browser
+     tab is in the foreground. Everywhere else it is torn down, socket and
+     all, rather than left spinning behind a hidden panel. */
+  var feed = null;
+  function feedStats(st) {
+    var el = $('feed-stat');
+    if (!el) return;
+    el.innerHTML = '<span class="dot' + (st.live ? ' on' : '') + '"></span>' +
+      (st.live
+        ? st.perSecond.toFixed(1) + '/s · ' + st.staged.toLocaleString('en-US') + ' packed · ' +
+          (st.vsize / 1e6).toFixed(2) + ' MB'
+        : 'reconnecting…');
+  }
+  function startFeed() {
+    var canvas = $('feed-canvas');
+    if (!canvas || !window.SATSTREET_MEMPOOL) return;
+    if (!feed) {
+      feed = window.SATSTREET_MEMPOOL.create(canvas, feedStats);
+      var legend = $('feed-legend');
+      if (legend) {
+        legend.innerHTML = [['#0f8a63','under 2'],['#3f9a58','2 to 5'],['#a9823c','5 to 15'],
+                            ['#c2761f','15 to 50'],['#c33a49','over 50'],['#9fb3c4','fee unknown']]
+          .map(function (b) { return '<span><i style="background:' + b[0] + '"></i>' + b[1] + ' sat/vB</span>'; }).join('') +
+          (feed.reduced() ? '<span>reduced motion: squares appear without animating</span>' : '');
+      }
+    }
+    feed.start();
+  }
+  function stopFeed() { if (feed) feed.stop(); }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) stopFeed();
+    else if (!$('p-network').hidden) startFeed();
+  });
 
   function loadNetwork() {
     var api = 'https://mempool.space/api/';
