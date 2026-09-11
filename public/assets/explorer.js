@@ -4,7 +4,7 @@
   var S = window.SATSTREET;
   var $ = function (id) { return document.getElementById(id); };
   var esc = S.esc;
-  S.mountHeader('Structure');
+  S.mountHeader('Explorer');
 
   function attr(value) {
     return esc(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');

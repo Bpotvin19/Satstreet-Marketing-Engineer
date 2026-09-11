@@ -115,7 +115,7 @@
   'use strict';
   var S = window.SATSTREET, $ = function (id) { return document.getElementById(id); };
   var esc = S.esc, fmt = S.fmt;
-  S.mountHeader('Chart');
+  S.mountHeader('Charts');
 
   var params = new URLSearchParams(location.search);
   var symbol = (params.get('symbol') || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g, '');
