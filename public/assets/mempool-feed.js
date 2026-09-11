@@ -258,6 +258,11 @@
     return {
       start: function () {
         if (running) return;
+        /* A browser runs no animation frames for a background tab, so
+           starting here would open a socket and report itself live while
+           nothing was ever drawn. Wait to be brought to the front; the
+           visibilitychange handler starts us then. */
+        if (document.hidden) return;
         running = true;
         resize();
         open();
