@@ -67,9 +67,10 @@
   #feed-stat .dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--faint); margin-right:6px; vertical-align:1px; }
   #feed-stat .dot.on { background:var(--up); }
 
-  /* The flow chart card sized itself to the fund list beside it and left a
-     tall empty area. Let each card take its own height instead. */
-  #p-institutional .panelgrid { align-items:start; }
+  /* The flow chart card used to stretch to the fund list beside it, which
+     is what left the tall empty area. The left column now stretches as a
+     whole while its first row stays auto, so the chart keeps its natural
+     height and the cumulative chart below takes up the slack. */
   .flowbar { height:132px !important; position:relative; }
   .flowbar::after { content:''; position:absolute; left:0; right:0; top:50%; border-top:1px dashed var(--border); pointer-events:none; }
   .flowbar i { transition:opacity .15s; }
@@ -83,6 +84,17 @@
   .curvewrap svg { display:block; width:100%; height:96px; overflow:visible; }
   .curvefoot { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:2px; }
   .dcell .trend { display:block; margin-top:4px; }
+
+  /* The fund list is the taller column, so the cumulative chart absorbs
+     whatever height is left rather than the column ending early. Both
+     columns then finish on the same line and the chart gets the room. */
+  .etf-left { display:grid; gap:16px; grid-template-rows:auto 1fr; min-width:0; }
+  #etf-cumulative { display:flex; flex-direction:column; }
+  #etf-cumulative svg { display:block; width:100%; flex:1 1 auto; height:auto; min-height:150px; overflow:visible; margin-top:8px; }
+  #etf-cumulative .cumfoot { margin-top:8px; }
+  @media (max-width:719px) { #etf-cumulative svg { flex:none; height:150px; } }
+  .cumfoot { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:6px; font-size:11px; color:var(--muted); }
+  .cumfoot b { color:var(--ink); font-family:var(--font-data); font-size:12px; }
 </style>
 </head>
 <body>
@@ -118,7 +130,10 @@
     <p class="ctx">US spot Bitcoin ETF creations and redemptions. Daily tape compiled by TFTC from SoSoValue and Farside Investors. Figures are not a Satstreet view on demand.</p>
     <div class="metrics" id="etf-kpis"></div>
     <div class="panelgrid" style="margin-top:16px">
-      <div class="card" id="etf-tape"></div>
+      <div class="etf-left">
+        <div class="card" id="etf-tape"></div>
+        <div class="card" id="etf-cumulative"></div>
+      </div>
       <div class="card" id="etf-issuers"></div>
     </div>
     <div class="card" id="etf-days" style="margin-top:16px"></div>
