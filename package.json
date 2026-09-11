@@ -6,6 +6,7 @@
   "description": "Satstreet's marketing desk: a Telegram bot that proposes, drafts and compliance-checks content. A human always publishes.",
   "scripts": {
     "bot": "tsx --env-file-if-exists=marketing/.env marketing/bot.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "marketing:bot": "tsx --env-file-if-exists=marketing/.env marketing/bot.ts",
     "marketing:today": "tsx --env-file-if-exists=marketing/.env marketing/today.ts",

@@ -51,3 +51,15 @@ Use environment variables / secret managers for credentials and approved systems
 - [Automation Backlog](docs/AUTOMATION_BACKLOG.md)
 - [Process Interview Guide](docs/PROCESS_INTERVIEW_GUIDE.md)
 - [Prospect Intelligence Engine — MVP Specification](specs/PROSPECT_INTELLIGENCE_ENGINE.md)
+
+## Bitcoin Explorer
+
+The public terminal includes a Bitcoin block explorer at `/explorer.html`. Its
+browser code calls same-origin `/api/bitcoin/*` Netlify endpoints; the upstream
+Esplora provider is isolated in `netlify/lib/bitcoin-service.mts`.
+
+The default provider is Blockstream's public Esplora API. Set
+`BITCOIN_ESPLORA_BASE_URL` in the Netlify environment to use another
+Esplora-compatible provider, including a future Satstreet-hosted instance. The
+feature uses public blockchain data only and does not connect to client-data
+systems.
