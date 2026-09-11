@@ -214,7 +214,7 @@
     el.innerHTML = '<span class="dot' + (st.live ? ' on' : '') + '"></span>' +
       (st.live
         ? st.perSecond.toFixed(1) + '/s · ' + st.staged.toLocaleString('en-US') + ' packed · ' +
-          (st.vsize / 1e6).toFixed(2) + ' MB'
+          (st.vsize / 1e6).toFixed(2) + ' MB' + (st.fills ? ' · ' + st.fills + ' cleared' : '')
         : 'reconnecting…');
   }
   function startFeed() {

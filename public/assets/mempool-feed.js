@@ -83,6 +83,9 @@
     var height = 0;
     var seen = 0;
     var sizeTotal = 0;
+    var flushing = 0;    /* timestamp the flush began, 0 when not flushing */
+    var fills = 0;
+    var FLUSH_MS = 560;
     var windowStart = Date.now();
     var recent = [];
 
@@ -209,9 +212,8 @@
       };
 
       if (reduced) {
-        settled.push(item);
-        if (settled.length > MAX_LIVE) settled.shift();
-        repack();
+        if (flushing) finishFlush();
+        land(item);
         return;
       }
 
@@ -221,21 +223,30 @@
     }
 
     function land(item) {
-      if (!seat(item)) {
-        /* Block is full. Drop the oldest fifth and rebuild, which is rare
-           enough not to matter and keeps the picture moving. */
-        settled = settled.slice(Math.ceil(settled.length * 0.2));
-        repack();
-        if (!seat(item)) return;
-      }
+      if (!seat(item)) { beginFlush(); return false; }
       settled.push(item);
-      if (settled.length > MAX_LIVE) { settled.shift(); repack(); }
+      if (settled.length > MAX_LIVE) { beginFlush(); }
+      return true;
     }
 
-    function clearBlock() {
+    /* When the block has no room left it empties, the way the staging area
+       does once a block is packed. Arrivals hold at the edge for the half
+       second it takes to clear, then start the next one. */
+    function beginFlush() {
+      if (flushing) return;
+      flushing = Date.now();
+      fills += 1;
+    }
+
+    function finishFlush() {
       settled = [];
       sizeTotal = 0;
       resetSky();
+      flushing = 0;
+    }
+
+    function clearBlock() {
+      beginFlush();
     }
 
     function stats() {
@@ -246,6 +257,8 @@
         staged: settled.length,
         vsize: sizeTotal,
         seen: seen,
+        fills: fills,
+        flushing: !!flushing,
         live: !!ws && ws.readyState === 1
       };
     }
@@ -264,14 +277,18 @@
       ctx.setLineDash([]);
 
       var i;
+      var t = flushing ? Math.min(1, (Date.now() - flushing) / FLUSH_MS) : 0;
+      var lift = t * 18;
+      ctx.globalAlpha = flushing ? Math.max(0, 1 - t) : 1;
       for (i = 0; i < settled.length; i += 1) {
         var s = settled[i];
         if (s.hidden) continue;
         ctx.fillStyle = s.tone;
         /* Packed flush; the single pixel comes off the drawn square, not
            the footprint, so the grid reads without opening real gaps. */
-        ctx.fillRect(s.x, s.y, s.side - 1, s.side - 1);
+        ctx.fillRect(s.x, s.y - lift, s.side - 1, s.side - 1);
       }
+      ctx.globalAlpha = 1;
 
       for (i = 0; i < flying.length; i += 1) {
         var f = flying[i];
@@ -284,10 +301,13 @@
 
     function step() {
       if (!running) return;
+      if (flushing && Date.now() - flushing >= FLUSH_MS) finishFlush();
+      var edge = blockWidth || floorWidth();
       for (var i = flying.length - 1; i >= 0; i -= 1) {
         var f = flying[i];
         f.x += f.vx;
-        if (f.x <= (blockWidth || floorWidth())) {
+        if (f.x <= edge) {
+          if (flushing) { f.x = edge + 1; continue; }
           flying.splice(i, 1);
           land(f);
         }
