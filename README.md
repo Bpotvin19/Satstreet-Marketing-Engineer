@@ -1,4 +1,4 @@
-# Satstreet Marketing Engineer
+# Satstreet Marketing 
 
 Internal operating repository for building Satstreet's AI-enabled growth and operations system.
 
